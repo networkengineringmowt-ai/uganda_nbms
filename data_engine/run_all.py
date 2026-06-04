@@ -9,6 +9,7 @@ scripts = [
     "build_legacy_data.py",
     "build_analytics.py",
     "build_spatial.py", 
+    "build_coords.py",
     "build_media.py", 
     "build_documents.py",
     "build_heavy_documents.py"

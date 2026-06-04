@@ -54,12 +54,9 @@ export default function MapDashboard() {
         {networkData && <GeoJSON data={networkData} style={{ color: '#5474ff', weight: 2, opacity: 0.6 }} />}
         
         {bridges.map((b, i) => {
-          if (!b.LegacyData) return null;
-          const lat = b.LegacyData.location_corrected_lat || b.LegacyData.map_y;
-          const lon = b.LegacyData.location_corrected_lon || b.LegacyData.map_x;
-          if (!lat || !lon) return null;
+          if (!b.Lat || !b.Lon) return null;
           return (
-            <CircleMarker key={`b-${i}`} center={[lat, lon]} radius={4} pathOptions={{ fillColor: '#00e5ff', color: '#fff', weight: 1, fillOpacity: 0.8 }}>
+            <CircleMarker key={`b-${i}`} center={[b.Lat, b.Lon]} radius={4} pathOptions={{ fillColor: '#00e5ff', color: '#fff', weight: 1, fillOpacity: 0.8 }}>
               <Tooltip>
                 <strong>{b.BridgeName || b.BridgeNumber}</strong><br/>
                 Bridge No: {b.BridgeNumber}<br/>
@@ -70,15 +67,13 @@ export default function MapDashboard() {
         })}
 
         {culverts.map((c, i) => {
-          const lat = c.CoOrdinateS;
-          const lon = c.CoOrdinateE;
-          if (!lat || !lon || isNaN(lat) || isNaN(lon)) return null;
+          if (!c.Lat || !c.Lon) return null;
           return (
-            <CircleMarker key={`c-${i}`} center={[lat, lon]} radius={4} pathOptions={{ fillColor: '#ff3366', color: '#fff', weight: 1, fillOpacity: 0.8 }}>
+            <CircleMarker key={`c-${i}`} center={[c.Lat, c.Lon]} radius={4} pathOptions={{ fillColor: '#ff3366', color: '#fff', weight: 1, fillOpacity: 0.8 }}>
               <Tooltip>
                 <strong>Culvert {c.CulvertNumber}</strong><br/>
-                River: {c.River}<br/>
-                Road: {c.Road}
+                River: {c.River || 'Unknown'}<br/>
+                Road: {c.Road || 'Unknown'}
               </Tooltip>
             </CircleMarker>
           );
