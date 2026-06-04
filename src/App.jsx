@@ -7,7 +7,8 @@ import DocumentsDashboard from './components/DocumentsDashboard';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import CriticalDashboard from './components/CriticalDashboard';
 import WorksDashboard from './components/WorksDashboard';
-import { Activity, LayoutDashboard, GitBranch, Map as MapIcon, FileText, BarChart3, AlertTriangle, Construction } from 'lucide-react';
+import RoadNetworkDashboard from './components/RoadNetworkDashboard';
+import { Activity, LayoutDashboard, GitBranch, Map as MapIcon, FileText, BarChart3, AlertTriangle, Construction, Network } from 'lucide-react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('investment');
@@ -26,6 +27,7 @@ function App() {
           <button className={`nav-tab ${activeTab === 'map' ? 'active' : ''}`} onClick={() => setActiveTab('map')}><MapIcon size={16} /> Interactive Map</button>
           <button className={`nav-tab ${activeTab === 'bridges' ? 'active' : ''}`} onClick={() => setActiveTab('bridges')}><LayoutDashboard size={16} /> Bridges Registry</button>
           <button className={`nav-tab ${activeTab === 'culverts' ? 'active' : ''}`} onClick={() => setActiveTab('culverts')}><GitBranch size={16} /> Major Culverts</button>
+          <button className={`nav-tab ${activeTab === 'network' ? 'active' : ''}`} onClick={() => setActiveTab('network')}><Network size={16} /> Road Network</button>
           <button className={`nav-tab ${activeTab === 'docs' ? 'active' : ''}`} onClick={() => setActiveTab('docs')}><FileText size={16} /> Document Library</button>
         </nav>
       </header>
@@ -38,6 +40,7 @@ function App() {
         {activeTab === 'map' && <MapDashboard />}
         {activeTab === 'bridges' && <BridgesDashboard />}
         {activeTab === 'culverts' && <CulvertsDashboard />}
+        {activeTab === 'network' && <RoadNetworkDashboard />}
         {activeTab === 'docs' && <DocumentsDashboard />}
       </main>
     </>

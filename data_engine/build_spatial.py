@@ -10,7 +10,9 @@ os.makedirs(SPATIAL_OUT_DIR, exist_ok=True)
 # Important Shapefiles
 shapefiles = [
     {"name": "network2026", "file": "network2026.shp"},
-    {"name": "bridges", "file": "Bridges_shp/Bridges.shp"}
+    {"name": "bridges", "file": "Bridges_shp/Bridges.shp"},
+    {"name": "major_culverts", "file": "Major_Culverts.shp/Major_Culverts.shp"},
+    {"name": "rivers_ug", "file": "Rivers_ug/Rivers_ug.shp"}
 ]
 
 def find_file(name):
