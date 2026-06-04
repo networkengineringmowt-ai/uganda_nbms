@@ -5,7 +5,7 @@ export default function InvestmentDashboard() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch('/data/investment.json')
+    fetch('/uganda_bms/data/investment.json')
       .then(r => r.json())
       .then(setData)
       .catch(console.error);

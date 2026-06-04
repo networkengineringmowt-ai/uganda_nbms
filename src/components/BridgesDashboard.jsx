@@ -6,7 +6,7 @@ export default function BridgesDashboard() {
   const [bridges, setBridges] = useState([]);
 
   useEffect(() => {
-    fetch('/data/bridges.json')
+    fetch('/uganda_bms/data/bridges.json')
       .then(r => r.json())
       .then(setBridges)
       .catch(console.error);

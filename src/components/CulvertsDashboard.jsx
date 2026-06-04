@@ -5,7 +5,7 @@ export default function CulvertsDashboard() {
   const [culverts, setCulverts] = useState([]);
 
   useEffect(() => {
-    fetch('/data/culverts.json')
+    fetch('/uganda_bms/data/culverts.json')
       .then(r => r.json())
       .then(setCulverts)
       .catch(console.error);
