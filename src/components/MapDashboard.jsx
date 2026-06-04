@@ -4,10 +4,16 @@ import 'leaflet/dist/leaflet.css';
 
 export default function MapDashboard() {
   const [networkData, setNetworkData] = useState(null);
+  const [waterData, setWaterData] = useState(null);
   const [bridges, setBridges] = useState([]);
   const [culverts, setCulverts] = useState([]);
 
   useEffect(() => {
+    fetch('/uganda_bms/data/spatial/water.geojson')
+      .then(res => res.json())
+      .then(setWaterData)
+      .catch(console.error);
+
     fetch('/uganda_bms/data/spatial/network2026.geojson')
       .then(res => res.json())
       .then(setNetworkData)
@@ -44,6 +50,7 @@ export default function MapDashboard() {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         />
+        {waterData && <GeoJSON data={waterData} style={{ color: '#0055ff', weight: 1.5, opacity: 0.7, fillColor: '#002288', fillOpacity: 0.3 }} />}
         {networkData && <GeoJSON data={networkData} style={{ color: '#5474ff', weight: 2, opacity: 0.6 }} />}
         
         {bridges.map((b, i) => {
