@@ -67,13 +67,15 @@ for b in bridges:
         lat = leg.get("location_corrected_lat") or leg.get("map_y")
         lon = leg.get("location_corrected_lon") or leg.get("map_x")
         
-    # 4. Try UTM Conversion
-    if not lat and has_proj and b.get('CoOrdinateE') and b.get('CoOrdinateS'):
+    # 4. Try UTM Conversion or Direct WGS84
+    if not lat and b.get('CoOrdinateE') and b.get('CoOrdinateS'):
         try:
             E = float(b['CoOrdinateE'])
             N = float(b['CoOrdinateS'])
-            if E > 1000 and N > 1000:
+            if E > 1000 and N > 1000 and has_proj:
                 lon, lat = transform(inProj, outProj, E, N)
+            elif E < 180 and N < 180:
+                lon, lat = E, N
         except: pass
         
     b["Lat"] = lat
@@ -90,13 +92,15 @@ for c in culverts:
     if feat and feat.get("geometry"):
         lon, lat = feat["geometry"]["coordinates"]
         
-    # 2. Try UTM Conversion
-    if not lat and has_proj and c.get('CoOrdinateE') and c.get('CoOrdinateS'):
+    # 2. Try UTM Conversion or Direct WGS84
+    if not lat and c.get('CoOrdinateE') and c.get('CoOrdinateS'):
         try:
             E = float(c['CoOrdinateE'])
             N = float(c['CoOrdinateS'])
-            if E > 1000 and N > 1000:
+            if E > 1000 and N > 1000 and has_proj:
                 lon, lat = transform(inProj, outProj, E, N)
+            elif E < 180 and N < 180:
+                lon, lat = E, N
         except: pass
         
     c["Lat"] = lat
