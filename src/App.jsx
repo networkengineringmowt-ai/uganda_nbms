@@ -6,12 +6,12 @@ import MapDashboard from './components/MapDashboard';
 import DocumentsDashboard from './components/DocumentsDashboard';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import CriticalDashboard from './components/CriticalDashboard';
-import WorksDashboard from './components/WorksDashboard';
-import RoadNetworkDashboard from './components/RoadNetworkDashboard';
-import { Activity, LayoutDashboard, GitBranch, Map as MapIcon, FileText, BarChart3, AlertTriangle, Construction, Network } from 'lucide-react';
+import CombinedDashboard from './components/CombinedDashboard';
+import CombinedInventory from './components/CombinedInventory';
+import { Activity, LayoutDashboard, Map as MapIcon, BarChart3, AlertTriangle, Layers } from 'lucide-react';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('investment');
+  const [activeTab, setActiveTab] = useState('bms');
 
   return (
     <>
@@ -21,27 +21,18 @@ function App() {
           <span>Bridge Management System</span>
         </div>
         <nav className="nav-tabs" style={{overflowX: 'auto'}}>
-          <button className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}><BarChart3 size={16} /> Advanced Analytics</button>
+          <button className={`nav-tab ${activeTab === 'bms' ? 'active' : ''}`} onClick={() => setActiveTab('bms')}><MapIcon size={16} /> BMS Dashboard & Map</button>
+          <button className={`nav-tab ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}><Layers size={16} /> Inventory & Condition</button>
+          <button className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}><BarChart3 size={16} /> Analytics</button>
           <button className={`nav-tab ${activeTab === 'critical' ? 'active' : ''}`} onClick={() => setActiveTab('critical')}><AlertTriangle size={16} /> Critical Structures</button>
-          <button className={`nav-tab ${activeTab === 'works' ? 'active' : ''}`} onClick={() => setActiveTab('works')}><Construction size={16} /> Bridge Works</button>
-          <button className={`nav-tab ${activeTab === 'map' ? 'active' : ''}`} onClick={() => setActiveTab('map')}><MapIcon size={16} /> Interactive Map</button>
-          <button className={`nav-tab ${activeTab === 'bridges' ? 'active' : ''}`} onClick={() => setActiveTab('bridges')}><LayoutDashboard size={16} /> Bridges Registry</button>
-          <button className={`nav-tab ${activeTab === 'culverts' ? 'active' : ''}`} onClick={() => setActiveTab('culverts')}><GitBranch size={16} /> Major Culverts</button>
-          <button className={`nav-tab ${activeTab === 'network' ? 'active' : ''}`} onClick={() => setActiveTab('network')}><Network size={16} /> Road Network</button>
-          <button className={`nav-tab ${activeTab === 'docs' ? 'active' : ''}`} onClick={() => setActiveTab('docs')}><FileText size={16} /> Document Library</button>
         </nav>
       </header>
       
-      <main className="main-content">
-        {activeTab === 'investment' && <InvestmentDashboard />}
+      <main className="dashboard-content">
+        {activeTab === 'bms' && <CombinedDashboard />}
+        {activeTab === 'inventory' && <CombinedInventory />}
         {activeTab === 'analytics' && <AnalyticsDashboard />}
         {activeTab === 'critical' && <CriticalDashboard />}
-        {activeTab === 'works' && <WorksDashboard />}
-        {activeTab === 'map' && <MapDashboard />}
-        {activeTab === 'bridges' && <BridgesDashboard />}
-        {activeTab === 'culverts' && <CulvertsDashboard />}
-        {activeTab === 'network' && <RoadNetworkDashboard />}
-        {activeTab === 'docs' && <DocumentsDashboard />}
       </main>
     </>
   );
