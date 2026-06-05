@@ -37,7 +37,6 @@ export default function InvestmentDashboard() {
           <div className="kpi-value">{criticalCount}</div>
           <div className="kpi-label">Prioritized structures requiring intervention</div>
         </div>
-        </div>
         <div className="glass-card">
           <h3 className="card-title"><FileText size={14} style={{display:'inline', marginRight:6}}/> Investment Plan</h3>
           <div className="kpi-value">2026</div>

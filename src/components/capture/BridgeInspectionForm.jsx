@@ -1,16 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Save, Calculator } from 'lucide-react';
 import { calculateOverallRating, calculateConditionDeficiency, getConditionCategory } from '../../utils/rankingEngine';
+import { supabase } from '../../utils/supabaseClient';
+
+const RATING_ELEMENTS = [
+  { id: 'approaches', label: '1. Approaches' },
+  { id: 'waterway', label: '2. Waterway' },
+  { id: 'substructure', label: '3. Substructure' },
+  { id: 'superstructure', label: '4. Superstructure' },
+  { id: 'roadway', label: '5. Roadway (Deck)' },
+  { id: 'expansion_joints', label: '6. Expansion Joints' },
+  { id: 'drainage', label: '7. Drainage' },
+  { id: 'traffic_barriers', label: '8. Traffic Barriers' },
+  { id: 'guardrails', label: '9. Guardrails' },
+  { id: 'cell_structures_cmp', label: '10. Cell Structures / CMP' }
+];
 
 export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) {
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
-  const [ratings, setRatings] = useState({
-    approaches: '',
-    waterway: '',
-    substructure: '',
-    superstructure: '',
-    roadway: ''
-  });
+  const [ratings, setRatings] = useState({});
   const [results, setResults] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -20,20 +28,20 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
     if (id) {
       const bridge = bridges.find(b => b.BridgeNumber === id);
       if (bridge && bridge.LegacyData) {
-        setRatings({
-          approaches: bridge.LegacyData.approaches_rating ?? '',
-          waterway: bridge.LegacyData.waterway_rating ?? '',
-          substructure: bridge.LegacyData.substructure_rating ?? '',
-          superstructure: bridge.LegacyData.superstructure_rating ?? '',
-          roadway: bridge.LegacyData.roadway_rating ?? ''
+        const initialRatings = {};
+        RATING_ELEMENTS.forEach(el => {
+          initialRatings[el.id] = bridge.LegacyData[`${el.id}_rating`] ?? '';
         });
+        setRatings(initialRatings);
         setResults({
           overallRating: bridge.LegacyData.overall_rating,
           deficiencyIndex: bridge.LegacyData.deficiency_index,
-          category: getConditionCategory(bridge.LegacyData.overall_rating)
+          category: bridge.LegacyData.overall_rating != null ? getConditionCategory(bridge.LegacyData.overall_rating) : 'N/A'
         });
       } else {
-        setRatings({ approaches: '', waterway: '', substructure: '', superstructure: '', roadway: '' });
+        const resetRatings = {};
+        RATING_ELEMENTS.forEach(el => resetRatings[el.id] = '');
+        setRatings(resetRatings);
         setResults(null);
       }
     }
@@ -44,16 +52,13 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
   };
 
   const handleCalculate = useCallback(() => {
-    const parsedRatings = {
-      approaches: ratings.approaches === '' ? null : Number(ratings.approaches),
-      waterway: ratings.waterway === '' ? null : Number(ratings.waterway),
-      substructure: ratings.substructure === '' ? null : Number(ratings.substructure),
-      superstructure: ratings.superstructure === '' ? null : Number(ratings.superstructure),
-      roadway: ratings.roadway === '' ? null : Number(ratings.roadway),
-    };
+    const parsedRatings = {};
+    RATING_ELEMENTS.forEach(el => {
+      parsedRatings[el.id] = ratings[el.id] === '' || ratings[el.id] === undefined ? null : Number(ratings[el.id]);
+    });
 
     const overall = calculateOverallRating(parsedRatings);
-    const dc = calculateConditionDeficiency(parsedRatings, 1000); 
+    const dc = calculateConditionDeficiency(parsedRatings, 1000); // 1000 is dummy replacement value
     
     setResults({
       overallRating: overall,
@@ -81,11 +86,10 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
     if (idx > -1) {
       const b = updatedBridges[idx];
       b.LegacyData = b.LegacyData || {};
-      b.LegacyData.approaches_rating = ratings.approaches === '' ? null : Number(ratings.approaches);
-      b.LegacyData.waterway_rating = ratings.waterway === '' ? null : Number(ratings.waterway);
-      b.LegacyData.substructure_rating = ratings.substructure === '' ? null : Number(ratings.substructure);
-      b.LegacyData.superstructure_rating = ratings.superstructure === '' ? null : Number(ratings.superstructure);
-      b.LegacyData.roadway_rating = ratings.roadway === '' ? null : Number(ratings.roadway);
+      
+      RATING_ELEMENTS.forEach(el => {
+        b.LegacyData[`${el.id}_rating`] = ratings[el.id] === '' || ratings[el.id] === undefined ? null : Number(ratings[el.id]);
+      });
       
       if (results && results.overallRating != null) {
         b.LegacyData.overall_rating = results.overallRating;
@@ -95,31 +99,28 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
       updatedBridges[idx] = b;
       
       try {
-        const res = await fetch('http://localhost:3001/api/bridges', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedBridges)
-        });
-        if (res.ok) {
-          setMessage('Inspection ratings saved successfully!');
-          if (onBridgesUpdate) onBridgesUpdate(updatedBridges);
-        } else {
-          setMessage('Failed to save.');
-        }
+        const { error } = await supabase
+          .from('bridges')
+          .upsert({ id: b.BridgeNumber, data: b });
+
+        if (error) throw error;
+        
+        setMessage('Inspection saved to Supabase successfully!');
+        if (onBridgesUpdate) onBridgesUpdate(updatedBridges);
       } catch (err) {
-        setMessage('Error connecting to backend.');
+        setMessage(`Supabase Sync Error: ${err.message}`);
       }
     }
   };
 
   return (
-    <div className="glass-card" style={{ maxWidth: '800px' }}>
-      <h3 className="card-title">Bridge Inspection (Condition Ratings)</h3>
+    <div className="glass-card" style={{ maxWidth: '1000px' }}>
+      <h3 className="card-title">Comprehensive Bridge Inspection (Condition Ratings)</h3>
       
       <div style={{ marginBottom: '20px' }}>
         <select 
           className="slp-search-input" 
-          style={{ width: '300px' }}
+          style={{ width: '400px' }}
           value={selectedBridgeId}
           onChange={handleSelectBridge}
         >
@@ -137,41 +138,43 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter ratings from 0 (Beyond Repair) to 9 (Excellent). Leave blank if N/A.</p>
             
-            {['approaches', 'waterway', 'substructure', 'superstructure', 'roadway'].map(comp => (
-              <div key={comp} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="bdc-label" style={{ textTransform: 'capitalize' }}>{comp}</label>
-                <input 
-                  type="number" 
-                  min="0" max="9"
-                  className="slp-search-input" 
-                  style={{ width: '80px', textAlign: 'center' }}
-                  name={comp} 
-                  value={ratings[comp]} 
-                  onChange={handleChange} 
-                />
-              </div>
-            ))}
+            <div className="bdc-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              {RATING_ELEMENTS.map(comp => (
+                <div key={comp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.1)', padding: '8px 12px', borderRadius: '8px' }}>
+                  <label className="bdc-label" style={{ margin: 0 }}>{comp.label}</label>
+                  <input 
+                    type="number" 
+                    min="0" max="9"
+                    className="slp-search-input" 
+                    style={{ width: '70px', textAlign: 'center', padding: '6px' }}
+                    name={comp.id} 
+                    value={ratings[comp.id] !== undefined ? ratings[comp.id] : ''} 
+                    onChange={handleChange} 
+                  />
+                </div>
+              ))}
+            </div>
             
             <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
               <button className="nav-tab active" onClick={handleSave}>
-                <Save size={16} /> Save Inspection
+                <Save size={16} /> Save Inspection Data
               </button>
             </div>
             {message && <span style={{ color: message.includes('Error') || message.includes('Failed') ? '#ff5252' : '#00e676', fontSize: '0.85rem' }}>{message}</span>}
           </div>
           
-          <div style={{ flex: 1, background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <h4 style={{ margin: '0 0 16px 0', color: 'var(--accent-cyan)' }}>Calculated Results</h4>
+          <div style={{ width: '300px', background: 'rgba(0,0,0,0.3)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <h4 style={{ margin: '0 0 20px 0', color: 'var(--accent-cyan)' }}>Live Calculated Results</h4>
             {results ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 <div>
-                  <div className="bdc-label">Overall Rating</div>
-                  <div className="kpi-value" style={{ fontSize: '2rem' }}>{results.overallRating != null ? results.overallRating : 'N/A'} / 9</div>
-                  <div style={{ color: 'var(--accent-purple)', fontWeight: 'bold' }}>{results.category}</div>
+                  <div className="bdc-label" style={{ marginBottom: '8px' }}>Overall Rating</div>
+                  <div className="kpi-value" style={{ fontSize: '2.5rem', margin: 0 }}>{results.overallRating != null ? results.overallRating : 'N/A'} <span style={{fontSize: '1rem', color: 'var(--text-muted)'}}>/ 9</span></div>
+                  <div style={{ color: 'var(--accent-purple)', fontWeight: 'bold', marginTop: '4px' }}>{results.category}</div>
                 </div>
                 <div>
-                  <div className="bdc-label">Condition Deficiency Index (DC)</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{results.deficiencyIndex != null ? results.deficiencyIndex.toFixed(1) : 'N/A'}</div>
+                  <div className="bdc-label" style={{ marginBottom: '8px' }}>Condition Deficiency Index (DC)</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{results.deficiencyIndex != null ? results.deficiencyIndex.toFixed(1) : 'N/A'}</div>
                 </div>
               </div>
             ) : (

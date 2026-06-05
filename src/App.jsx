@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { Map as MapIcon, BarChart3, AlertTriangle, Layers, Edit3 } from 'lucide-react';
 import StructureListPanel from './components/StructureListPanel';
 import DataCaptureTabs from './components/capture/DataCaptureTabs';
+import { supabase } from './utils/supabaseClient';
 
 const CombinedDashboard = lazy(() => import('./components/CombinedDashboard'));
 const CombinedInventory = lazy(() => import('./components/CombinedInventory'));
@@ -25,18 +26,26 @@ function App() {
   const [bridgesData, setBridgesData] = useState([]);
   
   useEffect(() => {
-    // Try to fetch from local backend first, fallback to static if not running
-    fetch('http://localhost:3001/api/bridges')
-      .then(res => res.json())
-      .then(data => setBridgesData(data))
-      .catch(() => {
-        console.log('Backend not running, falling back to static data.');
-        const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
-        fetch(`${BASE_URL}data/bridges.json`)
-          .then(r => r.json())
-          .then(setBridgesData)
-          .catch(console.error);
-      });
+    async function fetchBridges() {
+      try {
+        const { data, error } = await supabase.from('bridges').select('data');
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const formattedBridges = data.map(row => row.data);
+          setBridgesData(formattedBridges);
+        } else {
+          // Fallback if db is empty
+          const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
+          const res = await fetch(`${BASE_URL}data/bridges.json`);
+          const json = await res.json();
+          setBridgesData(json);
+        }
+      } catch (err) {
+        console.error('Error fetching from Supabase:', err);
+      }
+    }
+    fetchBridges();
   }, []);
 
   const handleSelectBridge = useCallback((bridge) => {

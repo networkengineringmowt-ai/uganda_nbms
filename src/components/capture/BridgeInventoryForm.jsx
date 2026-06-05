@@ -1,18 +1,33 @@
 import React, { useState } from 'react';
-import { Save, Plus } from 'lucide-react';
+import { Save, Plus, MapPin, Ruler, Navigation, Shield, Info } from 'lucide-react';
+import { supabase } from '../../utils/supabaseClient';
+
+const TABS = [
+  { id: 'identification', label: 'Identification', icon: Info },
+  { id: 'location', label: 'Location Details', icon: MapPin },
+  { id: 'structural', label: 'Structural Info', icon: Shield },
+  { id: 'dimensions', label: 'Dimensions', icon: Ruler },
+  { id: 'admin', label: 'Administrative', icon: Navigation }
+];
 
 export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
+  const [activeTab, setActiveTab] = useState('identification');
   const [formData, setFormData] = useState({
     BridgeNumber: '',
     BridgeName: '',
     RoadDescrPrincipal: '',
     LinkID: '',
+    Latitude: '',
+    Longitude: '',
+    District: '',
     LegacyData: {
-      region: '',
-      station: '',
-      overall_rating: null,
-      scour_risk: 'N'
+      region: '', station: '', county: '', sub_county: '', village: '',
+      feature_intersected: '', detour_length: '',
+      superstructure_type: '', substructure_type: '', material_type: '', span_arrangement: '', foundation_type: '',
+      total_length: '', overall_width: '', carriageway_width: '', sidewalks: '', clearances: '',
+      year_built: '', contractor: '', consultant: '', maintenance_responsibility: '',
+      overall_rating: null, scour_risk: 'N'
     }
   });
 
@@ -22,11 +37,28 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
     const id = e.target.value;
     setSelectedBridgeId(id);
     if (id === 'NEW') {
-      setFormData({ BridgeNumber: '', BridgeName: '', RoadDescrPrincipal: '', LinkID: '', LegacyData: { region: '', station: '', scour_risk: 'N' } });
+      setFormData({ 
+        BridgeNumber: '', BridgeName: '', RoadDescrPrincipal: '', LinkID: '', Latitude: '', Longitude: '', District: '', 
+        LegacyData: {
+          region: '', station: '', county: '', sub_county: '', village: '', feature_intersected: '', detour_length: '',
+          superstructure_type: '', substructure_type: '', material_type: '', span_arrangement: '', foundation_type: '',
+          total_length: '', overall_width: '', carriageway_width: '', sidewalks: '', clearances: '',
+          year_built: '', contractor: '', consultant: '', maintenance_responsibility: '', scour_risk: 'N'
+        } 
+      });
     } else if (id) {
       const bridge = bridges.find(b => b.BridgeNumber === id);
       if (bridge) {
-        setFormData({ ...bridge, LegacyData: bridge.LegacyData || { region: '', station: '', scour_risk: 'N' } });
+        setFormData({ 
+          BridgeNumber: bridge.BridgeNumber || '', 
+          BridgeName: bridge.BridgeName || '', 
+          RoadDescrPrincipal: bridge.RoadDescrPrincipal || '', 
+          LinkID: bridge.LinkID || '', 
+          Latitude: bridge.Latitude || '', 
+          Longitude: bridge.Longitude || '', 
+          District: bridge.District || '', 
+          LegacyData: { ...formData.LegacyData, ...(bridge.LegacyData || {}) } 
+        });
       }
     }
   };
@@ -37,10 +69,7 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
       const legacyField = name.split('.')[1];
       setFormData(prev => ({
         ...prev,
-        LegacyData: {
-          ...prev.LegacyData,
-          [legacyField]: value
-        }
+        LegacyData: { ...prev.LegacyData, [legacyField]: value }
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -50,46 +79,55 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
   const handleSave = async () => {
     setMessage('Saving...');
     let updatedBridges = [...bridges];
+    let b = { ...formData };
     
     if (selectedBridgeId === 'NEW') {
-      // Check if exists
-      if (updatedBridges.some(b => b.BridgeNumber === formData.BridgeNumber)) {
+      if (updatedBridges.some(existing => existing.BridgeNumber === formData.BridgeNumber)) {
         setMessage('Error: Bridge Number already exists.');
         return;
       }
-      updatedBridges.push(formData);
+      updatedBridges.push(b);
     } else {
-      const idx = updatedBridges.findIndex(b => b.BridgeNumber === selectedBridgeId);
-      if (idx > -1) {
-        updatedBridges[idx] = { ...updatedBridges[idx], ...formData };
-      }
+      const idx = updatedBridges.findIndex(existing => existing.BridgeNumber === selectedBridgeId);
+      if (idx > -1) updatedBridges[idx] = b;
     }
 
     try {
-      const res = await fetch('http://localhost:3001/api/bridges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedBridges)
-      });
-      if (res.ok) {
-        setMessage('Saved successfully!');
-        if (onBridgesUpdate) onBridgesUpdate(updatedBridges);
-      } else {
-        setMessage('Failed to save.');
-      }
+      const { error } = await supabase
+        .from('bridges')
+        .upsert({ id: b.BridgeNumber, data: b });
+
+      if (error) throw error;
+      
+      setMessage('Saved to Database successfully!');
+      if (onBridgesUpdate) onBridgesUpdate(updatedBridges);
     } catch (err) {
-      setMessage('Error connecting to backend.');
+      setMessage(`Sync Error: ${err.message}`);
     }
   };
 
+  const renderField = (label, name, type = 'text') => (
+    <div className="bdc-field">
+      <label className="bdc-label">{label}</label>
+      <input 
+        type={type}
+        className="slp-search-input" 
+        name={name} 
+        value={name.startsWith('LegacyData.') ? formData.LegacyData[name.split('.')[1]] : formData[name]} 
+        onChange={handleChange} 
+        disabled={name === 'BridgeNumber' && selectedBridgeId !== 'NEW'} 
+      />
+    </div>
+  );
+
   return (
-    <div className="glass-card" style={{ maxWidth: '800px' }}>
-      <h3 className="card-title">Bridge Inventory Data</h3>
+    <div className="glass-card" style={{ maxWidth: '1000px' }}>
+      <h3 className="card-title">Comprehensive Bridge Inventory</h3>
       
       <div style={{ marginBottom: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
         <select 
           className="slp-search-input" 
-          style={{ width: '300px' }}
+          style={{ width: '400px' }}
           value={selectedBridgeId}
           onChange={handleSelectBridge}
         >
@@ -104,39 +142,90 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
       </div>
 
       {(selectedBridgeId || selectedBridgeId === 'NEW') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="bdc-grid">
-            <div className="bdc-field">
-              <label className="bdc-label">Bridge Number (Unique)</label>
-              <input className="slp-search-input" name="BridgeNumber" value={formData.BridgeNumber} onChange={handleChange} disabled={selectedBridgeId !== 'NEW'} />
-            </div>
-            <div className="bdc-field">
-              <label className="bdc-label">Bridge Name</label>
-              <input className="slp-search-input" name="BridgeName" value={formData.BridgeName} onChange={handleChange} />
-            </div>
-            <div className="bdc-field">
-              <label className="bdc-label">Road Description</label>
-              <input className="slp-search-input" name="RoadDescrPrincipal" value={formData.RoadDescrPrincipal} onChange={handleChange} />
-            </div>
-            <div className="bdc-field">
-              <label className="bdc-label">Link ID</label>
-              <input className="slp-search-input" name="LinkID" value={formData.LinkID} onChange={handleChange} />
-            </div>
-            <div className="bdc-field">
-              <label className="bdc-label">Region</label>
-              <input className="slp-search-input" name="LegacyData.region" value={formData.LegacyData.region} onChange={handleChange} />
-            </div>
-            <div className="bdc-field">
-              <label className="bdc-label">Station</label>
-              <input className="slp-search-input" name="LegacyData.station" value={formData.LegacyData.station} onChange={handleChange} />
-            </div>
-          </div>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
           
-          <div style={{ display: 'flex', gap: '12px', marginTop: '16px', alignItems: 'center' }}>
-            <button className="nav-tab active" onClick={handleSave}>
-              <Save size={16} /> Save Data
-            </button>
-            {message && <span style={{ color: message.includes('Error') || message.includes('Failed') ? '#ff5252' : '#00e676', fontSize: '0.85rem' }}>{message}</span>}
+          {/* Vertical Tabs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button 
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
+                    background: activeTab === tab.id ? 'rgba(0, 150, 255, 0.2)' : 'rgba(0,0,0,0.2)',
+                    border: `1px solid ${activeTab === tab.id ? 'var(--accent-blue)' : 'transparent'}`,
+                    color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
+                    borderRadius: '8px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
+                  }}
+                >
+                  <Icon size={18} /> {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Form Content Area */}
+          <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <div className="bdc-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              {activeTab === 'identification' && (
+                <>
+                  {renderField('Bridge Number (Unique)', 'BridgeNumber')}
+                  {renderField('Bridge Name', 'BridgeName')}
+                  {renderField('Road Description', 'RoadDescrPrincipal')}
+                  {renderField('Link ID', 'LinkID')}
+                  {renderField('Region', 'LegacyData.region')}
+                  {renderField('UNRA Station', 'LegacyData.station')}
+                </>
+              )}
+              {activeTab === 'location' && (
+                <>
+                  {renderField('Latitude', 'Latitude', 'number')}
+                  {renderField('Longitude', 'Longitude', 'number')}
+                  {renderField('District', 'District')}
+                  {renderField('County', 'LegacyData.county')}
+                  {renderField('Sub-County', 'LegacyData.sub_county')}
+                  {renderField('Village', 'LegacyData.village')}
+                  {renderField('Feature Intersected', 'LegacyData.feature_intersected')}
+                  {renderField('Detour Length (km)', 'LegacyData.detour_length', 'number')}
+                </>
+              )}
+              {activeTab === 'structural' && (
+                <>
+                  {renderField('Superstructure Type', 'LegacyData.superstructure_type')}
+                  {renderField('Substructure Type', 'LegacyData.substructure_type')}
+                  {renderField('Main Material Type', 'LegacyData.material_type')}
+                  {renderField('Span Arrangement', 'LegacyData.span_arrangement')}
+                  {renderField('Foundation Type', 'LegacyData.foundation_type')}
+                  {renderField('Scour Risk (Y/N)', 'LegacyData.scour_risk')}
+                </>
+              )}
+              {activeTab === 'dimensions' && (
+                <>
+                  {renderField('Total Length (m)', 'LegacyData.total_length', 'number')}
+                  {renderField('Overall Width (m)', 'LegacyData.overall_width', 'number')}
+                  {renderField('Carriageway Width (m)', 'LegacyData.carriageway_width', 'number')}
+                  {renderField('Sidewalks (m)', 'LegacyData.sidewalks', 'number')}
+                  {renderField('Clearances (m)', 'LegacyData.clearances', 'number')}
+                </>
+              )}
+              {activeTab === 'admin' && (
+                <>
+                  {renderField('Year Built', 'LegacyData.year_built', 'number')}
+                  {renderField('Contractor', 'LegacyData.contractor')}
+                  {renderField('Consultant', 'LegacyData.consultant')}
+                  {renderField('Maintenance Responsibility', 'LegacyData.maintenance_responsibility')}
+                </>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '32px', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
+              <button className="nav-tab active" onClick={handleSave} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <Save size={16} /> Save Bridge Data
+              </button>
+              {message && <span style={{ color: message.includes('Error') || message.includes('Failed') ? '#ff5252' : '#00e676', fontSize: '0.85rem' }}>{message}</span>}
+            </div>
           </div>
         </div>
       )}
