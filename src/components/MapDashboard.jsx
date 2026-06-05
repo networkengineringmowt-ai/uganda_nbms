@@ -151,7 +151,7 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
   }, [onSelectBridge]);
 
   return (
-    <div style={{ height: '75vh', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
+    <div style={{ height: '100%', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
       
       <div style={{position: 'absolute', top: 16, right: 16, zIndex: 1000, background: 'rgba(10,15,28,0.85)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', backdropFilter: 'blur(10px)'}}>
         <h4 style={{margin: '0 0 12px 0', color: 'var(--text-primary)'}}>Map Legend</h4>

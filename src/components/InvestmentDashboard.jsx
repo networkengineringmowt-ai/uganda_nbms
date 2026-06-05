@@ -37,26 +37,12 @@ export default function InvestmentDashboard() {
           <div className="kpi-value">{criticalCount}</div>
           <div className="kpi-label">Prioritized structures requiring intervention</div>
         </div>
+        </div>
         <div className="glass-card">
           <h3 className="card-title"><FileText size={14} style={{display:'inline', marginRight:6}}/> Investment Plan</h3>
           <div className="kpi-value">2026</div>
           <div className="kpi-label">Bridge & Major Culvert Division</div>
         </div>
-      </div>
-
-      <div className="glass-card">
-        <h3 className="card-title" style={{marginBottom:'24px', color:'var(--text-primary)', fontSize:'1.2rem'}}>Network Investment Strategy Overview</h3>
-        {data.investment_plan.slice(0, 10).map((p, i) => (
-          <p key={i} className="document-text">{p}</p>
-        ))}
-      </div>
-      
-      <div className="glass-card" style={{marginTop:'24px'}}>
-        <h3 className="card-title" style={{marginBottom:'24px', color:'var(--text-primary)', fontSize:'1.2rem'}}>Critical Structures List (CS 2026)</h3>
-        {data.critical_structures.slice(0, 15).map((p, i) => (
-          <p key={i} className="document-text">{p}</p>
-        ))}
-        <p className="document-text" style={{color:'var(--accent-blue)', fontStyle:'italic'}}>...and {Math.max(criticalCount - 15, 0)} more prioritized structures.</p>
       </div>
     </div>
   );
