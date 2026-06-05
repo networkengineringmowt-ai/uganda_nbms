@@ -17,7 +17,7 @@ const getConditionLabel = (rating) => {
   return '-';
 };
 
-export default function StructureListPanel({ selectedBridge, onSelectBridge }) {
+export default function StructureListPanel({ selectedBridge, onSelectBridge, dynamicBridges }) {
   const [bridges, setBridges] = useState([]);
   const [culverts, setCulverts] = useState([]);
   const [search, setSearch] = useState('');
