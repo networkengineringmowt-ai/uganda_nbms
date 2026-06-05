@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import DataTable from './DataTable';
-import { Activity, Hash, AlertTriangle } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 export default function BridgesDashboard() {
   const [bridges, setBridges] = useState([]);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetch('/uganda_bms/data/bridges.json')
@@ -15,12 +16,27 @@ export default function BridgesDashboard() {
   const cols = [
     { header: 'Bridge No', accessor: 'BridgeNumber' },
     { header: 'Bridge Name', accessor: 'BridgeName' },
-    { header: 'Road / Link ID', cell: (row) => `${row.RoadDescrPrincipal || '-'} (${row.LinkID || '-'})` },
-    { header: 'AADT (2026 est)', cell: (row) => row.Traffic ? <span className="badge purple">{row.Traffic.aadt_2026?.toLocaleString() || '-'}</span> : '-' },
-    { header: 'Growth Rate', cell: (row) => row.Traffic ? `${(row.Traffic.growth_rate * 100).toFixed(2)}%` : '-' },
-    { header: 'Legacy ID', accessor: 'LegacyData' && 'bridge_no', cell: (row) => row.LegacyData ? row.LegacyData._id : '-' },
+    { header: 'Road / Link ID', cell: (row) => `${row.RoadDescrPrincipal || '-'} (${row.LinkID || '-'})`, sortValue: (row) => row.RoadDescrPrincipal || row.LinkID },
+    { header: 'Region / Station', cell: (row) => `${row.Region || '-'} / ${row.Station || '-'}`, sortValue: (row) => `${row.Region || ''} ${row.Station || ''}` },
+    { header: 'Chainage km', accessor: 'KmPrincipal', sortValue: (row) => row.KmPrincipal },
+    { header: 'Condition', accessor: 'OverallCondition', sortValue: (row) => row.OverallConditionRating },
+    { header: 'AADT (2026 est)', cell: (row) => row.Traffic ? <span className="badge purple">{row.Traffic.aadt_2026?.toLocaleString() || '-'}</span> : '-', sortValue: (row) => row.Traffic?.aadt_2026 },
+    { header: 'Growth Rate', cell: (row) => row.Traffic ? `${(row.Traffic.growth_rate * 100).toFixed(2)}%` : '-', sortValue: (row) => row.Traffic?.growth_rate },
     { header: 'Date Modified', accessor: 'DateModified' },
   ];
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return bridges;
+    return bridges.filter((bridge) => [
+      bridge.BridgeNumber,
+      bridge.BridgeName,
+      bridge.RoadDescrPrincipal,
+      bridge.LinkID,
+      bridge.Region,
+      bridge.Station,
+    ].some((value) => String(value || '').toLowerCase().includes(term)));
+  }, [bridges, search]);
 
   if (bridges.length === 0) return (
     <div className="loader-container">
@@ -47,10 +63,19 @@ export default function BridgesDashboard() {
       </div>
       
       <div className="glass-card" style={{padding:0, overflow:'hidden'}}>
-        <div style={{padding:'24px', borderBottom:'1px solid var(--border)'}}>
+        <div style={{padding:'18px 20px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', gap:'16px', alignItems:'center', flexWrap:'wrap'}}>
           <h3 className="card-title" style={{margin:0}}>Bridges Registry</h3>
+          <label style={{position:'relative', display:'block', width:'min(360px, 100%)'}}>
+            <Search size={16} style={{position:'absolute', left:12, top:11, color:'var(--text-muted)'}} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search bridge name, number, road, station..."
+              style={{width:'100%', padding:'10px 12px 10px 36px', background:'rgba(0,0,0,0.3)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-primary)'}}
+            />
+          </label>
         </div>
-        <DataTable columns={cols} data={bridges} />
+        <DataTable columns={cols} data={filtered} />
       </div>
     </div>
   );

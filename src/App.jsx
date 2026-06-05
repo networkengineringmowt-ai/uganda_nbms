@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
-import BridgesDashboard from './components/BridgesDashboard';
-import CulvertsDashboard from './components/CulvertsDashboard';
-import InvestmentDashboard from './components/InvestmentDashboard';
-import MapDashboard from './components/MapDashboard';
-import DocumentsDashboard from './components/DocumentsDashboard';
-import AnalyticsDashboard from './components/AnalyticsDashboard';
-import CriticalDashboard from './components/CriticalDashboard';
-import CombinedDashboard from './components/CombinedDashboard';
-import CombinedInventory from './components/CombinedInventory';
-import { Activity, LayoutDashboard, Map as MapIcon, BarChart3, AlertTriangle, Layers } from 'lucide-react';
+import React, { Suspense, lazy, useState, useCallback } from 'react';
+import { Map as MapIcon, BarChart3, AlertTriangle, Layers } from 'lucide-react';
+import StructureListPanel from './components/StructureListPanel';
+
+const CombinedDashboard = lazy(() => import('./components/CombinedDashboard'));
+const CombinedInventory = lazy(() => import('./components/CombinedInventory'));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
+const CriticalDashboard = lazy(() => import('./components/CriticalDashboard'));
+
+function TabLoader() {
+  return (
+    <div className="loader-container">
+      <div className="spinner"></div>
+      <p>Loading dashboard...</p>
+    </div>
+  );
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('bms');
+  const [selectedBridge, setSelectedBridge] = useState(null);
+
+  const handleSelectBridge = useCallback((bridge) => {
+    setSelectedBridge(bridge);
+    // When selecting from the list, switch to BMS tab to show the map
+    if (bridge && activeTab !== 'bms') {
+      setActiveTab('bms');
+    }
+  }, [activeTab]);
 
   return (
     <>
@@ -28,12 +43,30 @@ function App() {
         </nav>
       </header>
       
-      <main className="dashboard-content">
-        {activeTab === 'bms' && <CombinedDashboard />}
-        {activeTab === 'inventory' && <CombinedInventory />}
-        {activeTab === 'analytics' && <AnalyticsDashboard />}
-        {activeTab === 'critical' && <CriticalDashboard />}
-      </main>
+      <div className="app-layout">
+        {/* Left pane structure list */}
+        <aside className="left-pane">
+          <StructureListPanel
+            selectedBridge={selectedBridge}
+            onSelectBridge={handleSelectBridge}
+          />
+        </aside>
+
+        {/* Right pane dashboard content */}
+        <main className="right-pane">
+          <Suspense fallback={<TabLoader />}>
+            {activeTab === 'bms' && (
+              <CombinedDashboard
+                selectedBridge={selectedBridge}
+                onSelectBridge={setSelectedBridge}
+              />
+            )}
+            {activeTab === 'inventory' && <CombinedInventory />}
+            {activeTab === 'analytics' && <AnalyticsDashboard />}
+            {activeTab === 'critical' && <CriticalDashboard />}
+          </Suspense>
+        </main>
+      </div>
     </>
   );
 }

@@ -4,17 +4,14 @@ import { AlertTriangle, MapPin, FileText, Image as ImageIcon } from 'lucide-reac
 export default function CriticalDashboard() {
   const [data, setData] = useState(null);
   const [gallery, setGallery] = useState([]);
-  const [bridges, setBridges] = useState([]);
 
   useEffect(() => {
     Promise.all([
       fetch('/uganda_bms/data/critical_structures.json').then(r => r.json()),
-      fetch('/uganda_bms/gallery/index.json').then(r => r.json()).catch(() => []),
-      fetch('/uganda_bms/data/bridges.json').then(r => r.json()).catch(() => [])
-    ]).then(([crit, gal, bri]) => {
+      fetch('/uganda_bms/gallery/index.json').then(r => r.json()).catch(() => [])
+    ]).then(([crit, gal]) => {
       setData(crit);
       setGallery(gal);
-      setBridges(bri);
     }).catch(console.error);
   }, []);
 
@@ -45,7 +42,6 @@ export default function CriticalDashboard() {
           {data.map((structure, i) => {
             const id = structure.BridgeNumber;
             const img = gallery.find(g => g.structure_id === id || g.filename.includes(id));
-            const bridge = bridges.find(b => b.BridgeNumber === id);
 
             return (
               <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: '4px solid var(--accent-purple)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -66,7 +62,7 @@ export default function CriticalDashboard() {
                 
                 {img ? (
                   <div style={{ marginTop: 'auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', height: '220px' }}>
-                    <img src={img.url} alt={id} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={img.url} alt={id} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 ) : (
                   <div style={{ marginTop: 'auto', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)' }}>

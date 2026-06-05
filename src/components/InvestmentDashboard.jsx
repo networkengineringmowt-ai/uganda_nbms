@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Map, Settings, TrendingUp } from 'lucide-react';
+import { FileText, Map, TrendingUp } from 'lucide-react';
 
 export default function InvestmentDashboard() {
   const [data, setData] = useState(null);
+  const [criticalCount, setCriticalCount] = useState(0);
 
   useEffect(() => {
-    fetch('/uganda_bms/data/investment.json')
-      .then(r => r.json())
-      .then(setData)
+    Promise.all([
+      fetch('/uganda_bms/data/investment.json').then(r => r.json()),
+      fetch('/uganda_bms/data/critical_structures.json').then(r => r.json()).catch(() => [])
+    ])
+      .then(([investment, critical]) => {
+        setData(investment);
+        setCriticalCount(Array.isArray(critical) ? critical.length : 0);
+      })
       .catch(console.error);
   }, []);
 
@@ -28,8 +34,8 @@ export default function InvestmentDashboard() {
         </div>
         <div className="glass-card">
           <h3 className="card-title"><Map size={14} style={{display:'inline', marginRight:6}}/> Critical Structures</h3>
-          <div className="kpi-value">53</div>
-          <div className="kpi-label">Prioritized for 2026 (49 Bridges, 4 Culverts)</div>
+          <div className="kpi-value">{criticalCount}</div>
+          <div className="kpi-label">Prioritized structures requiring intervention</div>
         </div>
         <div className="glass-card">
           <h3 className="card-title"><FileText size={14} style={{display:'inline', marginRight:6}}/> Investment Plan</h3>
@@ -50,7 +56,7 @@ export default function InvestmentDashboard() {
         {data.critical_structures.slice(0, 15).map((p, i) => (
           <p key={i} className="document-text">{p}</p>
         ))}
-        <p className="document-text" style={{color:'var(--accent-blue)', fontStyle:'italic'}}>...and 38 more prioritized structures.</p>
+        <p className="document-text" style={{color:'var(--accent-blue)', fontStyle:'italic'}}>...and {Math.max(criticalCount - 15, 0)} more prioritized structures.</p>
       </div>
     </div>
   );
