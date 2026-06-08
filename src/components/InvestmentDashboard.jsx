@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Map, TrendingUp } from 'lucide-react';
 
 export default function InvestmentDashboard() {

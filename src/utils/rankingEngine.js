@@ -90,9 +90,6 @@ const K_I_COEFFICIENTS = {
   waterway:       [1.0, 1.0, 1.0, 0.425, 0.2, 0.1, 0.03, 0, 0, 0]
 };
 
-// Approach Alignment Coefficient (KAA) (Table 11)
-const K_AA_COEFFICIENTS = [1.0, 1.0, 1.0, 1.0, 0.5, 0.2, 0, 0, 0, 0];
-
 /**
  * Calculates Bridge Condition Deficiency (DC)
  * DC = WC * (ADTO / ADTB)^K4 * F_SI * Sum(ki * wi)

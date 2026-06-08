@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import InvestmentDashboard from './InvestmentDashboard';
 import MapDashboard from './MapDashboard';
 

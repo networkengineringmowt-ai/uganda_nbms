@@ -5,15 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "node server/bridgeSyncServer.cjs",
+    "dev:full": "concurrently -k -n react,server -c cyan,yellow \"npm run dev\" \"npm run server\"",
     "build": "vite build",
+    "build:pages": "npm run build && node scripts/prunePagesGallery.mjs",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist"
+    "deploy": "npm run build:pages && node scripts/deployPages.mjs",
+    "seed:supabase": "node scripts/seedSupabase.mjs"
   },
   "dependencies": {
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
     "echarts": "^6.1.0",
     "echarts-for-react": "^3.0.6",
     "echarts-gl": "^2.1.0",
+    "express": "^5.2.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
@@ -29,6 +36,7 @@
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "concurrently": "^9.2.1",
     "gh-pages": "^6.3.0",
     "globals": "^17.6.0",
     "vite": "^8.0.12"

@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DataTable from './DataTable';
+import { fetchCulverts } from '../services/bmsDataService';
 
 export default function CulvertsDashboard() {
   const [culverts, setCulverts] = useState([]);
 
   useEffect(() => {
-    fetch('/uganda_bms/data/culverts.json')
-      .then(r => r.json())
+    fetchCulverts()
       .then(setCulverts)
       .catch(console.error);
   }, []);

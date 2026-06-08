@@ -1,14 +1,14 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import DataTable from './DataTable';
 import { Search } from 'lucide-react';
+import { fetchBridges } from '../services/bmsDataService';
 
 export default function BridgesDashboard() {
   const [bridges, setBridges] = useState([]);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('/uganda_bms/data/bridges.json')
-      .then(r => r.json())
+    fetchBridges()
       .then(setBridges)
       .catch(console.error);
   }, []);

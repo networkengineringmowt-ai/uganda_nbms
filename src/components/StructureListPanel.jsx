@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronDown, ChevronRight, MapPin, Activity } from 'lucide-react';
+import { fetchBridgeByNumber, fetchCulvertByNumber } from '../services/bmsDataService';
 
 const CONDITION_COLORS = {
   9: '#00e676', 8: '#66ff66', 7: '#a0ff00',
@@ -17,15 +18,13 @@ const getConditionLabel = (rating) => {
   return '-';
 };
 
-export default function StructureListPanel({ selectedBridge, onSelectBridge, dynamicBridges }) {
+export default function StructureListPanel({ selectedBridge, onSelectBridge, dynamicBridges = [] }) {
   const [bridges, setBridges] = useState([]);
   const [culverts, setCulverts] = useState([]);
   const [search, setSearch] = useState('');
   const [expandedSection, setExpandedSection] = useState('bridges');
   const listRef = useRef(null);
   const selectedRef = useRef(null);
-  const bridgeDetailsRef = useRef(null);
-  const culvertDetailsRef = useRef(null);
 
   useEffect(() => {
     const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
@@ -61,13 +60,15 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
 
   const term = search.trim().toLowerCase();
 
+  const sourceBridges = dynamicBridges.length ? dynamicBridges : bridges;
+
   const filteredBridges = useMemo(() => {
-    if (!term) return bridges;
-    return bridges.filter(b => [
+    if (!term) return sourceBridges;
+    return sourceBridges.filter(b => [
       b.BridgeNumber, b.BridgeName, b.RoadDescrPrincipal,
       b.LinkID, b.Region, b.Station,
     ].some(v => String(v || '').toLowerCase().includes(term)));
-  }, [bridges, term]);
+  }, [sourceBridges, term]);
 
   const filteredCulverts = useMemo(() => {
     if (!term) return culverts;
@@ -77,19 +78,13 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
   }, [culverts, term]);
 
   const handleSelect = useCallback(async (item, type) => {
-    const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
-    const url = (p) => `${BASE_URL}${p.replace(/^\/+/, '')}`;
     if (type === 'bridge') {
-      bridgeDetailsRef.current ||= fetch(url('data/bridges.json')).then(r => r.json()).catch(() => []);
-      const details = await bridgeDetailsRef.current;
-      const fullBridge = details.find(b => b.BridgeNumber === item.BridgeNumber) || item;
-      onSelectBridge({ ...fullBridge, _structureType: 'bridge' });
+      const fullBridge = await fetchBridgeByNumber(item.BridgeNumber).catch(() => null);
+      onSelectBridge({ ...(fullBridge || item), _structureType: 'bridge' });
       return;
     }
-    culvertDetailsRef.current ||= fetch(url('data/culverts.json')).then(r => r.json()).catch(() => []);
-    const details = await culvertDetailsRef.current;
-    const fullCulvert = details.find(c => c.CulvertNumber === item.CulvertNumber) || item;
-    onSelectBridge({ ...fullCulvert, _structureType: 'culvert' });
+    const fullCulvert = await fetchCulvertByNumber(item.CulvertNumber).catch(() => null);
+    onSelectBridge({ ...(fullCulvert || item), _structureType: 'culvert' });
   }, [onSelectBridge]);
 
   const isSelected = (item, type) => {

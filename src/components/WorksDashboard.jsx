@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Construction, CheckCircle2, DollarSign } from 'lucide-react';
 
 export default function WorksDashboard() {

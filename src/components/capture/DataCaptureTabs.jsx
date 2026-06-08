@@ -1,9 +1,14 @@
+import { useEffect, useState } from 'react';
 import BridgeInventoryForm from './BridgeInventoryForm';
 import BridgeInspectionForm from './BridgeInspectionForm';
 import { Layers, FileText } from 'lucide-react';
 
-export default function DataCaptureTabs({ bridges, onBridgesUpdate }) {
+export default function DataCaptureTabs({ bridges, onBridgesUpdate, onLoadBridges }) {
   const [activeTab, setActiveTab] = useState('inventory');
+
+  useEffect(() => {
+    onLoadBridges?.();
+  }, [onLoadBridges]);
   
   return (
     <div className="capture-tabs-container" style={{ padding: '24px' }}>

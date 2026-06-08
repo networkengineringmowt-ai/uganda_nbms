@@ -1,109 +1,464 @@
-import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
-import { Map as MapIcon, BarChart3, AlertTriangle, Layers, Edit3 } from 'lucide-react';
-import StructureListPanel from './components/StructureListPanel';
-import DataCaptureTabs from './components/capture/DataCaptureTabs';
-import { supabase } from './utils/supabaseClient';
+import { useEffect, useState } from 'react';
+import {
+  MapPin,
+  TrendingUp,
+  Printer,
+  FileSpreadsheet,
+  HelpCircle,
+  Database,
+  Activity,
+  Layers,
+  Settings,
+  Plus
+} from 'lucide-react';
+import MainSwitchboard from './components/MainSwitchboard';
+import BridgeInventoryForm from './components/capture/BridgeInventoryForm';
+import BridgeInspectionForm from './components/capture/BridgeInspectionForm';
+import CulvertInventoryForm from './components/capture/CulvertInventoryForm';
+import CulvertInspectionForm from './components/capture/CulvertInspectionForm';
+import BmsReports from './components/BmsReports';
+import UpgradeBridgesForm from './components/UpgradeBridgesForm';
+import SystemParametersForm from './components/SystemParametersForm';
+import MapDashboard from './components/MapDashboard';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
+import { fetchBridges, fetchCulverts, saveBridge } from './services/bmsDataService';
 
-const CombinedDashboard = lazy(() => import('./components/CombinedDashboard'));
-const CombinedInventory = lazy(() => import('./components/CombinedInventory'));
-const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
-const CriticalDashboard = lazy(() => import('./components/CriticalDashboard'));
+// Draggable Window Component
+function MSWindow({ id, title, x, y, width, height, active, onClose, onFocus, children, resizable = false }) {
+  const [pos, setPos] = useState({ x, y });
 
-function TabLoader() {
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.ms-ctrl-btn')) return;
+    onFocus(id);
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialX = pos.x;
+    const initialY = pos.y;
+
+    const handleMouseMove = (moveEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      setPos({
+        x: Math.max(0, initialX + dx),
+        y: Math.max(0, initialY + dy)
+      });
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
-    <div className="loader-container">
-      <div className="spinner"></div>
-      <p>Loading dashboard...</p>
+    <div
+      className={`ms-window ms-bevel-out ${active ? 'active' : 'inactive'} ${resizable ? 'ms-window-resizable' : ''}`}
+      style={{
+        left: `${pos.x}px`,
+        top: `${pos.y}px`,
+        width: width ? `${width}px` : 'auto',
+        height: height ? `${height}px` : 'auto',
+        zIndex: active ? 1000 : 100,
+        position: 'absolute'
+      }}
+      onClick={() => onFocus(id)}
+    >
+      <div className="ms-window-header" onMouseDown={handleMouseDown}>
+        <div className="ms-window-title">
+          <span>{title}</span>
+        </div>
+        <div className="ms-window-controls">
+          <button className="ms-ctrl-btn ms-ctrl-btn-close" onClick={() => onClose(id)}>×</button>
+        </div>
+      </div>
+      <div className="ms-window-body">
+        {children}
+      </div>
     </div>
   );
 }
 
-function App() {
-  const [activeTab, setActiveTab] = useState('bms');
-  const [selectedBridge, setSelectedBridge] = useState(null);
+export default function App() {
+  const [viewMode, setViewMode] = useState('classic'); // 'classic' or 'modern'
+  const [bridges, setBridges] = useState([]);
+  const [culverts, setCulverts] = useState([]);
   
-  // Dynamic Data State
-  const [bridgesData, setBridgesData] = useState([]);
+  // MDI Windows state
+  const [openWindows, setOpenWindows] = useState({
+    switchboard: true,
+    bridgeInventory: false,
+    bridgeInspection: false,
+    culvertInventory: false,
+    culvertInspection: false,
+    map: false,
+    analytics: false,
+    reports: false,
+    upgrades: false,
+    parameters: false
+  });
   
+  const [activeWindow, setActiveWindow] = useState('switchboard');
+
+  // Load datasets on startup
   useEffect(() => {
-    async function fetchBridges() {
-      try {
-        const { data, error } = await supabase.from('bridges').select('data');
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          const formattedBridges = data.map(row => row.data);
-          setBridgesData(formattedBridges);
-        } else {
-          // Fallback if db is empty
-          const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
-          const res = await fetch(`${BASE_URL}data/bridges.json`);
-          const json = await res.json();
-          setBridgesData(json);
-        }
-      } catch (err) {
-        console.error('Error fetching from Supabase:', err);
-      }
-    }
-    fetchBridges();
+    Promise.all([fetchBridges(), fetchCulverts()])
+      .then(([bridgeRows, culvertRows]) => {
+        setBridges(bridgeRows);
+        setCulverts(culvertRows);
+      })
+      .catch(console.error);
   }, []);
 
-  const handleSelectBridge = useCallback((bridge) => {
-    setSelectedBridge(bridge);
-    if (bridge && activeTab !== 'bms' && activeTab !== 'capture') {
-      setActiveTab('bms');
+  const handleOpenWindow = (winId) => {
+    if (winId === 'exit') {
+      alert('To close the database system, close this browser tab.');
+      return;
     }
-  }, [activeTab]);
+    setOpenWindows(prev => ({ ...prev, [winId]: true }));
+    setActiveWindow(winId);
+  };
+
+  const handleCloseWindow = (winId) => {
+    setOpenWindows(prev => ({ ...prev, [winId]: false }));
+    if (activeWindow === winId) {
+      // Focus another open window
+      const remaining = Object.keys(openWindows).filter(k => openWindows[k] && k !== winId);
+      if (remaining.length > 0) {
+        setActiveWindow(remaining[remaining.length - 1]);
+      }
+    }
+  };
+
+  const handleFocusWindow = (winId) => {
+    setActiveWindow(winId);
+  };
+
+  const handleSaveBridgeLocal = async (bridge) => {
+    try {
+      await saveBridge(bridge);
+      const updated = await fetchBridges();
+      setBridges(updated);
+    } catch (e) {
+      alert(`Error saving bridge: ${e.message}`);
+    }
+  };
 
   return (
-    <>
-      <header className="header">
-        <div className="brand">
-          <h1>Uganda BMS</h1>
-          <span>Bridge Management System</span>
+    <div className="ms-access-shell">
+      {/* 1. Main System Title Bar */}
+      <header className="ms-main-title">
+        <div className="ms-main-title-text">
+          <Database size={14} />
+          <span>Microsoft Access - [Uganda National Roads Authority - Bridge Management System (UBMS)]</span>
         </div>
-        <nav className="nav-tabs" style={{overflowX: 'auto'}}>
-          <button className={`nav-tab ${activeTab === 'bms' ? 'active' : ''}`} onClick={() => setActiveTab('bms')}><MapIcon size={16} /> BMS Dashboard & Map</button>
-          <button className={`nav-tab ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}><Layers size={16} /> Inventory & Condition</button>
-          <button className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}><BarChart3 size={16} /> Analytics</button>
-          <button className={`nav-tab ${activeTab === 'critical' ? 'active' : ''}`} onClick={() => setActiveTab('critical')}><AlertTriangle size={16} /> Critical Structures</button>
-          <button className={`nav-tab ${activeTab === 'capture' ? 'active' : ''}`} onClick={() => setActiveTab('capture')}><Edit3 size={16} /> Data Capture</button>
-        </nav>
+        <div className="ms-window-controls">
+          <button className="ms-ctrl-btn" onClick={() => setViewMode(v => v === 'classic' ? 'modern' : 'classic')}>
+            {viewMode === 'classic' ? 'Web Mode' : 'Access Mode'}
+          </button>
+          <button className="ms-ctrl-btn ms-ctrl-btn-close" onClick={() => handleOpenWindow('exit')}>×</button>
+        </div>
       </header>
-      
-      <div className="app-layout">
-        {/* Left pane structure list */}
-        <aside className="left-pane">
-          <StructureListPanel
-            selectedBridge={selectedBridge}
-            onSelectBridge={handleSelectBridge}
-            dynamicBridges={bridgesData}
-          />
-        </aside>
 
-        {/* Right pane dashboard content */}
-        <main className="right-pane">
-          <Suspense fallback={<TabLoader />}>
-            {activeTab === 'bms' && (
-              <CombinedDashboard
-                selectedBridge={selectedBridge}
-                onSelectBridge={setSelectedBridge}
-              />
-            )}
-            {activeTab === 'inventory' && <CombinedInventory />}
-            {activeTab === 'analytics' && <AnalyticsDashboard />}
-            {activeTab === 'critical' && <CriticalDashboard />}
-            {activeTab === 'capture' && (
-              <DataCaptureTabs 
-                bridges={bridgesData} 
-                onBridgesUpdate={setBridgesData} 
-              />
-            )}
-          </Suspense>
-        </main>
+      {/* 2. Dropdown Menu Bar */}
+      <nav className="ms-menu-bar" aria-label="Access Main Menu">
+        <div className="ms-menu-item">
+          File
+          <div className="ms-menu-dropdown">
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>Set Paths...</div>
+            <div className="ms-dropdown-divider" />
+            <div className="ms-dropdown-item" onClick={() => setViewMode('modern')}>Switch to Web Dashboard</div>
+            <div className="ms-dropdown-divider" />
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('exit')}>Exit Database</div>
+          </div>
+        </div>
+        
+        <div className="ms-menu-item">
+          Capture Screens
+          <div className="ms-menu-dropdown">
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('bridgeInventory')}>Bridge Inventory</div>
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('bridgeInspection')}>Bridge Inspection</div>
+            <div className="ms-dropdown-divider" />
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('culvertInventory')}>Culvert Inventory</div>
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('culvertInspection')}>Culvert Inspection</div>
+            <div className="ms-dropdown-divider" />
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('upgrades')}>Upgrade of Bridges</div>
+          </div>
+        </div>
+
+        <div className="ms-menu-item">
+          Reporting
+          <div className="ms-menu-dropdown">
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>Data Validation Audits</div>
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>CRC Replacement Costing</div>
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>Generate Summary Sheets</div>
+          </div>
+        </div>
+
+        <div className="ms-menu-item">
+          Add-ins
+          <div className="ms-menu-dropdown">
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('map')}>Open GIS Network Map</div>
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('analytics')}>Traffic predictions (SQLBot)</div>
+            <div className="ms-dropdown-divider" />
+            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('parameters')}>System Parameters</div>
+          </div>
+        </div>
+
+        <div className="ms-menu-item" onClick={() => alert('Uganda National Roads Authority BMS\nDeveloped by Aurecon (Copyright 2017).\nMigrated to Supabase Web platform (2026).')}>
+          Help
+        </div>
+      </nav>
+
+      {/* 3. Standard Shortcut Toolbar */}
+      <div className="ms-toolbar">
+        <button className="ms-tool-btn" onClick={() => handleOpenWindow('bridgeInventory')} title="New Bridge Record">
+          <Plus size={14} /> New
+        </button>
+        <button className="ms-tool-btn" onClick={() => handleOpenWindow('reports')} title="Generate PDF Sheets">
+          <Printer size={14} /> Print
+        </button>
+        <button className="ms-tool-btn" onClick={() => handleOpenWindow('reports')} title="Export Cost Metrics">
+          <FileSpreadsheet size={14} /> Excel
+        </button>
+        <div className="ms-tool-divider" />
+        <button className="ms-tool-btn" onClick={() => handleOpenWindow('map')} title="Open Network Map">
+          <MapPin size={14} /> GIS Map
+        </button>
+        <button className="ms-tool-btn" onClick={() => handleOpenWindow('analytics')} title="Traffic counts & predictions">
+          <TrendingUp size={14} /> Traffic
+        </button>
+        <button className="ms-tool-btn" onClick={() => handleOpenWindow('reports')} title="Run database audits">
+          <Activity size={14} /> Audits
+        </button>
+        <div className="ms-tool-divider" />
+        <button className="ms-tool-btn" onClick={() => handleOpenWindow('parameters')} title="Formula weights">
+          <Settings size={14} /> Parameters
+        </button>
+        <div className="ms-tool-divider" />
+        <button className="ms-tool-btn" onClick={() => alert('Access Help Desk: unra_support@aurecongroup.com')} title="Get support">
+          <HelpCircle size={14} /> Help
+        </button>
       </div>
-    </>
+
+      {/* 4. Desktop area (MDI container or Modern shell) */}
+      <div className="ms-workspace" style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {viewMode === 'classic' ? (
+          <>
+            {/* Draggable MDI Windows */}
+            {openWindows.switchboard && (
+              <MSWindow
+                id="switchboard"
+                title="Main Switchboard"
+                x={120}
+                y={50}
+                width={520}
+                height={412}
+                active={activeWindow === 'switchboard'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <MainSwitchboard onOpenWindow={handleOpenWindow} />
+              </MSWindow>
+            )}
+
+            {openWindows.bridgeInventory && (
+              <MSWindow
+                id="bridgeInventory"
+                title="Bridge Inventory Form"
+                x={40}
+                y={30}
+                width={920}
+                height={550}
+                active={activeWindow === 'bridgeInventory'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />
+              </MSWindow>
+            )}
+
+            {openWindows.bridgeInspection && (
+              <MSWindow
+                id="bridgeInspection"
+                title="Bridge Inspection Ratings"
+                x={80}
+                y={50}
+                width={860}
+                height={480}
+                active={activeWindow === 'bridgeInspection'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />
+              </MSWindow>
+            )}
+
+            {openWindows.culvertInventory && (
+              <MSWindow
+                id="culvertInventory"
+                title="Culvert Inventory Form"
+                x={120}
+                y={70}
+                width={800}
+                height={460}
+                active={activeWindow === 'culvertInventory'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />
+              </MSWindow>
+            )}
+
+            {openWindows.culvertInspection && (
+              <MSWindow
+                id="culvertInspection"
+                title="Culvert Inspection Ratings"
+                x={140}
+                y={90}
+                width={720}
+                height={400}
+                active={activeWindow === 'culvertInspection'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />
+              </MSWindow>
+            )}
+
+            {openWindows.reports && (
+              <MSWindow
+                id="reports"
+                title="BMS Reports & Validation Audits"
+                x={160}
+                y={40}
+                width={880}
+                height={530}
+                active={activeWindow === 'reports'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <BmsReports bridges={bridges} culverts={culverts} onSaveBridge={handleSaveBridgeLocal} />
+              </MSWindow>
+            )}
+
+            {openWindows.upgrades && (
+              <MSWindow
+                id="upgrades"
+                title="Upgrade of Bridges"
+                x={200}
+                y={110}
+                width={850}
+                height={440}
+                active={activeWindow === 'upgrades'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <UpgradeBridgesForm bridges={bridges} />
+              </MSWindow>
+            )}
+
+            {openWindows.parameters && (
+              <MSWindow
+                id="parameters"
+                title="System Parameters"
+                x={220}
+                y={130}
+                width={620}
+                height={380}
+                active={activeWindow === 'parameters'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+              >
+                <SystemParametersForm />
+              </MSWindow>
+            )}
+
+            {openWindows.map && (
+              <MSWindow
+                id="map"
+                title="BMS GIS Map Viewer"
+                x={60}
+                y={60}
+                width={900}
+                height={520}
+                active={activeWindow === 'map'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+                resizable={true}
+              >
+                <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ background: '#ECE9D8', padding: '6px 12px', borderBottom: '1px solid #808080', fontSize: '11px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <Layers size={12} />
+                    <strong>Layers Active:</strong>
+                    <span>Bridges (546) | Culverts (452) | National Road Links | Rivers</span>
+                  </div>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <MapDashboard selectedBridge={null} onSelectBridge={() => {}} />
+                  </div>
+                </div>
+              </MSWindow>
+            )}
+
+            {openWindows.analytics && (
+              <MSWindow
+                id="analytics"
+                title="Traffic counts & predictions"
+                x={100}
+                y={80}
+                width={850}
+                height={500}
+                active={activeWindow === 'analytics'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+                resizable={true}
+              >
+                <div style={{ height: '100%', width: '100%', overflowY: 'auto', background: '#fff', padding: '12px' }}>
+                  <AnalyticsDashboard />
+                </div>
+              </MSWindow>
+            )}
+          </>
+        ) : (
+          /* Modern Web Dashboard Fallback */
+          <div style={{
+            position: 'absolute', inset: 0, overflow: 'auto', background: 'var(--bg-primary)',
+            color: 'var(--text-primary)', padding: '24px', fontFamily: "'Plus Jakarta Sans', sans-serif"
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>National Roads Analytics Dashboard</h2>
+                <p style={{ color: 'var(--text-secondary)' }}>Live bridge structure status and traffic data visualization</p>
+              </div>
+              <button 
+                style={{
+                  background: 'var(--gradient-primary)', border: 'none', borderRadius: '8px',
+                  color: '#fff', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer'
+                }}
+                onClick={() => setViewMode('classic')}
+              >
+                Return to Access Shell
+              </button>
+            </div>
+            <AnalyticsDashboard />
+          </div>
+        )}
+      </div>
+
+      {/* 5. System Status Bar */}
+      <footer className="ms-status-bar ms-bevel-out">
+        <div className="ms-status-section" style={{ width: '150px' }}>
+          Ready
+        </div>
+        <div className="ms-status-section ms-status-section-fill">
+          Dataset: {bridges.length} bridges and {culverts.length} culverts loaded from Supabase.
+        </div>
+        <div className="ms-status-indicator active" title="Caps Lock Status">CAPS</div>
+        <div className="ms-status-indicator active" title="Num Lock Status">NUM</div>
+        <div className="ms-status-indicator active" title="Scroll Lock Status">SCRL</div>
+      </footer>
+    </div>
   );
 }
-
-export default App;

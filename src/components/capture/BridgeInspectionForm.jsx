@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Save, Calculator } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { saveBridge } from '../../services/bmsDataService';
 import { calculateOverallRating, calculateConditionDeficiency, getConditionCategory } from '../../utils/rankingEngine';
-import { supabase } from '../../utils/supabaseClient';
 
 const RATING_ELEMENTS = [
   { id: 'approaches', label: '1. Approaches' },
@@ -17,74 +16,110 @@ const RATING_ELEMENTS = [
 ];
 
 export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) {
-  const [selectedBridgeId, setSelectedBridgeId] = useState('');
-  const [ratings, setRatings] = useState({});
-  const [results, setResults] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedId, setSelectedId] = useState('');
+  const [ratings, setRatings] = useState({
+    approaches: '', waterway: '', substructure: '', superstructure: '', roadway: '',
+    expansion_joints: '', drainage: '', traffic_barriers: '', guardrails: '', cell_structures_cmp: ''
+  });
+
+  const [defectsList, setDefectsList] = useState([]);
+  const [defectForm, setDefectForm] = useState({
+    element: 'approaches',
+    stage: 'B', // Beginning
+    extent: 'L', // Localized
+    activity: 'Erosion repair',
+    qty: '',
+    unit: 'm²'
+  });
+
   const [message, setMessage] = useState('');
 
-  const handleSelectBridge = (e) => {
-    const id = e.target.value;
-    setSelectedBridgeId(id);
-    if (id) {
-      const bridge = bridges.find(b => b.BridgeNumber === id);
-      if (bridge && bridge.LegacyData) {
-        const initialRatings = {};
-        RATING_ELEMENTS.forEach(el => {
-          initialRatings[el.id] = bridge.LegacyData[`${el.id}_rating`] ?? '';
-        });
-        setRatings(initialRatings);
-        setResults({
-          overallRating: bridge.LegacyData.overall_rating,
-          deficiencyIndex: bridge.LegacyData.deficiency_index,
-          category: bridge.LegacyData.overall_rating != null ? getConditionCategory(bridge.LegacyData.overall_rating) : 'N/A'
-        });
-      } else {
-        const resetRatings = {};
-        RATING_ELEMENTS.forEach(el => resetRatings[el.id] = '');
-        setRatings(resetRatings);
-        setResults(null);
-      }
+  const [prevIndex, setPrevIndex] = useState(-1);
+  const [prevBridges, setPrevBridges] = useState(null);
+
+  const b = bridges[currentIndex];
+
+  if (currentIndex !== prevIndex || bridges !== prevBridges) {
+    setPrevIndex(currentIndex);
+    setPrevBridges(bridges);
+    if (b) {
+      setSelectedId(b.BridgeNumber);
+      const leg = b.LegacyData || {};
+      
+      setRatings({
+        approaches: leg.approaches_rating ?? '',
+        waterway: leg.waterway_rating ?? '',
+        substructure: leg.substructure_rating ?? '',
+        superstructure: leg.superstructure_rating ?? '',
+        roadway: leg.roadway_rating ?? '',
+        expansion_joints: leg.expansion_joints_rating ?? '',
+        drainage: leg.drainage_rating ?? '',
+        traffic_barriers: leg.traffic_barriers_rating ?? '',
+        guardrails: leg.guardrails_rating ?? '',
+        cell_structures_cmp: leg.cell_structures_cmp_rating ?? ''
+      });
+
+      setDefectsList(leg.defects || []);
+    }
+  }
+
+  const handleNavigate = (dir) => {
+    setMessage('');
+    if (dir === 'first') setCurrentIndex(0);
+    else if (dir === 'prev') setCurrentIndex(prev => Math.max(0, prev - 1));
+    else if (dir === 'next') setCurrentIndex(prev => Math.min(bridges.length - 1, prev + 1));
+    else if (dir === 'last') setCurrentIndex(bridges.length - 1);
+  };
+
+  const handleRecordInput = (e) => {
+    const val = Number(e.target.value);
+    if (val > 0 && val <= bridges.length) {
+      setCurrentIndex(val - 1);
     }
   };
 
-  const handleChange = (e) => {
-    setRatings(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleRatingSelect = (elId, num) => {
+    setRatings(prev => ({ ...prev, [elId]: num }));
   };
 
-  const handleCalculate = useCallback(() => {
+  const handleAddDefect = () => {
+    if (!defectForm.qty || !defectForm.activity) return;
+    const newDef = { ...defectForm, qty: Number(defectForm.qty) };
+    setDefectsList(prev => [...prev, newDef]);
+    setDefectForm(prev => ({ ...prev, qty: '' }));
+  };
+
+  const handleRemoveDefect = (idx) => {
+    setDefectsList(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const results = useMemo(() => {
+    if (!selectedId) return null;
     const parsedRatings = {};
     RATING_ELEMENTS.forEach(el => {
       parsedRatings[el.id] = ratings[el.id] === '' || ratings[el.id] === undefined ? null : Number(ratings[el.id]);
     });
 
     const overall = calculateOverallRating(parsedRatings);
-    const dc = calculateConditionDeficiency(parsedRatings, 1000); // 1000 is dummy replacement value
+    const dc = calculateConditionDeficiency(parsedRatings, 15000000); // 15M dummy replacement value
     
-    setResults({
+    return {
       overallRating: overall,
       deficiencyIndex: dc,
       category: getConditionCategory(overall)
-    });
-  }, [ratings]);
-
-  useEffect(() => {
-    if (selectedBridgeId) {
-      handleCalculate();
-    }
-  }, [ratings, selectedBridgeId, handleCalculate]);
+    };
+  }, [ratings, selectedId]);
 
   const handleSave = async () => {
-    if (!selectedBridgeId) return;
+    if (!selectedId) return;
     setMessage('Saving...');
     
-    // Calculate final stats before saving
-    handleCalculate();
-    
-    let updatedBridges = [...bridges];
-    const idx = updatedBridges.findIndex(b => b.BridgeNumber === selectedBridgeId);
+    let updated = [...bridges];
+    const idx = updated.findIndex(b => b.BridgeNumber === selectedId);
     
     if (idx > -1) {
-      const b = updatedBridges[idx];
+      const b = { ...updated[idx] };
       b.LegacyData = b.LegacyData || {};
       
       RATING_ELEMENTS.forEach(el => {
@@ -95,94 +130,239 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
         b.LegacyData.overall_rating = results.overallRating;
         b.LegacyData.deficiency_index = results.deficiencyIndex;
       }
+
+      b.LegacyData.defects = defectsList;
       
-      updatedBridges[idx] = b;
+      updated[idx] = b;
       
       try {
-        const { error } = await supabase
-          .from('bridges')
-          .upsert({ id: b.BridgeNumber, data: b });
-
-        if (error) throw error;
-        
-        setMessage('Inspection saved to Supabase successfully!');
-        if (onBridgesUpdate) onBridgesUpdate(updatedBridges);
+        await saveBridge(b);
+        setMessage('Inspection saved successfully!');
+        if (onBridgesUpdate) onBridgesUpdate(updated);
       } catch (err) {
-        setMessage(`Supabase Sync Error: ${err.message}`);
+        setMessage(`Error: ${err.message}`);
       }
     }
   };
 
-  return (
-    <div className="glass-card" style={{ maxWidth: '1000px' }}>
-      <h3 className="card-title">Comprehensive Bridge Inspection (Condition Ratings)</h3>
-      
-      <div style={{ marginBottom: '20px' }}>
-        <select 
-          className="slp-search-input" 
-          style={{ width: '400px' }}
-          value={selectedBridgeId}
-          onChange={handleSelectBridge}
-        >
-          <option value="">-- Select a Bridge --</option>
-          {bridges.map(b => (
-            <option key={b.BridgeNumber} value={b.BridgeNumber}>
-              {b.BridgeNumber} - {b.BridgeName}
-            </option>
-          ))}
-        </select>
-      </div>
+  const handleSearch = (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) return;
+    const idx = bridges.findIndex(x => 
+      x.BridgeNumber?.toLowerCase().includes(q) || 
+      x.BridgeName?.toLowerCase().includes(q)
+    );
+    if (idx > -1) {
+      setCurrentIndex(idx);
+    }
+  };
 
-      {selectedBridgeId && (
-        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter ratings from 0 (Beyond Repair) to 9 (Excellent). Leave blank if N/A.</p>
-            
-            <div className="bdc-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+  return (
+    <div className="ms-form-tab-container" style={{ height: '100%' }}>
+      {/* Content */}
+      <div className="ms-form-body">
+        <h3 style={{ margin: '0 0 10px 0', color: '#0a246a' }}>Bridge Condition Inspection Ratings</h3>
+        
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+          
+          {/* Ratings list */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ fontStyle: 'italic', color: '#005a5b', margin: '0 0 10px 0' }}>
+              Select a rating from 0 (Beyond Repair) to 9 (Excellent). Hover over numbers to check manual criteria.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {RATING_ELEMENTS.map(comp => (
-                <div key={comp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.1)', padding: '8px 12px', borderRadius: '8px' }}>
-                  <label className="bdc-label" style={{ margin: 0 }}>{comp.label}</label>
-                  <input 
-                    type="number" 
-                    min="0" max="9"
-                    className="slp-search-input" 
-                    style={{ width: '70px', textAlign: 'center', padding: '6px' }}
-                    name={comp.id} 
-                    value={ratings[comp.id] !== undefined ? ratings[comp.id] : ''} 
-                    onChange={handleChange} 
-                  />
+                <div key={comp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.03)', padding: '6px 12px', border: '1px solid var(--ms-border-dark)' }}>
+                  <label style={{ fontWeight: 'bold' }}>{comp.label}:</label>
+                  
+                  <div className="ms-rating-box">
+                    {[9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map(num => (
+                      <div 
+                        key={num} 
+                        className={`ms-rating-num ${ratings[comp.id] === num ? 'selected' : ''}`}
+                        onClick={() => handleRatingSelect(comp.id, num)}
+                        title={`Rating ${num}`}
+                      >
+                        {num}
+                      </div>
+                    ))}
+                    <button 
+                      className="ms-btn" 
+                      style={{ padding: '2px 6px', fontSize: '9px', border: '1px solid #808080' }}
+                      onClick={() => setRatings(prev => ({ ...prev, [comp.id]: '' }))}
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-            
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-              <button className="nav-tab active" onClick={handleSave}>
-                <Save size={16} /> Save Inspection Data
+
+            {/* Defect details capturing */}
+            <fieldset className="ms-fieldset" style={{ marginTop: '15px' }}>
+              <legend>Defect Capturing &amp; Work Recommendations</legend>
+              
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+                <div className="ms-select-container" style={{ width: '130px', flex: 'none' }}>
+                  <select 
+                    className="ms-select"
+                    value={defectForm.element}
+                    onChange={(e) => setDefectForm({ ...defectForm, element: e.target.value })}
+                  >
+                    {RATING_ELEMENTS.map(el => (
+                      <option key={el.id} value={el.id}>{el.label}</option>
+                    ))}
+                  </select>
+                  <div className="ms-select-arrow">▼</div>
+                </div>
+
+                <div className="ms-select-container" style={{ width: '80px', flex: 'none' }}>
+                  <select 
+                    className="ms-select"
+                    value={defectForm.stage}
+                    onChange={(e) => setDefectForm({ ...defectForm, stage: e.target.value })}
+                    title="Stage of defect (B=Beginning, E=Established, A=Advanced)"
+                  >
+                    <option value="B">B (Begin)</option>
+                    <option value="E">E (Estab)</option>
+                    <option value="A">A (Adv)</option>
+                  </select>
+                  <div className="ms-select-arrow">▼</div>
+                </div>
+
+                <div className="ms-select-container" style={{ width: '80px', flex: 'none' }}>
+                  <select 
+                    className="ms-select"
+                    value={defectForm.extent}
+                    onChange={(e) => setDefectForm({ ...defectForm, extent: e.target.value })}
+                    title="Extent of defect (L=Localised, E=Established, D=Distributed)"
+                  >
+                    <option value="L">L (Local)</option>
+                    <option value="E">E (Estab)</option>
+                    <option value="D">D (Dist)</option>
+                  </select>
+                  <div className="ms-select-arrow">▼</div>
+                </div>
+
+                <input 
+                  type="text" 
+                  placeholder="Activity / Defect Details" 
+                  className="ms-input"
+                  value={defectForm.activity}
+                  onChange={(e) => setDefectForm({ ...defectForm, activity: e.target.value })}
+                />
+
+                <input 
+                  type="number" 
+                  placeholder="Qty" 
+                  className="ms-input"
+                  style={{ width: '60px', flex: 'none' }}
+                  value={defectForm.qty}
+                  onChange={(e) => setDefectForm({ ...defectForm, qty: e.target.value })}
+                />
+
+                <div className="ms-select-container" style={{ width: '60px', flex: 'none' }}>
+                  <select 
+                    className="ms-select"
+                    value={defectForm.unit}
+                    onChange={(e) => setDefectForm({ ...defectForm, unit: e.target.value })}
+                  >
+                    <option value="m">m</option>
+                    <option value="m²">m²</option>
+                    <option value="m³">m³</option>
+                    <option value="No">No</option>
+                  </select>
+                  <div className="ms-select-arrow">▼</div>
+                </div>
+
+                <button className="ms-btn" onClick={handleAddDefect}>Add</button>
+              </div>
+
+              <div style={{ maxHeight: '100px', overflowY: 'auto', background: '#fff' }} className="ms-bevel-in">
+                <table className="ms-grid-table">
+                  <thead>
+                    <tr><th>Component</th><th>Stage</th><th>Extent</th><th>Activity</th><th>Qty</th><th>Unit</th><th>Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {defectsList.map((row, idx) => (
+                      <tr key={idx}>
+                        <td>{row.element}</td>
+                        <td>{row.stage}</td>
+                        <td>{row.extent}</td>
+                        <td>{row.activity}</td>
+                        <td>{row.qty}</td>
+                        <td>{row.unit}</td>
+                        <td>
+                          <button className="ms-btn" style={{ padding: '1px 5px', fontSize: '9px' }} onClick={() => handleRemoveDefect(idx)}>
+                            Del
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '15px' }}>
+              <button className="ms-btn" onClick={handleSave}>
+                Save Inspection Record
               </button>
+              {message && <span style={{ fontWeight: 'bold', color: '#005a5b' }}>{message}</span>}
             </div>
-            {message && <span style={{ color: message.includes('Error') || message.includes('Failed') ? '#ff5252' : '#00e676', fontSize: '0.85rem' }}>{message}</span>}
           </div>
-          
-          <div style={{ width: '300px', background: 'rgba(0,0,0,0.3)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <h4 style={{ margin: '0 0 20px 0', color: 'var(--accent-cyan)' }}>Live Calculated Results</h4>
-            {results ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Results panel */}
+          <div className="ms-chart-container" style={{ width: '280px', flexShrink: 0 }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#0a246a' }}>Calculated Deficiency Index</h4>
+            {results && results.overallRating !== null ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div>
-                  <div className="bdc-label" style={{ marginBottom: '8px' }}>Overall Rating</div>
-                  <div className="kpi-value" style={{ fontSize: '2.5rem', margin: 0 }}>{results.overallRating != null ? results.overallRating : 'N/A'} <span style={{fontSize: '1rem', color: 'var(--text-muted)'}}>/ 9</span></div>
-                  <div style={{ color: 'var(--accent-purple)', fontWeight: 'bold', marginTop: '4px' }}>{results.category}</div>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#808080' }}>Overall Condition rating</div>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', margin: '4px 0' }}>{results.overallRating} / 9</div>
+                  <div style={{ fontWeight: 'bold', color: '#ef4444' }}>{results.category}</div>
                 </div>
                 <div>
-                  <div className="bdc-label" style={{ marginBottom: '8px' }}>Condition Deficiency Index (DC)</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{results.deficiencyIndex != null ? results.deficiencyIndex.toFixed(1) : 'N/A'}</div>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#808080' }}>Deficiency Index (DC)</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0a246a' }}>{results.deficiencyIndex.toFixed(1)}</div>
+                  <small style={{ color: '#808080' }}>Calculated according to UNRA Table 3 weights.</small>
                 </div>
               </div>
             ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Select a bridge to see results.</p>
+              <span style={{ color: '#808080' }}>No inspection data loaded. Navigate to a rated bridge.</span>
             )}
           </div>
+
         </div>
-      )}
+      </div>
+
+      {/* Record Selector */}
+      <div className="ms-record-navigator">
+        <button className="ms-nav-btn" onClick={() => handleNavigate('first')} title="First Record">|&lt;</button>
+        <button className="ms-nav-btn" onClick={() => handleNavigate('prev')} title="Previous Record">&lt;</button>
+        <span className="ms-navigator-text">Record:</span>
+        <input 
+          type="text" 
+          className="ms-record-num-input" 
+          value={currentIndex + 1}
+          onChange={handleRecordInput}
+        />
+        <span className="ms-navigator-text">of {bridges.length}</span>
+        <button className="ms-nav-btn" onClick={() => handleNavigate('next')} title="Next Record">&gt;</button>
+        <button className="ms-nav-btn" onClick={() => handleNavigate('last')} title="Last Record">&gt;|</button>
+
+        <div className="ms-nav-search">
+          <label style={{ fontWeight: 'bold' }}>Find Bridge:</label>
+          <input 
+            type="text" 
+            placeholder="Search name/No..." 
+            className="ms-input"
+            style={{ width: '120px', height: '18px' }}
+            onChange={handleSearch}
+          />
+        </div>
+      </div>
     </div>
   );
 }

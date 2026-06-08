@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { fetchBridgeByNumber, fetchCulvertByNumber } from '../services/bmsDataService';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
 
 const ROAD_CLASS_STYLE = {
-  A: { color: '#ff4f7b', weight: 2.4, opacity: 0.78 },
-  B: { color: '#ffb340', weight: 2.0, opacity: 0.72 },
-  C: { color: '#72e58a', weight: 1.25, opacity: 0.62 },
-  M: { color: '#f97316', weight: 2.6, opacity: 0.8 },
+  A: { color: '#c84339', weight: 2.4, opacity: 0.82 },
+  B: { color: '#d89a18', weight: 2.0, opacity: 0.78 },
+  C: { color: '#26865c', weight: 1.25, opacity: 0.7 },
+  M: { color: '#735b3c', weight: 2.6, opacity: 0.82 },
 };
 
 const getRoadClass = (props = {}) => String(
@@ -53,9 +54,9 @@ function SelectedMarker({ bridge }) {
         center={point}
         radius={18}
         pathOptions={{
-          fillColor: isCulvert ? '#ff3366' : '#00e5ff',
+          fillColor: isCulvert ? '#d89a18' : '#08784d',
           fillOpacity: 0.15,
-          color: isCulvert ? '#ff3366' : '#00e5ff',
+          color: isCulvert ? '#d89a18' : '#08784d',
           weight: 2,
           opacity: 0.5,
           className: 'selected-marker-pulse'
@@ -67,7 +68,7 @@ function SelectedMarker({ bridge }) {
         radius={8}
         pathOptions={{
           fillColor: '#fff',
-          color: isCulvert ? '#ff3366' : '#00e5ff',
+          color: isCulvert ? '#d89a18' : '#08784d',
           weight: 3,
           fillOpacity: 0.95,
         }}
@@ -87,8 +88,6 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
   const [waterData, setWaterData] = useState(null);
   const [bridges, setBridges] = useState([]);
   const [culverts, setCulverts] = useState([]);
-  const bridgeDetailsRef = useRef(null);
-  const culvertDetailsRef = useRef(null);
 
   useEffect(() => {
     fetch(dataUrl('data/spatial/water.geojson'))
@@ -136,31 +135,27 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
 
   const handleBridgeClick = useCallback(async (b) => {
     if (!onSelectBridge) return;
-    bridgeDetailsRef.current ||= fetch(dataUrl('data/bridges.json')).then(res => res.json()).catch(() => []);
-    const details = await bridgeDetailsRef.current;
-    const fullBridge = details.find(row => row.BridgeNumber === b.BridgeNumber) || b;
-    onSelectBridge({ ...fullBridge, _structureType: 'bridge' });
+    const fullBridge = await fetchBridgeByNumber(b.BridgeNumber).catch(() => null);
+    onSelectBridge({ ...(fullBridge || b), _structureType: 'bridge' });
   }, [onSelectBridge]);
 
   const handleCulvertClick = useCallback(async (c) => {
     if (!onSelectBridge) return;
-    culvertDetailsRef.current ||= fetch(dataUrl('data/culverts.json')).then(res => res.json()).catch(() => []);
-    const details = await culvertDetailsRef.current;
-    const fullCulvert = details.find(row => row.CulvertNumber === c.CulvertNumber) || c;
-    onSelectBridge({ ...fullCulvert, _structureType: 'culvert' });
+    const fullCulvert = await fetchCulvertByNumber(c.CulvertNumber).catch(() => null);
+    onSelectBridge({ ...(fullCulvert || c), _structureType: 'culvert' });
   }, [onSelectBridge]);
 
   return (
-    <div style={{ height: '100%', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
+    <div className="network-map">
       
-      <div style={{position: 'absolute', top: 16, right: 16, zIndex: 1000, background: 'rgba(10,15,28,0.85)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', backdropFilter: 'blur(10px)'}}>
+      <div className="map-legend">
         <h4 style={{margin: '0 0 12px 0', color: 'var(--text-primary)'}}>Map Legend</h4>
         <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#00e5ff'}}></div>
+          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#08784d'}}></div>
           <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Bridges ({bridges.length})</span>
         </div>
         <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#ff3366'}}></div>
+          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#d89a18'}}></div>
           <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Major Culverts ({culverts.length})</span>
         </div>
         {Object.entries(ROAD_CLASS_STYLE).map(([roadClass, style]) => (
@@ -171,7 +166,7 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
         ))}
       </div>
 
-      <MapContainer center={[1.3733, 32.2903]} zoom={7} preferCanvas style={{ height: '100%', width: '100%', background: '#0a0f1c' }}>
+      <MapContainer center={[1.3733, 32.2903]} zoom={7} preferCanvas style={{ height: '100%', width: '100%', background: '#dce6df' }}>
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution='Tiles &copy; Esri'
@@ -197,7 +192,7 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
               key={`b-${i}`}
               center={point}
               radius={4.5}
-              pathOptions={{ fillColor: '#00e5ff', color: '#fff', weight: 1.5, fillOpacity: 0.88 }}
+              pathOptions={{ fillColor: '#08784d', color: '#fff', weight: 1.5, fillOpacity: 0.9 }}
               eventHandlers={{ click: () => handleBridgeClick(b) }}
             >
               <Tooltip>
@@ -217,7 +212,7 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
               key={`c-${i}`}
               center={[c.Lat, c.Lon]}
               radius={4}
-              pathOptions={{ fillColor: '#ff3366', color: '#fff', weight: 1, fillOpacity: 0.8 }}
+              pathOptions={{ fillColor: '#d89a18', color: '#fff', weight: 1, fillOpacity: 0.85 }}
               eventHandlers={{ click: () => handleCulvertClick(c) }}
             >
               <Tooltip>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const DataTable = ({ columns, data }) => {
   const [sort, setSort] = useState({ index: null, direction: 'asc' });

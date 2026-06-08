@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, MapPin, FileText, Image as ImageIcon } from 'lucide-react';
+import { getPhotoUrl } from '../utils/photoUrlResolver';
 
 export default function CriticalDashboard() {
   const [data, setData] = useState(null);
@@ -62,7 +63,7 @@ export default function CriticalDashboard() {
                 
                 {img ? (
                   <div style={{ marginTop: 'auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', height: '220px' }}>
-                    <img src={img.url} alt={id} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={getPhotoUrl(img)} alt={id} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 ) : (
                   <div style={{ marginTop: 'auto', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)' }}>

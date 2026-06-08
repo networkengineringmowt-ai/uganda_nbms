@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Network, Search } from 'lucide-react';
 
 export default function RoadNetworkDashboard() {

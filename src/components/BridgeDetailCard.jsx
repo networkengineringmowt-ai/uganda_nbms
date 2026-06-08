@@ -1,5 +1,6 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { X, MapPin, Ruler, Calendar, Droplets, Truck, Camera, AlertTriangle, Layers, Gauge } from 'lucide-react';
+import { Suspense, lazy, useState, useEffect } from 'react';
+import { X, MapPin, Truck, Camera, AlertTriangle, Layers, Gauge } from 'lucide-react';
+import { getPhotoUrl } from '../utils/photoUrlResolver';
 
 const ReactECharts = lazy(() => import('echarts-for-react'));
 
@@ -11,10 +12,10 @@ const RATING_LABELS = {
 const EMPTY = '-';
 
 const ratingColor = (r) => {
-  if (r >= 8) return '#00e676';
-  if (r >= 6) return '#ffcc00';
-  if (r >= 4) return '#ff7043';
-  return '#ff1744';
+  if (r >= 8) return '#168257';
+  if (r >= 6) return '#77a86e';
+  if (r >= 4) return '#e3a008';
+  return '#be3a34';
 };
 
 const CROSSING_TYPE = {
@@ -50,7 +51,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
     { label: 'Waterway', value: legacy.waterway_rating },
   ].filter(r => r.value != null);
 
-  const overallRating = legacy.overall_rating;
+  const overallRating = legacy.overall_rating ?? bridge.OverallConditionRating;
 
   // Traffic pie chart
   const classShareEntries = Object.entries(traffic.class_shares || {});
@@ -60,7 +61,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
       type: 'pie',
       radius: ['35%', '65%'],
       center: ['50%', '50%'],
-      itemStyle: { borderRadius: 6, borderColor: '#0a0f1c', borderWidth: 2 },
+      itemStyle: { borderRadius: 3, borderColor: '#ffffff', borderWidth: 2 },
       label: { show: false },
       data: classShareEntries
         .map(([k, v]) => ({ name: k.replace(/Light |Medium |Large /g, ''), value: +(v * 100).toFixed(2) }))
@@ -109,11 +110,11 @@ export default function BridgeDetailCard({ bridge, onClose }) {
             </div>
             <div className="bdc-field">
               <span className="bdc-label">Region</span>
-              <span className="bdc-value">{legacy.region || EMPTY}</span>
+              <span className="bdc-value">{legacy.region || bridge.Region || EMPTY}</span>
             </div>
             <div className="bdc-field">
               <span className="bdc-label">Station</span>
-              <span className="bdc-value">{legacy.station || legacy.maintenanc || EMPTY}</span>
+              <span className="bdc-value">{legacy.station || legacy.maintenanc || bridge.Station || EMPTY}</span>
             </div>
             <div className="bdc-field">
               <span className="bdc-label">District</span>
@@ -165,7 +166,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
               </div>
               <div className="bdc-field">
                 <span className="bdc-label">Scour Risk</span>
-                <span className="bdc-value" style={{ color: legacy.scour_risk === 'Y' ? '#ff5252' : legacy.scour_risk === 'N' ? '#00e676' : '#ffcc00' }}>
+                <span className="bdc-value" style={{ color: legacy.scour_risk === 'Y' ? '#be3a34' : legacy.scour_risk === 'N' ? '#168257' : '#e3a008' }}>
                   {legacy.scour_risk === 'Y' ? 'Yes' : legacy.scour_risk === 'N' ? 'No' : legacy.scour_risk || EMPTY}
                 </span>
               </div>
@@ -209,7 +210,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
               </div>
               <div className="bdc-field">
                 <span className="bdc-label">Growth Rate</span>
-                <span className="bdc-value" style={{ color: traffic.growth_rate >= 0 ? '#00e676' : '#ff5252' }}>
+                <span className="bdc-value" style={{ color: traffic.growth_rate >= 0 ? '#168257' : '#be3a34' }}>
                   {(traffic.growth_rate * 100).toFixed(1)}%
                 </span>
               </div>
@@ -229,7 +230,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
                   <ReactECharts
                     option={{
                       ...trafficChartOption,
-                      color: ['#00e5ff', '#a64dff', '#ff3366', '#ffcc00', '#00ffcc', '#3366ff', '#ff6b35', '#c44dff', '#26a69a', '#ef5350'],
+                      color: ['#0b6b43', '#e3a008', '#be3a34', '#397596', '#7a6a4f', '#77a86e', '#d8673a', '#708aa2', '#50906e', '#9a514d'],
                     }}
                     style={{ height: '180px', width: '100%' }}
                     opts={{ renderer: 'canvas' }}
@@ -255,7 +256,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
           <div className="bdc-section">
             <h4 className="bdc-section-title"><Camera size={14} /> Evidence Photo</h4>
             <div className="bdc-photo">
-              <img src={photo.url} alt={id} loading="lazy" />
+              <img src={getPhotoUrl(photo)} alt={id} loading="lazy" />
             </div>
           </div>
         )}
