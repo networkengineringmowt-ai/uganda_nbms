@@ -293,7 +293,7 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
           <button className="ms-btn" onClick={handleSave}>
             Save Record
           </button>
-          {message && <span style={{ fontWeight: 'bold', color: '#005a5b' }}>{message}</span>}
+          {message && <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{message}</span>}
         </div>
       </div>
 

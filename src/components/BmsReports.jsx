@@ -34,7 +34,7 @@ export default function BmsReports({ bridges = [], onSaveBridge }) {
       const crc = area * unitCost;
       
       const rating = b.LegacyData?.overall_rating != null ? Number(b.LegacyData.overall_rating) : 9;
-      // In UNRA BMS, 0 is Beyond Repair and 9 is Excellent.
+      // In National Roads BMS, 0 is Beyond Repair and 9 is Excellent.
       // CDRC (Depreciated Cost) = CRC * (9 - Rating) / 9 (higher rating = less depreciation)
       // The manual says: CDRC = (CRC * Condition) / 9. If condition is 9 (Excellent), CDRC = CRC.
       const cdrc = (crc * rating) / 9;

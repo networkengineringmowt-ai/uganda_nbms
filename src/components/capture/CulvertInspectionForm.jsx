@@ -189,7 +189,7 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
               <button className="ms-btn" onClick={handleSave}>
                 Save Inspection ratings
               </button>
-              {message && <span style={{ fontWeight: 'bold', color: '#005a5b' }}>{message}</span>}
+              {message && <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{message}</span>}
             </div>
           </div>
 
@@ -200,7 +200,7 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
                 <div>
                   <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#808080' }}>Overall rating</div>
                   <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{results.overallRating} / 9</div>
-                  <div style={{ fontWeight: 'bold', color: '#005a5b', marginTop: '4px' }}>{results.category}</div>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', marginTop: '4px' }}>{results.category}</div>
                 </div>
               </div>
             ) : (

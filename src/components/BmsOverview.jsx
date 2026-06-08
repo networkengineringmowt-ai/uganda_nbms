@@ -84,7 +84,7 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
     <div className="overview-layout">
       <section className="kpi-grid" aria-label="Network summary">
         <article className="kpi-card">
-          <div className="kpi-icon green"><Landmark size={21} /></div>
+          <div className="kpi-icon blue"><Landmark size={21} /></div>
           <span className="kpi-eyebrow">Structure register</span>
           <strong>{(bridges.length + culverts.length).toLocaleString()}</strong>
           <p>{bridges.length} bridges and {culverts.length} major culverts</p>

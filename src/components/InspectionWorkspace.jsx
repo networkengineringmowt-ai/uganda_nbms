@@ -20,7 +20,7 @@ export default function InspectionWorkspace({ bridges, onBridgesUpdate }) {
   return (
     <div className="inspection-layout">
       <section className="kpi-grid compact">
-        <article className="kpi-card"><div className="kpi-icon green"><ClipboardCheck size={20} /></div><span className="kpi-eyebrow">Rated structures</span><strong>{metrics.rated.length}</strong><p>Bridge records with element or overall ratings</p></article>
+        <article className="kpi-card"><div className="kpi-icon blue"><ClipboardCheck size={20} /></div><span className="kpi-eyebrow">Rated structures</span><strong>{metrics.rated.length}</strong><p>Bridge records with element or overall ratings</p></article>
         <article className="kpi-card"><div className="kpi-icon red"><TriangleAlert size={20} /></div><span className="kpi-eyebrow">Critical ratings</span><strong>{metrics.critical.length}</strong><p>Overall rating of 3 or below</p></article>
         <article className="kpi-card"><div className="kpi-icon amber"><CalendarClock size={20} /></div><span className="kpi-eyebrow">Location review</span><strong>{metrics.review.length}</strong><p>Records flagged for coordinate review</p></article>
       </section>

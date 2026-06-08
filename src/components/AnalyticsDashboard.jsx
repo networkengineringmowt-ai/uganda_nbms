@@ -45,7 +45,7 @@ export default function AnalyticsDashboard() {
   return (
     <div className="analytics-layout">
       <section className="kpi-grid compact">
-        <article className="kpi-card"><div className="kpi-icon green"><Landmark size={20} /></div><span className="kpi-eyebrow">Bridges analysed</span><strong>{metrics.totalBridges}</strong><p>Across six maintenance regions</p></article>
+        <article className="kpi-card"><div className="kpi-icon blue"><Landmark size={20} /></div><span className="kpi-eyebrow">Bridges analysed</span><strong>{metrics.totalBridges}</strong><p>Across six maintenance regions</p></article>
         <article className="kpi-card"><div className="kpi-icon blue"><MapPin size={20} /></div><span className="kpi-eyebrow">Major culverts</span><strong>{metrics.totalCulverts}</strong><p>Linked to the national road network</p></article>
         <article className="kpi-card"><div className="kpi-icon red"><BarChart3 size={20} /></div><span className="kpi-eyebrow">Poor or worse</span><strong>{metrics.poor}</strong><p>Bridge records requiring intervention</p></article>
         <article className="kpi-card"><div className="kpi-icon amber"><TrendingUp size={20} /></div><span className="kpi-eyebrow">High-traffic bridges</span><strong>{metrics.highTraffic}</strong><p>Estimated AADT above 10,000</p></article>

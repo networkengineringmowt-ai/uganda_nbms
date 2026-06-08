@@ -25,3 +25,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Extraction Outputs
+public/data/extracted_photos/
+public/data/extracted_metadata.json
+

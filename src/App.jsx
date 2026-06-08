@@ -13,7 +13,8 @@ import {
   ClipboardCheck,
   HardHat
 } from 'lucide-react';
-import MainSwitchboard from './components/MainSwitchboard';
+import LeftNavigationPane from './components/LeftNavigationPane';
+import RightUtilityPane from './components/RightUtilityPane';
 import BridgeInventoryForm from './components/capture/BridgeInventoryForm';
 import BridgeInspectionForm from './components/capture/BridgeInspectionForm';
 import CulvertInventoryForm from './components/capture/CulvertInventoryForm';
@@ -90,7 +91,7 @@ function MSWindow({ id, title, x, y, width, height, active, onClose, onFocus, ch
 }
 
 export default function App() {
-  const [viewMode, setViewMode] = useState('classic'); // 'classic' or 'modern'
+  const [viewMode, setViewMode] = useState('modern'); // 'classic' or 'modern'
   const [modernTab, setModernTab] = useState('overview');
   const [selectedBridge, setSelectedBridge] = useState(null);
   const [bridges, setBridges] = useState([]);
@@ -176,19 +177,22 @@ export default function App() {
       case 'inspection': return 'Record field inspection and overall rating statistics';
       case 'maintenance': return 'Review critical interventions and priority queues';
       case 'analytics': return 'Traffic predictions and vehicle class analysis';
-      default: return 'Uganda National Roads Authority BMS';
+      default: return 'Ministry of Works and Transport BMS';
     }
   };
 
   if (viewMode === 'modern') {
     return (
-      <div className="bms-shell" style={{ display: 'flex', minHeight: '100vh', background: '#f2f5f3' }}>
+      <div className="bms-shell modern-theme-root">
+        {/* Animated Background Canvas */}
+        <div className="ambient-background"></div>
+        
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="sidebar-brand">
             <div className="brand-mark">BMS</div>
             <div>
-              <strong>UNRA UBMS</strong>
+              <strong>National Roads BMS</strong>
               <span>Bridge Management</span>
             </div>
           </div>
@@ -224,8 +228,8 @@ export default function App() {
         </aside>
         
         {/* Main Container */}
-        <main className="shell-main" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <header className="topbar">
+        <main className="shell-main">
+          <header className="topbar glass-header">
             <div className="page-heading">
               <h1>{pageTitle(modernTab)}</h1>
               <p>{pageSubtitle(modernTab)}</p>
@@ -244,7 +248,7 @@ export default function App() {
             </div>
           </header>
           
-          <div className="page-content" style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="page-content modern-scroll">
             {modernTab === 'overview' && (
               <BmsOverview 
                 onNavigate={(tab) => setModernTab(tab)} 
@@ -304,7 +308,7 @@ export default function App() {
       <header className="ms-main-title">
         <div className="ms-main-title-text">
           <Database size={14} />
-          <span>Microsoft Access - [Uganda National Roads Authority - Bridge Management System (UBMS)]</span>
+          <span>Microsoft Access - [Ministry of Works and Transport - Bridge Management System (UBMS)]</span>
         </div>
         <div className="ms-window-controls">
           <button className="ms-ctrl-btn" onClick={() => setViewMode(v => v === 'classic' ? 'modern' : 'classic')}>
@@ -314,107 +318,17 @@ export default function App() {
         </div>
       </header>
 
-      {/* 2. Dropdown Menu Bar */}
-      <nav className="ms-menu-bar" aria-label="Access Main Menu">
-        <div className="ms-menu-item">
-          File
-          <div className="ms-menu-dropdown">
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>Set Paths...</div>
-            <div className="ms-dropdown-divider" />
-            <div className="ms-dropdown-item" onClick={() => setViewMode('modern')}>Switch to Web Dashboard</div>
-            <div className="ms-dropdown-divider" />
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('exit')}>Exit Database</div>
-          </div>
-        </div>
-        
-        <div className="ms-menu-item">
-          Capture Screens
-          <div className="ms-menu-dropdown">
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('bridgeInventory')}>Bridge Inventory</div>
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('bridgeInspection')}>Bridge Inspection</div>
-            <div className="ms-dropdown-divider" />
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('culvertInventory')}>Culvert Inventory</div>
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('culvertInspection')}>Culvert Inspection</div>
-            <div className="ms-dropdown-divider" />
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('upgrades')}>Upgrade of Bridges</div>
-          </div>
-        </div>
 
-        <div className="ms-menu-item">
-          Reporting
-          <div className="ms-menu-dropdown">
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>Data Validation Audits</div>
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>CRC Replacement Costing</div>
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('reports')}>Generate Summary Sheets</div>
-          </div>
-        </div>
-
-        <div className="ms-menu-item">
-          Add-ins
-          <div className="ms-menu-dropdown">
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('map')}>Open GIS Network Map</div>
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('analytics')}>Traffic predictions (SQLBot)</div>
-            <div className="ms-dropdown-divider" />
-            <div className="ms-dropdown-item" onClick={() => handleOpenWindow('parameters')}>System Parameters</div>
-          </div>
-        </div>
-
-        <div className="ms-menu-item" onClick={() => alert('Uganda National Roads Authority BMS\nDeveloped by Aurecon (Copyright 2017).\nMigrated to Supabase Web platform (2026).')}>
-          Help
-        </div>
-      </nav>
-
-      {/* 3. Standard Shortcut Toolbar */}
-      <div className="ms-toolbar">
-        <button className="ms-tool-btn" onClick={() => handleOpenWindow('bridgeInventory')} title="New Bridge Record">
-          <Plus size={14} /> New
-        </button>
-        <button className="ms-tool-btn" onClick={() => handleOpenWindow('reports')} title="Generate PDF Sheets">
-          <Printer size={14} /> Print
-        </button>
-        <button className="ms-tool-btn" onClick={() => handleOpenWindow('reports')} title="Export Cost Metrics">
-          <FileSpreadsheet size={14} /> Excel
-        </button>
-        <div className="ms-tool-divider" />
-        <button className="ms-tool-btn" onClick={() => handleOpenWindow('map')} title="Open Network Map">
-          <MapPin size={14} /> GIS Map
-        </button>
-        <button className="ms-tool-btn" onClick={() => handleOpenWindow('analytics')} title="Traffic counts & predictions">
-          <TrendingUp size={14} /> Traffic
-        </button>
-        <button className="ms-tool-btn" onClick={() => handleOpenWindow('reports')} title="Run database audits">
-          <Activity size={14} /> Audits
-        </button>
-        <div className="ms-tool-divider" />
-        <button className="ms-tool-btn" onClick={() => handleOpenWindow('parameters')} title="Formula weights">
-          <Settings size={14} /> Parameters
-        </button>
-        <div className="ms-tool-divider" />
-        <button className="ms-tool-btn" onClick={() => alert('Access Help Desk: unra_support@aurecongroup.com')} title="Get support">
-          <HelpCircle size={14} /> Help
-        </button>
-      </div>
 
       {/* 4. Desktop area (MDI container or Modern shell) */}
-      <div className="ms-workspace" style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        {viewMode === 'classic' ? (
-          <>
+      <div className="ms-shell-body" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {viewMode === 'classic' && <LeftNavigationPane onOpenWindow={handleOpenWindow} />}
+        
+        <div className="ms-workspace" style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          {viewMode === 'classic' ? (
+            <>
             {/* Draggable MDI Windows */}
-            {openWindows.switchboard && (
-              <MSWindow
-                id="switchboard"
-                title="Main Switchboard"
-                x={120}
-                y={50}
-                width={520}
-                height={412}
-                active={activeWindow === 'switchboard'}
-                onClose={handleCloseWindow}
-                onFocus={handleFocusWindow}
-              >
-                <MainSwitchboard onOpenWindow={handleOpenWindow} />
-              </MSWindow>
-            )}
+
 
             {openWindows.bridgeInventory && (
               <MSWindow
@@ -596,6 +510,18 @@ export default function App() {
             </div>
             <AnalyticsDashboard />
           </div>
+        )}
+        </div>
+        
+        {viewMode === 'classic' && (
+          <RightUtilityPane 
+            openWindows={openWindows} 
+            activeWindow={activeWindow} 
+            onFocusWindow={handleFocusWindow} 
+            onCloseWindow={handleCloseWindow} 
+            bridges={bridges}
+            culverts={culverts}
+          />
         )}
       </div>
 

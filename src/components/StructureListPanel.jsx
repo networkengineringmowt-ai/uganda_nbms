@@ -200,22 +200,19 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
   return (
     <div className="structure-list-panel">
       {/* Search and Filters Trigger */}
-      <div className="slp-search-container" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={15} className="slp-search-icon" style={{ position: 'absolute', top: '11px', left: '11px', color: 'var(--text-muted)' }} />
+      <div className="slp-search-container">
+        <div className="toolbar-search">
+          <Search size={15} />
           <input
-            className="slp-search-input"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search structures..."
-            style={{ paddingLeft: '33px', width: '100%', minHeight: '38px' }}
           />
         </div>
         <button
-          className={`icon-button filter-trigger-btn ${hasActiveFilters ? 'filters-active' : ''}`}
+          className={`filter-trigger-btn ${hasActiveFilters ? 'filters-active' : ''}`}
           onClick={() => setShowFilters(true)}
           title="Filter Structures"
-          style={{ height: '38px', width: '38px', flex: '0 0 38px', display: 'grid', placeItems: 'center', position: 'relative' }}
         >
           <Filter size={15} />
           {hasActiveFilters && <span className="filters-active-dot" />}

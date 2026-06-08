@@ -3,9 +3,9 @@ import { useState } from 'react';
 export default function UpgradeBridgesForm({ bridges = [] }) {
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
   const [upgradesList, setUpgradesList] = useState([
-    { bridgeNo: 'B001', date: '12/04/2024', desc: 'Deck expansion joint reseal and approach resurfacing', ref: 'UNRA/WKS/23-24/09', budget: 120000000, hasReport: 'Yes' },
-    { bridgeNo: 'B004', date: '05/09/2025', desc: 'Wingwall stabilization and substructure crack injection', ref: 'UNRA/WKS/24-25/12', budget: 85000000, hasReport: 'No' },
-    { bridgeNo: 'B042', date: '18/02/2026', desc: 'Full rehabilitation of superstructure, replacement of bearings', ref: 'UNRA/WKS/25-26/01', budget: 450000000, hasReport: 'Yes' }
+    { bridgeNo: 'B001', date: '12/04/2024', desc: 'Deck expansion joint reseal and approach resurfacing', ref: 'MoWT/WKS/23-24/09', budget: 120000000, hasReport: 'Yes' },
+    { bridgeNo: 'B004', date: '05/09/2025', desc: 'Wingwall stabilization and substructure crack injection', ref: 'MoWT/WKS/24-25/12', budget: 85000000, hasReport: 'No' },
+    { bridgeNo: 'B042', date: '18/02/2026', desc: 'Full rehabilitation of superstructure, replacement of bearings', ref: 'MoWT/WKS/25-26/01', budget: 450000000, hasReport: 'Yes' }
   ]);
 
   const [formData, setFormData] = useState({

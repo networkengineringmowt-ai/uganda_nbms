@@ -22,7 +22,7 @@ export default function MainSwitchboard({ onOpenWindow }) {
             display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center',
             boxShadow: '1px 1px 4px rgba(0,0,0,0.3)', marginBottom: '8px'
           }}>
-            <strong style={{ color: '#005a5b', fontSize: '18px', fontFamily: 'Impact, sans-serif' }}>UNRA</strong>
+            <strong style={{ color: '#0f172a', fontSize: '18px', fontFamily: 'Impact, sans-serif' }}>Department of National Roads, Ministry of Works and Transport</strong>
           </div>
           <span style={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
             National Roads
@@ -42,7 +42,7 @@ export default function MainSwitchboard({ onOpenWindow }) {
       <div className="ms-sb-main">
         <div className="ms-sb-header">
           <div className="ms-sb-title">Bridge Management System</div>
-          <div className="ms-sb-subtitle">Uganda National Roads Authority (UNRA)</div>
+          <div className="ms-sb-subtitle">Ministry of Works and Transport</div>
         </div>
 
         <div className="ms-sb-grid">

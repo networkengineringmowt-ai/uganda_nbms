@@ -167,7 +167,7 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
           
           {/* Ratings list */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <p style={{ fontStyle: 'italic', color: '#005a5b', margin: '0 0 10px 0' }}>
+            <p style={{ fontStyle: 'italic', color: '#0f172a', margin: '0 0 10px 0' }}>
               Select a rating from 0 (Beyond Repair) to 9 (Excellent). Hover over numbers to check manual criteria.
             </p>
 
@@ -309,7 +309,7 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
               <button className="ms-btn" onClick={handleSave}>
                 Save Inspection Record
               </button>
-              {message && <span style={{ fontWeight: 'bold', color: '#005a5b' }}>{message}</span>}
+              {message && <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{message}</span>}
             </div>
           </div>
 
@@ -326,7 +326,7 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
                 <div>
                   <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#808080' }}>Deficiency Index (DC)</div>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0a246a' }}>{results.deficiencyIndex.toFixed(1)}</div>
-                  <small style={{ color: '#808080' }}>Calculated according to UNRA Table 3 weights.</small>
+                  <small style={{ color: '#808080' }}>Calculated according to Department Table 3 weights.</small>
                 </div>
               </div>
             ) : (

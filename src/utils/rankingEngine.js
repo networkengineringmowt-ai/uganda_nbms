@@ -1,6 +1,6 @@
 /**
- * UNRA BMS Ranking & Deficiency Engine
- * Based on the UNRA Bridge Management System User Manual (January 2017)
+ * National Roads BMS Ranking & Deficiency Engine
+ * Based on the Department of National Roads, Ministry of Works and Transport Bridge Management System User Manual (January 2017)
  */
 
 // Table 3: System Parameters / Overall Rating Variables for Bridges

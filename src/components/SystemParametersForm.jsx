@@ -25,7 +25,7 @@ export default function SystemParametersForm() {
         <legend>Deficiency Index Formula Weights</legend>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <p style={{ fontStyle: 'italic', color: '#005a5b', marginBottom: '10px' }}>
+          <p style={{ fontStyle: 'italic', color: '#0f172a', marginBottom: '10px' }}>
             Adjust the weights used to calculate the Deficiency Index. The sum of all weights must equal 1.0 (100%).
           </p>
 
@@ -100,7 +100,7 @@ export default function SystemParametersForm() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '15px', borderTop: '1px solid #808080', paddingTop: '12px' }}>
-            {savedMessage && <span style={{ color: '#005a5b', alignSelf: 'center', fontWeight: 'bold' }}>{savedMessage}</span>}
+            {savedMessage && <span style={{ color: '#0f172a', alignSelf: 'center', fontWeight: 'bold' }}>{savedMessage}</span>}
             <button className="ms-btn" onClick={handleSave}>
               Save Variables
             </button>

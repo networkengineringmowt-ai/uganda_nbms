@@ -54,9 +54,9 @@ function SelectedMarker({ bridge }) {
         center={point}
         radius={18}
         pathOptions={{
-          fillColor: isCulvert ? '#d89a18' : '#08784d',
+          fillColor: isCulvert ? '#d89a18' : '#1e40af',
           fillOpacity: 0.15,
-          color: isCulvert ? '#d89a18' : '#08784d',
+          color: isCulvert ? '#d89a18' : '#1e40af',
           weight: 2,
           opacity: 0.5,
           className: 'selected-marker-pulse'
@@ -68,7 +68,7 @@ function SelectedMarker({ bridge }) {
         radius={8}
         pathOptions={{
           fillColor: '#fff',
-          color: isCulvert ? '#d89a18' : '#08784d',
+          color: isCulvert ? '#d89a18' : '#1e40af',
           weight: 3,
           fillOpacity: 0.95,
         }}
@@ -151,7 +151,7 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
       <div className="map-legend">
         <h4 style={{margin: '0 0 12px 0', color: 'var(--text-primary)'}}>Map Legend</h4>
         <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#08784d'}}></div>
+          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#1e40af'}}></div>
           <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Bridges ({bridges.length})</span>
         </div>
         <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
@@ -168,12 +168,8 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
 
       <MapContainer center={[1.3733, 32.2903]} zoom={7} preferCanvas style={{ height: '100%', width: '100%', background: '#dce6df' }}>
         <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          attribution='Tiles &copy; Esri'
-        />
-        <TileLayer
-          url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-          attribution='Labels &copy; Esri'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
         />
         {waterData && <GeoJSON data={waterData} style={{ color: '#0055ff', weight: 1.5, opacity: 0.7, fillColor: '#002288', fillOpacity: 0.3 }} />}
         {networkData && (
@@ -192,7 +188,7 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
               key={`b-${i}`}
               center={point}
               radius={4.5}
-              pathOptions={{ fillColor: '#08784d', color: '#fff', weight: 1.5, fillOpacity: 0.9 }}
+              pathOptions={{ fillColor: '#1e40af', color: '#fff', weight: 1.5, fillOpacity: 0.9 }}
               eventHandlers={{ click: () => handleBridgeClick(b) }}
             >
               <Tooltip>
