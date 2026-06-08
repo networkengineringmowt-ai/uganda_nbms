@@ -108,7 +108,8 @@ export default function App() {
     analytics: false,
     reports: false,
     upgrades: false,
-    parameters: false
+    parameters: false,
+    documentGallery: false
   });
   
   const [activeWindow, setActiveWindow] = useState('switchboard');
@@ -484,6 +485,23 @@ export default function App() {
                 <div style={{ height: '100%', width: '100%', overflowY: 'auto', background: '#fff', padding: '12px' }}>
                   <AnalyticsDashboard />
                 </div>
+              </MSWindow>
+            )}
+
+            {openWindows.documentGallery && (
+              <MSWindow
+                id="documentGallery"
+                title="Offline Document & Media Gallery"
+                x={120}
+                y={70}
+                width={880}
+                height={550}
+                active={activeWindow === 'documentGallery'}
+                onClose={handleCloseWindow}
+                onFocus={handleFocusWindow}
+                resizable={true}
+              >
+                <DocumentGallery bridges={bridges} />
               </MSWindow>
             )}
           </>
