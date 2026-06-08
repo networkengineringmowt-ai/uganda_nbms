@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import LeftNavigationPane from './components/LeftNavigationPane';
 import RightUtilityPane from './components/RightUtilityPane';
+import DocumentGallery from './components/DocumentGallery';
 import BridgeInventoryForm from './components/capture/BridgeInventoryForm';
 import BridgeInspectionForm from './components/capture/BridgeInspectionForm';
 import CulvertInventoryForm from './components/capture/CulvertInventoryForm';
