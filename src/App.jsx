@@ -9,7 +9,9 @@ import {
   Activity,
   Layers,
   Settings,
-  Plus
+  Plus,
+  ClipboardCheck,
+  HardHat
 } from 'lucide-react';
 import MainSwitchboard from './components/MainSwitchboard';
 import BridgeInventoryForm from './components/capture/BridgeInventoryForm';
@@ -21,6 +23,12 @@ import UpgradeBridgesForm from './components/UpgradeBridgesForm';
 import SystemParametersForm from './components/SystemParametersForm';
 import MapDashboard from './components/MapDashboard';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import BmsOverview from './components/BmsOverview';
+import CombinedInventory from './components/CombinedInventory';
+import InspectionWorkspace from './components/InspectionWorkspace';
+import MaintenanceWorkspace from './components/MaintenanceWorkspace';
+import BridgeDetailCard from './components/BridgeDetailCard';
+import StructureListPanel from './components/StructureListPanel';
 import { fetchBridges, fetchCulverts, saveBridge } from './services/bmsDataService';
 
 // Draggable Window Component
@@ -83,6 +91,8 @@ function MSWindow({ id, title, x, y, width, height, active, onClose, onFocus, ch
 
 export default function App() {
   const [viewMode, setViewMode] = useState('classic'); // 'classic' or 'modern'
+  const [modernTab, setModernTab] = useState('overview');
+  const [selectedBridge, setSelectedBridge] = useState(null);
   const [bridges, setBridges] = useState([]);
   const [culverts, setCulverts] = useState([]);
   
@@ -145,6 +155,148 @@ export default function App() {
       alert(`Error saving bridge: ${e.message}`);
     }
   };
+
+  const pageTitle = (tab) => {
+    switch (tab) {
+      case 'overview': return 'Network Overview';
+      case 'map': return 'Interactive GIS Map';
+      case 'inventory': return 'Asset Registers';
+      case 'inspection': return 'Inspections Workspace';
+      case 'maintenance': return 'Maintenance Planning';
+      case 'analytics': return 'Traffic Analytics';
+      default: return 'BMS Dashboard';
+    }
+  };
+
+  const pageSubtitle = (tab) => {
+    switch (tab) {
+      case 'overview': return 'Live network status and operational overview';
+      case 'map': return 'Locate structures and review inventory profiles';
+      case 'inventory': return 'Review bridge and culvert registries';
+      case 'inspection': return 'Record field inspection and overall rating statistics';
+      case 'maintenance': return 'Review critical interventions and priority queues';
+      case 'analytics': return 'Traffic predictions and vehicle class analysis';
+      default: return 'Uganda National Roads Authority BMS';
+    }
+  };
+
+  if (viewMode === 'modern') {
+    return (
+      <div className="bms-shell" style={{ display: 'flex', minHeight: '100vh', background: '#f2f5f3' }}>
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="sidebar-brand">
+            <div className="brand-mark">BMS</div>
+            <div>
+              <strong>UNRA UBMS</strong>
+              <span>Bridge Management</span>
+            </div>
+          </div>
+          <nav className="sidebar-nav">
+            <span className="nav-label">Main Register</span>
+            <button className={`sidebar-link ${modernTab === 'overview' ? 'active' : ''}`} onClick={() => setModernTab('overview')}>
+              <Database size={16} /> <span>Network Overview</span>
+            </button>
+            <button className={`sidebar-link ${modernTab === 'map' ? 'active' : ''}`} onClick={() => { setModernTab('map'); setSelectedBridge(null); }}>
+              <MapPin size={16} /> <span>Interactive GIS Map</span>
+            </button>
+            <button className={`sidebar-link ${modernTab === 'inventory' ? 'active' : ''}`} onClick={() => setModernTab('inventory')}>
+              <Layers size={16} /> <span>Asset Registers</span>
+            </button>
+            <span className="nav-label">Operations</span>
+            <button className={`sidebar-link ${modernTab === 'inspection' ? 'active' : ''}`} onClick={() => setModernTab('inspection')}>
+              <ClipboardCheck size={16} /> <span>Inspections</span>
+            </button>
+            <button className={`sidebar-link ${modernTab === 'maintenance' ? 'active' : ''}`} onClick={() => setModernTab('maintenance')}>
+              <HardHat size={16} /> <span>Maintenance Planning</span>
+            </button>
+            <button className={`sidebar-link ${modernTab === 'analytics' ? 'active' : ''}`} onClick={() => setModernTab('analytics')}>
+              <TrendingUp size={16} /> <span>Traffic Analytics</span>
+            </button>
+          </nav>
+          <div className="sidebar-status">
+            <div className="status-line">
+              <div className="status-dot"></div>
+              <span>Supabase Connected</span>
+            </div>
+            <span>API: v1 REST Active</span>
+          </div>
+        </aside>
+        
+        {/* Main Container */}
+        <main className="shell-main" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <header className="topbar">
+            <div className="page-heading">
+              <h1>{pageTitle(modernTab)}</h1>
+              <p>{pageSubtitle(modernTab)}</p>
+            </div>
+            
+            <div className="topbar-actions">
+              <div className="role-badge">National Inspector</div>
+              <button 
+                className="icon-button" 
+                onClick={() => setViewMode('classic')}
+                title="Switch to Access Shell"
+                style={{ width: 'auto', padding: '0 12px', fontSize: '11px', fontWeight: 'bold' }}
+              >
+                Access Shell
+              </button>
+            </div>
+          </header>
+          
+          <div className="page-content" style={{ flex: 1, overflowY: 'auto' }}>
+            {modernTab === 'overview' && (
+              <BmsOverview 
+                onNavigate={(tab) => setModernTab(tab)} 
+                onSelectAsset={(asset) => {
+                  setSelectedBridge(asset);
+                  setModernTab('map');
+                }} 
+              />
+            )}
+            {modernTab === 'map' && (
+              <div className="map-workspace has-drawer" style={{ height: '100%' }}>
+                <div className="map-asset-list">
+                  <StructureListPanel 
+                    selectedBridge={selectedBridge} 
+                    onSelectBridge={setSelectedBridge} 
+                    dynamicBridges={bridges}
+                    dynamicCulverts={culverts}
+                  />
+                </div>
+                <div className="map-surface">
+                  <MapDashboard 
+                    selectedBridge={selectedBridge} 
+                    onSelectBridge={setSelectedBridge} 
+                  />
+                </div>
+                {selectedBridge && (
+                  <div className="map-detail-drawer">
+                    <BridgeDetailCard 
+                      bridge={selectedBridge} 
+                      onClose={() => setSelectedBridge(null)} 
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            {modernTab === 'inventory' && <CombinedInventory />}
+            {modernTab === 'inspection' && <InspectionWorkspace bridges={bridges} onBridgesUpdate={setBridges} />}
+            {modernTab === 'maintenance' && (
+              <MaintenanceWorkspace 
+                bridges={bridges} 
+                onSelectAsset={(asset) => {
+                  setSelectedBridge(asset);
+                  setModernTab('map');
+                }}
+              />
+            )}
+            {modernTab === 'analytics' && <AnalyticsDashboard />}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="ms-access-shell">

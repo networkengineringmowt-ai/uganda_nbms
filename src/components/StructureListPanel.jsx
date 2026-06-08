@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, ChevronDown, ChevronRight, MapPin, Activity } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, MapPin, Activity, Filter } from 'lucide-react';
 import { fetchBridgeByNumber, fetchCulvertByNumber } from '../services/bmsDataService';
 
 const CONDITION_COLORS = {
@@ -18,13 +18,20 @@ const getConditionLabel = (rating) => {
   return '-';
 };
 
-export default function StructureListPanel({ selectedBridge, onSelectBridge, dynamicBridges = [] }) {
+export default function StructureListPanel({ selectedBridge, onSelectBridge, dynamicBridges = [], dynamicCulverts = [] }) {
   const [bridges, setBridges] = useState([]);
   const [culverts, setCulverts] = useState([]);
   const [search, setSearch] = useState('');
   const [expandedSection, setExpandedSection] = useState('bridges');
   const listRef = useRef(null);
   const selectedRef = useRef(null);
+
+  // Filter States
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState('All'); // 'All', 'Bridges', 'Culverts'
+  const [filterRegion, setFilterRegion] = useState('All');
+  const [filterCondition, setFilterCondition] = useState('All'); // 'All', 'Good', 'Fair', 'Poor', 'Critical'
+  const [filterAuditStatus, setFilterAuditStatus] = useState('All'); // 'All', 'Checked', 'Unchecked'
 
   useEffect(() => {
     const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
@@ -41,6 +48,7 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
     fetch(url('data/spatial/major_culverts.geojson'))
       .then(r => r.json())
       .then(data => setCulverts((data.features || []).map((feature, index) => ({
+        ...feature.properties,
         CulvertNumber: feature.properties?.Culvert__N || feature.properties?.CulvertNumber || `C${String(index + 1).padStart(3, '0')}`,
         River: feature.properties?.River || feature.properties?.Link__Name || feature.properties?.District || 'Major culvert',
         Road: feature.properties?.Road || feature.properties?.Link__Name || '',
@@ -60,22 +68,113 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
 
   const term = search.trim().toLowerCase();
 
+  const getConditionLabelFromCategory = (category) => {
+    if (!category) return null;
+    const cat = String(category).trim().toLowerCase();
+    if (cat.includes('good') || cat.includes('satisfactory') || cat.includes('excellent') || cat.includes('very good')) return 'Good';
+    if (cat.includes('fair') || cat.includes('marginal') || cat.includes('watch')) return 'Fair';
+    if (cat.includes('poor') || cat.includes('very poor')) return 'Poor';
+    if (cat.includes('critical') || cat.includes('beyond') || cat.includes('repair')) return 'Critical';
+    return null;
+  };
+
   const sourceBridges = dynamicBridges.length ? dynamicBridges : bridges;
 
   const filteredBridges = useMemo(() => {
-    if (!term) return sourceBridges;
-    return sourceBridges.filter(b => [
-      b.BridgeNumber, b.BridgeName, b.RoadDescrPrincipal,
-      b.LinkID, b.Region, b.Station,
-    ].some(v => String(v || '').toLowerCase().includes(term)));
-  }, [sourceBridges, term]);
+    if (filterType === 'Culverts') return [];
+    
+    let result = sourceBridges;
+
+    if (term) {
+      result = result.filter(b => [
+        b.BridgeNumber, b.BridgeName, b.RoadDescrPrincipal,
+        b.LinkID, b.Region, b.Station,
+      ].some(v => String(v || '').toLowerCase().includes(term)));
+    }
+
+    if (filterRegion !== 'All') {
+      result = result.filter(b => b.Region && b.Region.toLowerCase().trim() === filterRegion.toLowerCase().trim());
+    }
+
+    if (filterCondition !== 'All') {
+      result = result.filter(b => {
+        const rating = b.OverallConditionRating ?? b.LegacyData?.overall_rating;
+        const condLabel = rating != null ? getConditionLabel(rating) : (b.OverallCondition ? getConditionLabelFromCategory(b.OverallCondition) : null);
+        return condLabel === filterCondition;
+      });
+    }
+
+    if (filterAuditStatus !== 'All') {
+      result = result.filter(b => {
+        const isChecked = !!b.LegacyData?.data_checked;
+        return filterAuditStatus === 'Checked' ? isChecked : !isChecked;
+      });
+    }
+
+    return result;
+  }, [sourceBridges, term, filterType, filterRegion, filterCondition, filterAuditStatus]);
+
+  const sourceCulverts = dynamicCulverts.length ? dynamicCulverts : culverts;
 
   const filteredCulverts = useMemo(() => {
-    if (!term) return culverts;
-    return culverts.filter(c => [
-      c.CulvertNumber, c.River, c.Road,
-    ].some(v => String(v || '').toLowerCase().includes(term)));
-  }, [culverts, term]);
+    if (filterType === 'Bridges') return [];
+
+    let result = sourceCulverts;
+
+    if (term) {
+      result = result.filter(c => [
+        c.CulvertNumber, c.River, c.Road, c.District, c.Link__Name, c.Region
+      ].some(v => String(v || '').toLowerCase().includes(term)));
+    }
+
+    if (filterRegion !== 'All') {
+      result = result.filter(c => {
+        const reg = c.Region || c.Maintenance_Region;
+        return reg && reg.toLowerCase().trim() === filterRegion.toLowerCase().trim();
+      });
+    }
+
+    if (filterCondition !== 'All') {
+      result = result.filter(c => {
+        const rating = c['Overall Rating'] != null ? Number(c['Overall Rating']) : null;
+        let condLabel = null;
+        if (rating != null) {
+          condLabel = getConditionLabel(rating);
+        } else {
+          const cat = c['Condition Category'] || c['Condition Category.4'];
+          if (cat) {
+            condLabel = getConditionLabelFromCategory(cat);
+          }
+        }
+        return condLabel === filterCondition;
+      });
+    }
+
+    if (filterAuditStatus !== 'All') {
+      result = result.filter(c => {
+        const isChecked = !!(c.CheckedBy || c.LegacyData?.data_checked);
+        return filterAuditStatus === 'Checked' ? isChecked : !isChecked;
+      });
+    }
+
+    return result;
+  }, [sourceCulverts, term, filterType, filterRegion, filterCondition, filterAuditStatus]);
+
+  const availableRegions = useMemo(() => {
+    const set = new Set();
+    sourceBridges.forEach(b => {
+      if (b.Region) set.add(b.Region.trim());
+    });
+    sourceCulverts.forEach(c => {
+      const reg = c.Region || c.Maintenance_Region;
+      if (reg) set.add(reg.trim());
+    });
+    return Array.from(set)
+      .filter(r => r && r.toLowerCase() !== 'unknown')
+      .sort((a, b) => a.localeCompare(b));
+  }, [sourceBridges, sourceCulverts]);
+
+  const hasActiveFilters = filterType !== 'All' || filterRegion !== 'All' || filterCondition !== 'All' || filterAuditStatus !== 'All';
 
   const handleSelect = useCallback(async (item, type) => {
     if (type === 'bridge') {
@@ -100,15 +199,27 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
 
   return (
     <div className="structure-list-panel">
-      {/* Search */}
-      <div className="slp-search-container">
-        <Search size={15} className="slp-search-icon" />
-        <input
-          className="slp-search-input"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search structures..."
-        />
+      {/* Search and Filters Trigger */}
+      <div className="slp-search-container" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search size={15} className="slp-search-icon" style={{ position: 'absolute', top: '11px', left: '11px', color: 'var(--text-muted)' }} />
+          <input
+            className="slp-search-input"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search structures..."
+            style={{ paddingLeft: '33px', width: '100%', minHeight: '38px' }}
+          />
+        </div>
+        <button
+          className={`icon-button filter-trigger-btn ${hasActiveFilters ? 'filters-active' : ''}`}
+          onClick={() => setShowFilters(true)}
+          title="Filter Structures"
+          style={{ height: '38px', width: '38px', flex: '0 0 38px', display: 'grid', placeItems: 'center', position: 'relative' }}
+        >
+          <Filter size={15} />
+          {hasActiveFilters && <span className="filters-active-dot" />}
+        </button>
       </div>
 
       {/* Counts */}
@@ -198,6 +309,92 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
           );
         })}
       </div>
+
+      {/* Filters Drawer Overlay */}
+      {showFilters && (
+        <>
+          <div className="modern-filters-scrim" onClick={() => setShowFilters(false)} />
+          <aside className="modern-filters-drawer">
+            <div className="modern-filters-header">
+              <h2>Filters</h2>
+              <button className="modern-filters-close" onClick={() => setShowFilters(false)} aria-label="Close filters">
+                ×
+              </button>
+            </div>
+            
+            <div className="modern-filters-body">
+              {/* Type Filter */}
+              <div className="modern-filter-field">
+                <label>Structure Type</label>
+                <div className="modern-select-wrapper">
+                  <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                    <option value="All">All Structures</option>
+                    <option value="Bridges">Bridges Only</option>
+                    <option value="Culverts">Major Culverts Only</option>
+                  </select>
+                  <ChevronDown size={14} className="modern-select-arrow" />
+                </div>
+              </div>
+
+              {/* Region Filter */}
+              <div className="modern-filter-field">
+                <label>Maintenance Region</label>
+                <div className="modern-select-wrapper">
+                  <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)}>
+                    <option value="All">All Regions</option>
+                    {availableRegions.map(reg => (
+                      <option key={reg} value={reg}>{reg}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="modern-select-arrow" />
+                </div>
+              </div>
+
+              {/* Condition Filter */}
+              <div className="modern-filter-field">
+                <label>Overall Condition</label>
+                <div className="modern-select-wrapper">
+                  <select value={filterCondition} onChange={(e) => setFilterCondition(e.target.value)}>
+                    <option value="All">All Conditions</option>
+                    <option value="Good">Good (Excellent / Good / Satisfactory)</option>
+                    <option value="Fair">Fair (Fair / Marginal)</option>
+                    <option value="Poor">Poor (Poor / Very Poor)</option>
+                    <option value="Critical">Critical (Critical / Beyond Repair)</option>
+                  </select>
+                  <ChevronDown size={14} className="modern-select-arrow" />
+                </div>
+              </div>
+
+              {/* Audit Status Filter */}
+              <div className="modern-filter-field">
+                <label>Validation Audit Status</label>
+                <div className="modern-select-wrapper">
+                  <select value={filterAuditStatus} onChange={(e) => setFilterAuditStatus(e.target.value)}>
+                    <option value="All">All Records</option>
+                    <option value="Checked">Audited & Checked</option>
+                    <option value="Unchecked">Outstanding / Unchecked</option>
+                  </select>
+                  <ChevronDown size={14} className="modern-select-arrow" />
+                </div>
+              </div>
+            </div>
+
+            <div className="modern-filters-footer">
+              <button className="modern-btn-secondary" onClick={() => {
+                setFilterType('All');
+                setFilterRegion('All');
+                setFilterCondition('All');
+                setFilterAuditStatus('All');
+              }}>
+                Reset
+              </button>
+              <button className="modern-btn-primary" onClick={() => setShowFilters(false)}>
+                Apply
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
     </div>
   );
 }
