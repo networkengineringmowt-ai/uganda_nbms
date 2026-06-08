@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 
-const G_DRIVE_DATA_DIR = process.env.BMS_SYNC_DIR || 'G:\\My Drive\\MOWT\\Bridge stuff\\uganda_bms_data';
+const G_DRIVE_DATA_DIR = process.env.BMS_SYNC_DIR || 'G:\\My Drive\\MOWT\\Uganda National Road Network Repository\\Bridge stuff';
 const FRONTEND_DATA_DIR = process.env.BMS_FRONTEND_DATA_DIR || path.join(__dirname, '..', 'public', 'data');
 
 if (!fs.existsSync(G_DRIVE_DATA_DIR)) {
