@@ -73,84 +73,105 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
     }
   };
 
+  const isCaptureMode = isAuthenticated && (
+    modernTab === 'capture_bridge' || 
+    modernTab === 'capture_culvert' || 
+    modernTab === 'inspect_bridge' || 
+    modernTab === 'inspect_culvert'
+  );
+
   return (
-    <div className="bms-shell modern-theme-root">
-      <div className="ambient-background"></div>
-      
-      <ModernSidebar 
-        modernTab={modernTab} 
-        setModernTab={setModernTab} 
-        setSelectedBridge={setSelectedBridge} 
-        onSecretClick={() => setShowLoginWall(true)}
-        isAuthenticated={isAuthenticated}
-      />
-      
-      <main className="shell-main">
-        <ModernHeader 
-          modernTab={modernTab} 
-          pageTitle={pageTitle} 
-          pageSubtitle={pageSubtitle} 
-        />
-        
-        <div className="page-content modern-scroll">
-          {modernTab === 'overview' && (
-            <BmsOverview 
-              onNavigate={(tab) => setModernTab(tab)} 
-              onSelectAsset={(asset) => {
-                setSelectedBridge(asset);
-                setModernTab('map');
-              }} 
+    <>
+      {isCaptureMode ? (
+        <div className="modern-theme-root" style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+          <div className="ambient-background"></div>
+          <button 
+            onClick={() => setModernTab('overview')}
+            style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 50, display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--cap-bg)', color: '#fff', border: '1px solid var(--cap-border)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Back to Dashboard
+          </button>
+          
+          {modernTab === 'capture_bridge' && <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />}
+          {modernTab === 'capture_culvert' && <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+          {modernTab === 'inspect_bridge' && <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />}
+          {modernTab === 'inspect_culvert' && <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+        </div>
+      ) : (
+        <div className="bms-shell modern-theme-root">
+          <div className="ambient-background"></div>
+          
+          <ModernSidebar 
+            modernTab={modernTab} 
+            setModernTab={setModernTab} 
+            setSelectedBridge={setSelectedBridge} 
+            onSecretClick={() => setShowLoginWall(true)}
+            isAuthenticated={isAuthenticated}
+          />
+          
+          <main className="shell-main">
+            <ModernHeader 
+              modernTab={modernTab} 
+              pageTitle={pageTitle} 
+              pageSubtitle={pageSubtitle} 
             />
-          )}
-          {modernTab === 'map' && (
-            <div className="map-workspace has-drawer" style={{ height: '100%' }}>
-              <div className="map-asset-list">
-                <StructureListPanel 
-                  selectedBridge={selectedBridge} 
-                  onSelectBridge={setSelectedBridge} 
-                  dynamicBridges={bridges}
-                  dynamicCulverts={culverts}
+            
+            <div className="page-content modern-scroll">
+              {modernTab === 'overview' && (
+                <BmsOverview 
+                  onNavigate={(tab) => setModernTab(tab)} 
+                  onSelectAsset={(asset) => {
+                    setSelectedBridge(asset);
+                    setModernTab('map');
+                  }} 
                 />
-              </div>
-              <div className="map-surface">
-                <MapDashboard 
-                  selectedBridge={selectedBridge} 
-                  onSelectBridge={setSelectedBridge} 
-                />
-              </div>
-              {selectedBridge && (
-                <div className="map-detail-drawer">
-                  <BridgeDetailCard 
-                    bridge={selectedBridge} 
-                    onClose={() => setSelectedBridge(null)} 
-                  />
+              )}
+              {modernTab === 'map' && (
+                <div className="map-workspace has-drawer" style={{ height: '100%' }}>
+                  <div className="map-asset-list">
+                    <StructureListPanel 
+                      selectedBridge={selectedBridge} 
+                      onSelectBridge={setSelectedBridge} 
+                      dynamicBridges={bridges}
+                      dynamicCulverts={culverts}
+                    />
+                  </div>
+                  <div className="map-surface">
+                    <MapDashboard 
+                      selectedBridge={selectedBridge} 
+                      onSelectBridge={setSelectedBridge} 
+                    />
+                  </div>
+                  {selectedBridge && (
+                    <div className="map-detail-drawer">
+                      <BridgeDetailCard 
+                        bridge={selectedBridge} 
+                        onClose={() => setSelectedBridge(null)} 
+                      />
+                    </div>
+                  )}
                 </div>
               )}
+              {modernTab === 'inventory' && <CombinedInventory />}
+              {modernTab === 'inspection' && <InspectionWorkspace bridges={bridges} onBridgesUpdate={setBridges} />}
+              {modernTab === 'maintenance' && (
+                <MaintenanceWorkspace 
+                  bridges={bridges} 
+                  onSelectAsset={(asset) => {
+                    setSelectedBridge(asset);
+                    setModernTab('map');
+                  }}
+                />
+              )}
+              {modernTab === 'analytics' && <AnalyticsDashboard />}
+              {modernTab === 'reports' && <BmsReports bridges={bridges} culverts={culverts} />}
+              {isAuthenticated && modernTab === 'upgrades' && <UpgradeBridgesForm bridges={bridges} />}
+              {isAuthenticated && modernTab === 'parameters' && <SystemParametersForm />}
             </div>
-          )}
-          {modernTab === 'inventory' && <CombinedInventory />}
-          {modernTab === 'inspection' && <InspectionWorkspace bridges={bridges} onBridgesUpdate={setBridges} />}
-          {modernTab === 'maintenance' && (
-            <MaintenanceWorkspace 
-              bridges={bridges} 
-              onSelectAsset={(asset) => {
-                setSelectedBridge(asset);
-                setModernTab('map');
-              }}
-            />
-          )}
-          {modernTab === 'analytics' && <AnalyticsDashboard />}
-          
-          {/* New Modern Forms */}
-          {isAuthenticated && modernTab === 'capture_bridge' && <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />}
-          {isAuthenticated && modernTab === 'capture_culvert' && <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
-          {isAuthenticated && modernTab === 'inspect_bridge' && <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />}
-          {isAuthenticated && modernTab === 'inspect_culvert' && <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
-          {modernTab === 'reports' && <BmsReports bridges={bridges} culverts={culverts} />}
-          {isAuthenticated && modernTab === 'upgrades' && <UpgradeBridgesForm bridges={bridges} />}
-          {isAuthenticated && modernTab === 'parameters' && <SystemParametersForm />}
+          </main>
         </div>
-      </main>
+      )}
 
       {showLoginWall && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: 'rgba(2, 6, 23, 0.95)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -174,6 +195,6 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
           </form>
         </div>
       )}
-    </div>
+    </>
   );
 }
