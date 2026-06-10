@@ -17,7 +17,7 @@ export function supabaseHeaders(extra = {}) {
   };
 }
 
-export async function supabaseRest(path, options = {}) {
+export async function supabaseRest(path, options = {}, retries = 3, backoff = 500) {
   if (!hasSupabaseConfig()) {
     throw new Error('Supabase REST URL or anon key is not configured.');
   }
@@ -26,15 +26,29 @@ export async function supabaseRest(path, options = {}) {
     ? path
     : `${SUPABASE_REST_URL}/${path.replace(/^\/+/, '')}`;
 
-  const response = await fetch(url, {
-    ...options,
-    headers: supabaseHeaders(options.headers || {}),
-  });
+  let lastError = null;
 
-  const text = await response.text();
-  if (!response.ok) {
-    throw new Error(text || `Supabase request failed with status ${response.status}`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: supabaseHeaders(options.headers || {}),
+      });
+
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text || `Supabase request failed with status ${response.status}`);
+      }
+
+      return text ? JSON.parse(text) : null;
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, backoff * (2 ** attempt)));
+      }
+    }
   }
 
-  return text ? JSON.parse(text) : null;
+  throw new Error(`Supabase request failed after ${retries + 1} attempts. Last error: ${lastError.message}`);
 }
