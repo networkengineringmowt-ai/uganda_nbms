@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { saveCulvert } from '../../services/bmsDataService';
-import { Search, Save, Plus, AlertCircle, CheckCircle, FilePlus } from 'lucide-react';
+import { Search, Save, Plus, AlertCircle, CheckCircle, MapPin, Maximize, FileText, Database } from 'lucide-react';
+import ReactECharts from 'echarts-for-react';
 
 export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,161 +88,198 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
     }
   };
 
-  const renderInputField = (label, name, type = 'text') => (
-    <div className="modern-filter-field">
-      <label>{label}</label>
-      <input 
-        type={type}
-        name={name}
-        className="toolbar-search"
-        style={{ width: '100%', background: 'rgba(0,0,0,0.05)', height: '40px', borderRadius: '8px' }}
-        value={formData[name]}
-        onChange={handleChange}
-        disabled={name === 'CulvertNumber' && selectedId !== 'NEW'}
-      />
-    </div>
-  );
+  // Completeness Calculation
+  const completeness = useMemo(() => {
+    if (!selectedId) return 0;
+    const fields = [
+      formData.CulvertNumber, formData.River, formData.Road, formData.Link_Name, 
+      formData.Maintenance_Station, formData.Latitude, formData.Longitude, 
+      formData.CellType, formData.NumBarrels, formData.SpanLength
+    ];
+    const filled = fields.filter(f => f && String(f).trim() !== '').length;
+    return Math.round((filled / fields.length) * 100);
+  }, [formData, selectedId]);
+
+  const gaugeOption = {
+    series: [
+      {
+        type: 'gauge',
+        startAngle: 90,
+        endAngle: -270,
+        pointer: { show: false },
+        progress: {
+          show: true,
+          overlap: false,
+          roundCap: true,
+          clip: false,
+          itemStyle: { borderWidth: 1, borderColor: '#00fa9a', color: '#00fa9a' }
+        },
+        axisLine: { lineStyle: { width: 12, color: [[1, '#1b1b2e']] } },
+        splitLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { show: false },
+        data: [{ value: completeness, name: 'Completeness', title: { offsetCenter: ['0%', '10%'] }, detail: { offsetCenter: ['0%', '-10%'] } }],
+        title: { fontSize: 10, color: '#8b8b9e' },
+        detail: { width: 50, height: 14, fontSize: 24, color: '#fff', fontWeight: 'bold', formatter: '{value}%' }
+      }
+    ]
+  };
+
+  const renderInputField = (label, name, type = 'text') => {
+    return (
+      <div className="capture-field-group">
+        <label className="capture-label">{label}</label>
+        <input 
+          type={type}
+          name={name}
+          className="capture-input"
+          value={formData[name]}
+          onChange={handleChange}
+          disabled={name === 'CulvertNumber' && selectedId !== 'NEW'}
+        />
+      </div>
+    );
+  };
 
   return (
-    <div className="map-workspace" style={{ height: 'calc(100vh - 120px)' }}>
+    <div className="capture-workspace">
       {/* Sidebar List */}
-      <div className="structure-list-panel">
-        <div className="slp-search-container" style={{ padding: '20px', display: 'flex', gap: '10px', flexDirection: 'column' }}>
-          <button className="modern-btn-primary" onClick={handleNewRecord} style={{ height: '40px', fontSize: '12px', gap: '8px' }}>
-            <Plus size={14} /> Create New Record
+      <div className="capture-sidebar">
+        <div className="capture-sidebar-header">
+          <button className="cap-btn-primary" onClick={handleNewRecord} style={{ width: '100%', marginBottom: '16px', background: 'var(--cap-neon-green)', boxShadow: '0 4px 15px rgba(0, 250, 154, 0.3)' }}>
+            <Plus size={16} /> New Culvert Record
           </button>
-          <div className="toolbar-search" style={{ width: '100%' }}>
-            <Search size={14} />
+          <div className="capture-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px' }}>
+            <Search size={16} color="var(--cap-text-muted)" />
             <input 
-              placeholder="Search culverts..." 
+              style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%' }}
+              placeholder="Search ID or River..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="capture-list">
           {filteredCulverts.map(c => (
             <div 
               key={c.CulvertNumber}
-              className={`slp-item ${selectedId === c.CulvertNumber ? 'slp-item-active' : ''}`}
+              className={`capture-list-item ${selectedId === c.CulvertNumber ? 'active' : ''}`}
               onClick={() => handleSelectCulvert(c)}
             >
-              <div className="slp-item-number">{c.CulvertNumber}</div>
-              <div className="slp-item-name">{c.River || 'Unnamed Stream'}</div>
-              <div className="slp-item-meta">{c.Road} • {c.CellType}</div>
+              <div className="capture-item-title">{c.CulvertNumber}</div>
+              <div className="capture-item-sub">{c.River || 'Unnamed Stream'} • {c.Road}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Main Form Area */}
-      <div className="panel" style={{ margin: '24px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="capture-main">
         {selectedId ? (
           <>
-            <div className="panel-header">
+            <div className="capture-header">
               <div>
-                <div className="panel-kicker">{selectedId === 'NEW' ? 'Create New' : 'Edit Inventory'}</div>
-                <h2>{selectedId === 'NEW' ? 'New Culvert Record' : formData.CulvertNumber}</h2>
+                <h2 className="capture-title" style={{ background: 'linear-gradient(90deg, var(--cap-neon-green), var(--cap-neon-blue))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  {selectedId === 'NEW' ? 'New Culvert Record' : formData.River || formData.CulvertNumber}
+                </h2>
+                <div style={{ color: 'var(--cap-text-muted)', fontSize: '13px', marginTop: '4px' }}>
+                  {selectedId === 'NEW' ? 'Fill out the form to create a new culvert registry entry.' : 'Editing existing culvert record.'}
+                </div>
               </div>
-              <button className="modern-btn-primary" onClick={handleSave} style={{ width: '140px', gap: '8px' }}>
-                <Save size={16} /> Save Record
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#fff', fontWeight: 800 }}>{completeness}%</div>
+                    <div style={{ color: 'var(--cap-text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Data Filled</div>
+                  </div>
+                  <div style={{ width: '60px', height: '60px' }}>
+                    <ReactECharts option={gaugeOption} style={{ height: '100%', width: '100%' }} />
+                  </div>
+                </div>
+                <button className="cap-btn-primary" onClick={handleSave} style={{ background: 'var(--cap-neon-green)', boxShadow: '0 4px 15px rgba(0, 250, 154, 0.3)' }}>
+                  <Save size={18} /> Save Record
+                </button>
+              </div>
             </div>
 
-            <div className="modern-scroll" style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+            <div className="capture-scroll">
               {message && (
                 <div style={{
-                  padding: '12px 16px',
-                  marginBottom: '24px',
-                  borderRadius: '8px',
-                  background: isError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                  color: isError ? 'var(--accent-red)' : 'var(--accent-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600
+                  padding: '16px 24px', borderRadius: '12px',
+                  background: isError ? 'rgba(255, 42, 85, 0.1)' : 'rgba(0, 250, 154, 0.1)',
+                  color: isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)',
+                  border: `1px solid ${isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)'}`,
+                  display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '14px'
                 }}>
-                  {isError ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+                  {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
                   {message}
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                <div style={{ gridColumn: '1 / -1', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '8px' }}>
-                  <h3 style={{ fontSize: '14px', color: 'var(--text-primary)' }}>Identification & Location</h3>
-                </div>
-                
-                {renderInputField('Culvert Number (Unique ID)', 'CulvertNumber')}
-                {renderInputField('River / Stream Name', 'River')}
-                {renderInputField('Road / Route Name', 'Road')}
-                {renderInputField('Link Name / ID', 'Link_Name')}
-                {renderInputField('Maintenance Station', 'Maintenance_Station')}
-                {renderInputField('Latitude', 'Latitude', 'number')}
-                {renderInputField('Longitude', 'Longitude', 'number')}
-                
-                <div style={{ gridColumn: '1 / -1', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginTop: '16px', marginBottom: '8px' }}>
-                  <h3 style={{ fontSize: '14px', color: 'var(--text-primary)' }}>Structure Characteristics</h3>
-                </div>
-
-                <div className="modern-filter-field">
-                  <label>Cell Type</label>
-                  <div className="modern-select-wrapper">
-                    <select 
-                      name="CellType"
-                      value={formData.CellType}
-                      onChange={handleChange}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.05)', color: 'var(--text-primary)', height: '40px' }}
-                    >
-                      <option value="Concrete Box">Concrete Box</option>
-                      <option value="Concrete Pipe">Concrete Pipe</option>
-                      <option value="Corrugated Metal Pipe">Corrugated Metal Pipe</option>
-                      <option value="Masonry Arch">Masonry Arch</option>
-                    </select>
+              <div className="capture-grid">
+                {/* Location Card */}
+                <div className="capture-card">
+                  <h3 className="capture-card-title"><MapPin size={20} color="var(--cap-neon-green)" /> Location & Routing</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Culvert Number (Unique ID)', 'CulvertNumber')}</div>
+                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('River / Stream Name', 'River')}</div>
+                    {renderInputField('Road / Route Name', 'Road')}
+                    {renderInputField('Link Name / ID', 'Link_Name')}
+                    {renderInputField('Maintenance Station', 'Maintenance_Station')}
+                    <div></div>
+                    {renderInputField('Latitude', 'Latitude', 'number')}
+                    {renderInputField('Longitude', 'Longitude', 'number')}
                   </div>
                 </div>
 
-                {renderInputField('Number of Barrels', 'NumBarrels', 'number')}
-                {renderInputField('Span / Opening Width (m)', 'SpanLength', 'number')}
+                {/* Structure Details */}
+                <div className="capture-card">
+                  <h3 className="capture-card-title"><Database size={20} color="var(--cap-neon-blue)" /> Structure Details</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+                    
+                    <div className="capture-field-group" style={{ gridColumn: '1 / -1' }}>
+                      <label className="capture-label">Cell Type</label>
+                      <select name="CellType" className="capture-input capture-select" value={formData.CellType} onChange={handleChange}>
+                        <option value="Concrete Box">Concrete Box</option>
+                        <option value="Concrete Pipe">Concrete Pipe</option>
+                        <option value="Corrugated Metal Pipe">Corrugated Metal Pipe</option>
+                        <option value="Masonry Arch">Masonry Arch</option>
+                      </select>
+                    </div>
 
-                <div className="modern-filter-field">
-                  <label>Inlet Scour Protection</label>
-                  <div className="modern-select-wrapper">
-                    <select 
-                      name="InletScour"
-                      value={formData.InletScour}
-                      onChange={handleChange}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.05)', color: 'var(--text-primary)', height: '40px' }}
-                    >
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                    </select>
+                    {renderInputField('Number of Barrels', 'NumBarrels', 'number')}
+                    {renderInputField('Span / Opening Width (m)', 'SpanLength', 'number')}
+
+                    <div className="capture-field-group">
+                      <label className="capture-label">Inlet Scour Protection</label>
+                      <select name="InletScour" className="capture-input capture-select" value={formData.InletScour} onChange={handleChange}>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+
+                    <div className="capture-field-group">
+                      <label className="capture-label">Outlet Scour Protection</label>
+                      <select name="OutletScour" className="capture-input capture-select" value={formData.OutletScour} onChange={handleChange}>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+
                   </div>
                 </div>
 
-                <div className="modern-filter-field">
-                  <label>Outlet Scour Protection</label>
-                  <div className="modern-select-wrapper">
-                    <select 
-                      name="OutletScour"
-                      value={formData.OutletScour}
-                      onChange={handleChange}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.05)', color: 'var(--text-primary)', height: '40px' }}
-                    >
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                    </select>
-                  </div>
-                </div>
               </div>
             </div>
           </>
         ) : (
-          <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--text-muted)' }}>
+          <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--cap-text-muted)' }}>
             <div style={{ textAlign: 'center' }}>
-              <FilePlus size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
-              <h3>No Record Selected</h3>
-              <p>Select a major culvert from the list to view or edit its inventory data.</p>
+              <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <Plus size={40} color="var(--cap-neon-green)" />
+              </div>
+              <h3 style={{ color: '#fff', fontSize: '24px', margin: '0 0 12px 0' }}>Culvert Data Hub</h3>
+              <p style={{ maxWidth: '300px', lineHeight: '1.6' }}>Select an existing culvert from the sidebar to edit, or create a new registry entry.</p>
             </div>
           </div>
         )}
