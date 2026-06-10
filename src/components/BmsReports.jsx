@@ -202,7 +202,7 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                       {b.BridgeNumber} - {b.BridgeName}
                     </option>
                   ))}
-                select>
+                </select>
               </div>
             </div>
             <button 

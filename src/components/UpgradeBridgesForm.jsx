@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, FilePlus, ArrowUpCircle } from 'lucide-react';
-import { fetchBridgeWorks } from '../../services/bmsDataService';
+import { fetchBridgeWorks } from '../services/bmsDataService';
 
 export default function UpgradeBridgesForm({ bridges = [] }) {
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
