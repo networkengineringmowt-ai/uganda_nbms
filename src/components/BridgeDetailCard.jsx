@@ -1,9 +1,8 @@
-import { Suspense, lazy, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, MapPin, Truck, Camera, AlertTriangle, Layers, Gauge } from 'lucide-react';
 import { getPhotoUrl } from '../utils/photoUrlResolver';
 
-const ReactECharts = lazy(() => import('echarts-for-react'));
-
+import ReactECharts from 'echarts-for-react';
 const RATING_LABELS = {
   9: 'Excellent', 8: 'Very Good', 7: 'Good', 6: 'Satisfactory',
   5: 'Fair', 4: 'Marginal', 3: 'Poor', 2: 'Very Poor', 1: 'Critical', 0: 'Beyond Repair',
@@ -226,16 +225,14 @@ export default function BridgeDetailCard({ bridge, onClose }) {
 
             {trafficChartOption && (
               <div className="bdc-traffic-chart">
-                <Suspense fallback={null}>
-                  <ReactECharts
-                    option={{
-                      ...trafficChartOption,
-                      color: ['#0b6b43', '#e3a008', '#be3a34', '#397596', '#7a6a4f', '#77a86e', '#d8673a', '#708aa2', '#50906e', '#9a514d'],
-                    }}
-                    style={{ height: '180px', width: '100%' }}
-                    opts={{ renderer: 'canvas' }}
-                  />
-                </Suspense>
+                <ReactECharts
+                  option={{
+                    ...trafficChartOption,
+                    color: ['#0b6b43', '#e3a008', '#be3a34', '#397596', '#7a6a4f', '#77a86e', '#d8673a', '#708aa2', '#50906e', '#9a514d'],
+                  }}
+                  style={{ height: '180px', width: '100%' }}
+                  opts={{ renderer: 'canvas' }}
+                />
                 <div className="bdc-traffic-legend">
                   {Object.entries(traffic.class_shares || {})
                     .sort((a, b) => b[1] - a[1])
