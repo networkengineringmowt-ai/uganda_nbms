@@ -20,6 +20,20 @@ import SystemParametersForm from '../SystemParametersForm';
 export default function ModernDashboardShell({ bridges, culverts, setBridges, setCulverts }) {
   const [modernTab, setModernTab] = useState('overview');
   const [selectedBridge, setSelectedBridge] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLoginWall, setShowLoginWall] = useState(false);
+  const [password, setPassword] = useState('');
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password.toLowerCase() === 'super') {
+      setIsAuthenticated(true);
+      setShowLoginWall(false);
+      setPassword('');
+    } else {
+      alert("Invalid password");
+    }
+  };
 
   const pageTitle = (tab) => {
     switch (tab) {
@@ -67,6 +81,8 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
         modernTab={modernTab} 
         setModernTab={setModernTab} 
         setSelectedBridge={setSelectedBridge} 
+        onSecretClick={() => setShowLoginWall(true)}
+        isAuthenticated={isAuthenticated}
       />
       
       <main className="shell-main">
@@ -126,15 +142,38 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
           {modernTab === 'analytics' && <AnalyticsDashboard />}
           
           {/* New Modern Forms */}
-          {modernTab === 'capture_bridge' && <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />}
-          {modernTab === 'capture_culvert' && <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
-          {modernTab === 'inspect_bridge' && <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />}
-          {modernTab === 'inspect_culvert' && <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+          {isAuthenticated && modernTab === 'capture_bridge' && <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />}
+          {isAuthenticated && modernTab === 'capture_culvert' && <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+          {isAuthenticated && modernTab === 'inspect_bridge' && <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />}
+          {isAuthenticated && modernTab === 'inspect_culvert' && <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
           {modernTab === 'reports' && <BmsReports bridges={bridges} culverts={culverts} />}
-          {modernTab === 'upgrades' && <UpgradeBridgesForm bridges={bridges} />}
-          {modernTab === 'parameters' && <SystemParametersForm />}
+          {isAuthenticated && modernTab === 'upgrades' && <UpgradeBridgesForm bridges={bridges} />}
+          {isAuthenticated && modernTab === 'parameters' && <SystemParametersForm />}
         </div>
       </main>
+
+      {showLoginWall && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: 'rgba(2, 6, 23, 0.95)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onSubmit={handleLogin} className="glass-card" style={{ width: '400px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px', border: '1px solid var(--border-glow)' }}>
+            <div style={{ textAlign: 'center' }}>
+              <h2 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '24px', fontWeight: 800 }}>Restricted Access</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Please enter the administrative password to unlock data input sections.</p>
+            </div>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              placeholder="Admin Password" 
+              style={{ padding: '14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '16px', outline: 'none' }} 
+              autoFocus 
+            />
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button type="button" onClick={() => setShowLoginWall(false)} style={{ flex: 1, padding: '12px', background: 'transparent', border: '1px solid var(--border)', color: '#fff', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+              <button type="submit" style={{ flex: 1, padding: '12px', background: 'var(--accent-blue)', border: 'none', color: '#fff', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)' }}>Unlock System</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

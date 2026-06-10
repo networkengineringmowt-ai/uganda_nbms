@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   MapPin,
   TrendingUp,
@@ -12,10 +13,27 @@ import {
   Activity
 } from 'lucide-react';
 
-export default function ModernSidebar({ modernTab, setModernTab, setSelectedBridge }) {
+export default function ModernSidebar({ modernTab, setModernTab, setSelectedBridge, onSecretClick, isAuthenticated }) {
+  const [clickCount, setClickCount] = useState(0);
+
+  useEffect(() => {
+    if (clickCount > 0) {
+      const timer = setTimeout(() => setClickCount(0), 1000);
+      if (clickCount >= 5) {
+        if (onSecretClick) onSecretClick();
+        setClickCount(0);
+      }
+      return () => clearTimeout(timer);
+    }
+  }, [clickCount, onSecretClick]);
+
   return (
     <aside className="sidebar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
+        <div 
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => setClickCount(c => c + 1)}
+          title="MoWT BMS National Roads Registry"
+        >
           <img src="mowt.jpg" alt="MoWT Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain', background: '#fff', padding: '2px' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <strong style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>MoWT BMS</strong>
@@ -34,27 +52,34 @@ export default function ModernSidebar({ modernTab, setModernTab, setSelectedBrid
           <Layers size={16} /> <span>Asset Registers</span>
         </button>
         
-        <span className="nav-label">Data Capture</span>
-        <button className={`sidebar-link ${modernTab === 'capture_bridge' ? 'active' : ''}`} onClick={() => setModernTab('capture_bridge')}>
-          <FilePlus size={16} /> <span>Bridge Inventory</span>
-        </button>
-        <button className={`sidebar-link ${modernTab === 'capture_culvert' ? 'active' : ''}`} onClick={() => setModernTab('capture_culvert')}>
-          <FilePlus size={16} /> <span>Culvert Inventory</span>
-        </button>
-        <button className={`sidebar-link ${modernTab === 'inspect_bridge' ? 'active' : ''}`} onClick={() => setModernTab('inspect_bridge')}>
-          <Activity size={16} /> <span>Bridge Inspections</span>
-        </button>
-        <button className={`sidebar-link ${modernTab === 'inspect_culvert' ? 'active' : ''}`} onClick={() => setModernTab('inspect_culvert')}>
-          <Activity size={16} /> <span>Culvert Inspections</span>
-        </button>
+        
+        {isAuthenticated && (
+          <>
+            <span className="nav-label">Data Capture</span>
+            <button className={`sidebar-link ${modernTab === 'capture_bridge' ? 'active' : ''}`} onClick={() => setModernTab('capture_bridge')}>
+              <FilePlus size={16} /> <span>Bridge Inventory</span>
+            </button>
+            <button className={`sidebar-link ${modernTab === 'capture_culvert' ? 'active' : ''}`} onClick={() => setModernTab('capture_culvert')}>
+              <FilePlus size={16} /> <span>Culvert Inventory</span>
+            </button>
+            <button className={`sidebar-link ${modernTab === 'inspect_bridge' ? 'active' : ''}`} onClick={() => setModernTab('inspect_bridge')}>
+              <Activity size={16} /> <span>Bridge Inspections</span>
+            </button>
+            <button className={`sidebar-link ${modernTab === 'inspect_culvert' ? 'active' : ''}`} onClick={() => setModernTab('inspect_culvert')}>
+              <Activity size={16} /> <span>Culvert Inspections</span>
+            </button>
+          </>
+        )}
         
         <span className="nav-label">Operations</span>
         <button className={`sidebar-link ${modernTab === 'maintenance' ? 'active' : ''}`} onClick={() => setModernTab('maintenance')}>
           <HardHat size={16} /> <span>Maintenance Planning</span>
         </button>
-        <button className={`sidebar-link ${modernTab === 'upgrades' ? 'active' : ''}`} onClick={() => setModernTab('upgrades')}>
-          <ArrowUpCircle size={16} /> <span>Bridge Upgrades</span>
-        </button>
+        {isAuthenticated && (
+          <button className={`sidebar-link ${modernTab === 'upgrades' ? 'active' : ''}`} onClick={() => setModernTab('upgrades')}>
+            <ArrowUpCircle size={16} /> <span>Bridge Upgrades</span>
+          </button>
+        )}
         <button className={`sidebar-link ${modernTab === 'analytics' ? 'active' : ''}`} onClick={() => setModernTab('analytics')}>
           <TrendingUp size={16} /> <span>Traffic Analytics</span>
         </button>
@@ -63,9 +88,11 @@ export default function ModernSidebar({ modernTab, setModernTab, setSelectedBrid
         <button className={`sidebar-link ${modernTab === 'reports' ? 'active' : ''}`} onClick={() => setModernTab('reports')}>
           <FileText size={16} /> <span>Reports & Audits</span>
         </button>
-        <button className={`sidebar-link ${modernTab === 'parameters' ? 'active' : ''}`} onClick={() => setModernTab('parameters')}>
-          <Settings size={16} /> <span>System Parameters</span>
-        </button>
+        {isAuthenticated && (
+          <button className={`sidebar-link ${modernTab === 'parameters' ? 'active' : ''}`} onClick={() => setModernTab('parameters')}>
+            <Settings size={16} /> <span>System Parameters</span>
+          </button>
+        )}
       </nav>
       <div className="sidebar-status">
         <div className="status-line">
