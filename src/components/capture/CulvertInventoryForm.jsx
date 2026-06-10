@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { saveCulvert } from '../../services/bmsDataService';
-import { Search, Save, Plus, AlertCircle, CheckCircle, MapPin, Maximize, FileText, Database } from 'lucide-react';
+import { Search, Save, Plus, AlertCircle, CheckCircle, MapPin, Database, Box } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }) {
@@ -60,14 +60,14 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
     const id = formData.CulvertNumber;
 
     if (!id) {
-      setMessage('Error: CulvertNumber is required.');
+      setMessage('CulvertNumber is required.');
       setIsError(true);
       return;
     }
 
     if (selectedId === 'NEW') {
       if (updated.some(x => x.CulvertNumber === id)) {
-        setMessage('Error: Culvert Number already exists.');
+        setMessage('Culvert Number already exists.');
         setIsError(true);
         return;
       }
@@ -79,7 +79,7 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
 
     try {
       await saveCulvert(formData);
-      setMessage(`Record saved successfully!`);
+      setMessage(`Record saved successfully.`);
       if (onCulvertsUpdate) onCulvertsUpdate(updated);
       setSelectedId(formData.CulvertNumber);
     } catch (err) {
@@ -88,7 +88,6 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
     }
   };
 
-  // Completeness Calculation
   const completeness = useMemo(() => {
     if (!selectedId) return 0;
     const fields = [
@@ -101,189 +100,161 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
   }, [formData, selectedId]);
 
   const gaugeOption = {
-    series: [
-      {
-        type: 'gauge',
-        startAngle: 90,
-        endAngle: -270,
-        pointer: { show: false },
-        progress: {
-          show: true,
-          overlap: false,
-          roundCap: true,
-          clip: false,
-          itemStyle: { borderWidth: 1, borderColor: '#00fa9a', color: '#00fa9a' }
-        },
-        axisLine: { lineStyle: { width: 12, color: [[1, '#1b1b2e']] } },
-        splitLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { show: false },
-        data: [{ value: completeness, name: 'Completeness', title: { offsetCenter: ['0%', '10%'] }, detail: { offsetCenter: ['0%', '-10%'] } }],
-        title: { fontSize: 10, color: '#8b8b9e' },
-        detail: { width: 50, height: 14, fontSize: 24, color: '#fff', fontWeight: 'bold', formatter: '{value}%' }
-      }
-    ]
+    series: [{
+      type: 'gauge',
+      startAngle: 90, endAngle: -270,
+      pointer: { show: false },
+      progress: {
+        show: true, overlap: false, roundCap: true, clip: false,
+        itemStyle: { borderWidth: 1, borderColor: '#10b981', color: '#10b981' }
+      },
+      axisLine: { lineStyle: { width: 10, color: [[1, '#e2e8f0']] } },
+      splitLine: { show: false }, axisTick: { show: false }, axisLabel: { show: false },
+      data: [{ value: completeness, detail: { offsetCenter: ['0%', '0%'] } }],
+      detail: { width: 50, height: 14, fontSize: 20, color: '#0f172a', fontWeight: 'bold', formatter: '{value}%' }
+    }]
   };
 
   const renderInputField = (label, name, type = 'text') => {
     return (
-      <div className="capture-field-group">
-        <label className="capture-label">{label}</label>
-        <input 
-          type={type}
-          name={name}
-          className="capture-input"
-          value={formData[name]}
-          onChange={handleChange}
-          disabled={name === 'CulvertNumber' && selectedId !== 'NEW'}
-        />
+      <div className="ent-field">
+        <label className="ent-label">{label}</label>
+        {type === 'select' ? (
+           <select name={name} className="ent-select" value={formData[name]} onChange={handleChange}>
+             <option value="">Select...</option>
+             <option value="Concrete Box">Concrete Box</option>
+             <option value="Concrete Pipe">Concrete Pipe</option>
+             <option value="Corrugated Metal Pipe">Corrugated Metal Pipe</option>
+             <option value="Masonry Arch">Masonry Arch</option>
+           </select>
+        ) : (
+          <input 
+            type={type} name={name} className="ent-input" value={formData[name] || ''} onChange={handleChange}
+            disabled={name === 'CulvertNumber' && selectedId !== 'NEW'}
+          />
+        )}
       </div>
     );
   };
 
   return (
-    <div className="capture-workspace">
-      {/* Sidebar List */}
-      <div className="capture-sidebar">
-        <div className="capture-sidebar-header">
-          <button className="cap-btn-primary" onClick={handleNewRecord} style={{ width: '100%', marginBottom: '16px', background: 'var(--cap-neon-green)', boxShadow: '0 4px 15px rgba(0, 250, 154, 0.3)' }}>
-            <Plus size={16} /> New Culvert Record
+    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+      {/* LEFT PANE: Navigation / List */}
+      <div className="ent-sidebar">
+        <div className="ent-sidebar-header">Culvert Records</div>
+        <div style={{ padding: '0 16px 16px' }}>
+          <button className="ent-btn-primary" onClick={handleNewRecord} style={{ marginBottom: '16px', background: '#10b981' }}>
+            <Plus size={16} /> New Culvert
           </button>
-          <div className="capture-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px' }}>
-            <Search size={16} color="var(--cap-text-muted)" />
+          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fff' }}>
+            <Search size={14} color="#64748b" />
             <input 
-              style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%' }}
-              placeholder="Search ID or River..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
+              placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <div className="capture-list">
+        <div className="ent-list" style={{ padding: '0 16px 16px' }}>
           {filteredCulverts.map(c => (
             <div 
               key={c.CulvertNumber}
-              className={`capture-list-item ${selectedId === c.CulvertNumber ? 'active' : ''}`}
+              className={`ent-list-item ${selectedId === c.CulvertNumber ? 'active' : ''}`}
               onClick={() => handleSelectCulvert(c)}
             >
-              <div className="capture-item-title">{c.CulvertNumber}</div>
-              <div className="capture-item-sub">{c.River || 'Unnamed Stream'} • {c.Road}</div>
+              <div className="ent-list-title">{c.CulvertNumber}</div>
+              <div className="ent-list-sub">{c.River || 'Unnamed Stream'}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Main Form Area */}
-      <div className="capture-main">
+      {/* CENTER PANE: Form Area */}
+      <div className="ent-main">
         {selectedId ? (
-          <>
-            <div className="capture-header">
-              <div>
-                <h2 className="capture-title" style={{ background: 'linear-gradient(90deg, var(--cap-neon-green), var(--cap-neon-blue))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  {selectedId === 'NEW' ? 'New Culvert Record' : formData.River || formData.CulvertNumber}
-                </h2>
-                <div style={{ color: 'var(--cap-text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                  {selectedId === 'NEW' ? 'Fill out the form to create a new culvert registry entry.' : 'Editing existing culvert record.'}
-                </div>
+          <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <h2 className="ent-page-title">{selectedId === 'NEW' ? 'Create Culvert Record' : formData.River || formData.CulvertNumber}</h2>
+            <p className="ent-page-subtitle">{selectedId === 'NEW' ? 'Fill out the initial baseline data.' : 'Update physical and administrative attributes.'}</p>
+
+            {message && (
+              <div className={`ent-alert ${isError ? 'ent-alert-error' : 'ent-alert-success'}`}>
+                {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+                {message}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#fff', fontWeight: 800 }}>{completeness}%</div>
-                    <div style={{ color: 'var(--cap-text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Data Filled</div>
-                  </div>
-                  <div style={{ width: '60px', height: '60px' }}>
-                    <ReactECharts option={gaugeOption} style={{ height: '100%', width: '100%' }} />
-                  </div>
+            )}
+
+            <div className="ent-card">
+              <div className="ent-card-header"><MapPin size={18} color="var(--ent-primary)" /> Location & Routing</div>
+              <div className="ent-grid">
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Culvert Number (Unique ID)', 'CulvertNumber')}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('River / Stream Name', 'River')}</div>
+                {renderInputField('Road / Route Name', 'Road')}
+                {renderInputField('Link Name / ID', 'Link_Name')}
+                {renderInputField('Maintenance Station', 'Maintenance_Station')}
+                <div></div>
+                {renderInputField('Latitude', 'Latitude', 'number')}
+                {renderInputField('Longitude', 'Longitude', 'number')}
+              </div>
+            </div>
+
+            <div className="ent-card">
+              <div className="ent-card-header"><Database size={18} color="var(--ent-primary)" /> Structure Details</div>
+              <div className="ent-grid">
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Cell Type', 'CellType', 'select')}</div>
+                {renderInputField('Number of Barrels', 'NumBarrels', 'number')}
+                {renderInputField('Span / Opening Width (m)', 'SpanLength', 'number')}
+                
+                <div className="ent-field">
+                  <label className="ent-label">Inlet Scour Protection</label>
+                  <select name="InletScour" className="ent-select" value={formData.InletScour} onChange={handleChange}>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
                 </div>
-                <button className="cap-btn-primary" onClick={handleSave} style={{ background: 'var(--cap-neon-green)', boxShadow: '0 4px 15px rgba(0, 250, 154, 0.3)' }}>
-                  <Save size={18} /> Save Record
-                </button>
+
+                <div className="ent-field">
+                  <label className="ent-label">Outlet Scour Protection</label>
+                  <select name="OutletScour" className="ent-select" value={formData.OutletScour} onChange={handleChange}>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="capture-scroll">
-              {message && (
-                <div style={{
-                  padding: '16px 24px', borderRadius: '12px',
-                  background: isError ? 'rgba(255, 42, 85, 0.1)' : 'rgba(0, 250, 154, 0.1)',
-                  color: isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)',
-                  border: `1px solid ${isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)'}`,
-                  display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '14px'
-                }}>
-                  {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-                  {message}
-                </div>
-              )}
-
-              <div className="capture-grid">
-                {/* Location Card */}
-                <div className="capture-card">
-                  <h3 className="capture-card-title"><MapPin size={20} color="var(--cap-neon-green)" /> Location & Routing</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Culvert Number (Unique ID)', 'CulvertNumber')}</div>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('River / Stream Name', 'River')}</div>
-                    {renderInputField('Road / Route Name', 'Road')}
-                    {renderInputField('Link Name / ID', 'Link_Name')}
-                    {renderInputField('Maintenance Station', 'Maintenance_Station')}
-                    <div></div>
-                    {renderInputField('Latitude', 'Latitude', 'number')}
-                    {renderInputField('Longitude', 'Longitude', 'number')}
-                  </div>
-                </div>
-
-                {/* Structure Details */}
-                <div className="capture-card">
-                  <h3 className="capture-card-title"><Database size={20} color="var(--cap-neon-blue)" /> Structure Details</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-                    
-                    <div className="capture-field-group" style={{ gridColumn: '1 / -1' }}>
-                      <label className="capture-label">Cell Type</label>
-                      <select name="CellType" className="capture-input capture-select" value={formData.CellType} onChange={handleChange}>
-                        <option value="Concrete Box">Concrete Box</option>
-                        <option value="Concrete Pipe">Concrete Pipe</option>
-                        <option value="Corrugated Metal Pipe">Corrugated Metal Pipe</option>
-                        <option value="Masonry Arch">Masonry Arch</option>
-                      </select>
-                    </div>
-
-                    {renderInputField('Number of Barrels', 'NumBarrels', 'number')}
-                    {renderInputField('Span / Opening Width (m)', 'SpanLength', 'number')}
-
-                    <div className="capture-field-group">
-                      <label className="capture-label">Inlet Scour Protection</label>
-                      <select name="InletScour" className="capture-input capture-select" value={formData.InletScour} onChange={handleChange}>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-
-                    <div className="capture-field-group">
-                      <label className="capture-label">Outlet Scour Protection</label>
-                      <select name="OutletScour" className="capture-input capture-select" value={formData.OutletScour} onChange={handleChange}>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                      </select>
-                    </div>
-
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </>
+          </div>
         ) : (
-          <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--cap-text-muted)' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <Plus size={40} color="var(--cap-neon-green)" />
-              </div>
-              <h3 style={{ color: '#fff', fontSize: '24px', margin: '0 0 12px 0' }}>Culvert Data Hub</h3>
-              <p style={{ maxWidth: '300px', lineHeight: '1.6' }}>Select an existing culvert from the sidebar to edit, or create a new registry entry.</p>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ent-text-muted)' }}>
+            <Box size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '20px', color: 'var(--ent-text-main)', margin: '0 0 8px 0' }}>Select a Culvert</h3>
+            <p>Choose a record from the left panel to view or edit inventory data.</p>
           </div>
         )}
       </div>
+
+      {/* RIGHT PANE: Summary & Actions */}
+      <div className="ent-summary">
+        <div className="ent-summary-title">Data Quality</div>
+        
+        {selectedId ? (
+          <>
+            <div style={{ height: '160px', width: '100%', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+               <ReactECharts option={gaugeOption} style={{ height: '160px', width: '160px' }} />
+            </div>
+            
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ent-text-main)' }}>Profile Completeness</div>
+              <div style={{ fontSize: '12px', color: 'var(--ent-text-muted)' }}>Required fields populated</div>
+            </div>
+
+            <button className="ent-btn-primary" onClick={handleSave} style={{ background: '#10b981' }}>
+              <Save size={16} /> Save Changes
+            </button>
+          </>
+        ) : (
+          <div style={{ fontSize: '13px', color: 'var(--ent-text-muted)' }}>No record active.</div>
+        )}
+      </div>
+
     </div>
   );
 }

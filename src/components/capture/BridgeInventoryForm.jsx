@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { saveBridge } from '../../services/bmsDataService';
-import { Search, Save, Plus, AlertCircle, CheckCircle, MapPin, Maximize, FileText, Database } from 'lucide-react';
+import { Search, Save, Plus, AlertCircle, CheckCircle, MapPin, Maximize, FileText, Database, Box } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
@@ -42,29 +42,8 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
       Longitude: bridge.Longitude || '',
       District: bridge.District || '',
       LegacyData: {
-        region: bridge.LegacyData?.region || '',
-        station: bridge.LegacyData?.station || '',
-        county: bridge.LegacyData?.county || '',
-        sub_county: bridge.LegacyData?.sub_county || '',
-        village: bridge.LegacyData?.village || '',
-        feature_intersected: bridge.LegacyData?.feature_intersected || '',
-        detour_length: bridge.LegacyData?.detour_length || '',
-        superstructure_type: bridge.LegacyData?.superstructure_type || '',
-        substructure_type: bridge.LegacyData?.substructure_type || '',
-        material_type: bridge.LegacyData?.material_type || '',
-        span_arrangement: bridge.LegacyData?.span_arrangement || '',
-        foundation_type: bridge.LegacyData?.foundation_type || '',
-        total_length: bridge.LegacyData?.total_length || '',
-        overall_width: bridge.LegacyData?.overall_width || '',
-        carriageway_width: bridge.LegacyData?.carriageway_width || '',
-        sidewalks: bridge.LegacyData?.sidewalks || '',
-        clearances: bridge.LegacyData?.clearances || '',
-        year_built: bridge.LegacyData?.year_built || '',
-        contractor: bridge.LegacyData?.contractor || '',
-        consultant: bridge.LegacyData?.consultant || '',
-        maintenance_responsibility: bridge.LegacyData?.maintenance_responsibility || '',
-        scour_risk: bridge.LegacyData?.scour_risk || 'No',
-        data_checked: bridge.LegacyData?.data_checked || false
+        ...initialFormData.LegacyData,
+        ...bridge.LegacyData
       }
     });
   };
@@ -97,14 +76,14 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
     const id = formData.BridgeNumber;
 
     if (!id) {
-      setMessage('Error: BridgeNumber is required.');
+      setMessage('BridgeNumber is required.');
       setIsError(true);
       return;
     }
 
     if (selectedId === 'NEW') {
       if (updated.some(x => x.BridgeNumber === id)) {
-        setMessage('Error: Bridge Number already exists.');
+        setMessage('Bridge Number already exists.');
         setIsError(true);
         return;
       }
@@ -116,7 +95,7 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
 
     try {
       await saveBridge(formData);
-      setMessage(`Record saved successfully!`);
+      setMessage(`Record saved successfully.`);
       if (onBridgesUpdate) onBridgesUpdate(updated);
       setSelectedId(formData.BridgeNumber);
     } catch (err) {
@@ -138,209 +117,169 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
   }, [formData, selectedId]);
 
   const gaugeOption = {
-    series: [
-      {
-        type: 'gauge',
-        startAngle: 90,
-        endAngle: -270,
-        pointer: { show: false },
-        progress: {
-          show: true,
-          overlap: false,
-          roundCap: true,
-          clip: false,
-          itemStyle: { borderWidth: 1, borderColor: '#00d4ff', color: '#00d4ff' }
-        },
-        axisLine: { lineStyle: { width: 12, color: [[1, '#1b1b2e']] } },
-        splitLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { show: false },
-        data: [{ value: completeness, name: 'Completeness', title: { offsetCenter: ['0%', '10%'] }, detail: { offsetCenter: ['0%', '-10%'] } }],
-        title: { fontSize: 10, color: '#8b8b9e' },
-        detail: { width: 50, height: 14, fontSize: 24, color: '#fff', fontWeight: 'bold', formatter: '{value}%' }
-      }
-    ]
+    series: [{
+      type: 'gauge',
+      startAngle: 90, endAngle: -270,
+      pointer: { show: false },
+      progress: {
+        show: true, overlap: false, roundCap: true, clip: false,
+        itemStyle: { borderWidth: 1, borderColor: '#2563eb', color: '#2563eb' }
+      },
+      axisLine: { lineStyle: { width: 10, color: [[1, '#e2e8f0']] } },
+      splitLine: { show: false }, axisTick: { show: false }, axisLabel: { show: false },
+      data: [{ value: completeness, detail: { offsetCenter: ['0%', '0%'] } }],
+      detail: { width: 50, height: 14, fontSize: 20, color: '#0f172a', fontWeight: 'bold', formatter: '{value}%' }
+    }]
   };
 
   const renderInputField = (label, name, type = 'text') => {
     const val = name.startsWith('LegacyData.') ? formData.LegacyData[name.split('.')[1]] : formData[name];
     return (
-      <div className="capture-field-group">
-        <label className="capture-label">{label}</label>
-        <input 
-          type={type}
-          name={name}
-          className="capture-input"
-          value={val}
-          onChange={handleChange}
-          disabled={name === 'BridgeNumber' && selectedId !== 'NEW'}
-        />
+      <div className="ent-field">
+        <label className="ent-label">{label}</label>
+        {type === 'select' ? (
+           <select name={name} className="ent-select" value={val} onChange={handleChange}>
+             <option value="">Select...</option>
+             <option value="Yes">Yes</option>
+             <option value="No">No</option>
+           </select>
+        ) : (
+          <input 
+            type={type} name={name} className="ent-input" value={val || ''} onChange={handleChange}
+            disabled={name === 'BridgeNumber' && selectedId !== 'NEW'}
+          />
+        )}
       </div>
     );
   };
 
   return (
-    <div className="capture-workspace">
-      {/* Sidebar List */}
-      <div className="capture-sidebar">
-        <div className="capture-sidebar-header">
-          <button className="cap-btn-primary" onClick={handleNewRecord} style={{ width: '100%', marginBottom: '16px' }}>
-            <Plus size={16} /> New Bridge Record
+    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+      {/* LEFT PANE: Navigation / List */}
+      <div className="ent-sidebar">
+        <div className="ent-sidebar-header">Bridge Records</div>
+        <div style={{ padding: '0 16px 16px' }}>
+          <button className="ent-btn-primary" onClick={handleNewRecord} style={{ marginBottom: '16px' }}>
+            <Plus size={16} /> New Bridge
           </button>
-          <div className="capture-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px' }}>
-            <Search size={16} color="var(--cap-text-muted)" />
+          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fff' }}>
+            <Search size={14} color="#64748b" />
             <input 
-              style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%' }}
-              placeholder="Search ID or Name..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
+              placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <div className="capture-list">
+        <div className="ent-list" style={{ padding: '0 16px 16px' }}>
           {filteredBridges.map(b => (
             <div 
               key={b.BridgeNumber}
-              className={`capture-list-item ${selectedId === b.BridgeNumber ? 'active' : ''}`}
+              className={`ent-list-item ${selectedId === b.BridgeNumber ? 'active' : ''}`}
               onClick={() => handleSelectBridge(b)}
             >
-              <div className="capture-item-title">{b.BridgeNumber}</div>
-              <div className="capture-item-sub">{b.BridgeName || 'Unnamed'} • {b.District}</div>
+              <div className="ent-list-title">{b.BridgeNumber}</div>
+              <div className="ent-list-sub">{b.BridgeName || 'Unnamed'}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Main Form Area */}
-      <div className="capture-main">
+      {/* CENTER PANE: Form Area */}
+      <div className="ent-main">
         {selectedId ? (
-          <>
-            <div className="capture-header">
-              <div>
-                <h2 className="capture-title">{selectedId === 'NEW' ? 'New Bridge Record' : formData.BridgeName || formData.BridgeNumber}</h2>
-                <div style={{ color: 'var(--cap-text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                  {selectedId === 'NEW' ? 'Fill out the form to create a new inventory record.' : 'Editing existing inventory record.'}
-                </div>
+          <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <h2 className="ent-page-title">{selectedId === 'NEW' ? 'Create Bridge Record' : formData.BridgeName || formData.BridgeNumber}</h2>
+            <p className="ent-page-subtitle">{selectedId === 'NEW' ? 'Fill out the initial baseline data.' : 'Update physical and administrative attributes.'}</p>
+
+            {message && (
+              <div className={`ent-alert ${isError ? 'ent-alert-error' : 'ent-alert-success'}`}>
+                {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+                {message}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: '#fff', fontWeight: 800 }}>{completeness}%</div>
-                    <div style={{ color: 'var(--cap-text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Data Filled</div>
-                  </div>
-                  <div style={{ width: '60px', height: '60px' }}>
-                    <ReactECharts option={gaugeOption} style={{ height: '100%', width: '100%' }} />
-                  </div>
-                </div>
-                <button className="cap-btn-primary" onClick={handleSave}>
-                  <Save size={18} /> Save Record
-                </button>
+            )}
+
+            <div className="ent-card">
+              <div className="ent-card-header"><MapPin size={18} color="var(--ent-primary)" /> Identification & Routing</div>
+              <div className="ent-grid">
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Bridge Number (Unique ID)', 'BridgeNumber')}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Bridge Name', 'BridgeName')}</div>
+                {renderInputField('Principal Feature', 'RoadDescrPrincipal')}
+                {renderInputField('Link ID', 'LinkID')}
+                {renderInputField('District', 'District')}
+                {renderInputField('Feature Intersected', 'LegacyData.feature_intersected')}
+                {renderInputField('Latitude', 'Latitude', 'number')}
+                {renderInputField('Longitude', 'Longitude', 'number')}
+              </div>
+            </div>
+
+            <div className="ent-card">
+              <div className="ent-card-header"><Database size={18} color="var(--ent-primary)" /> Structural Characteristics</div>
+              <div className="ent-grid">
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Superstructure Type', 'LegacyData.superstructure_type')}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Substructure Type', 'LegacyData.substructure_type')}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Main Material Type', 'LegacyData.material_type')}</div>
+                {renderInputField('Span Arrangement', 'LegacyData.span_arrangement')}
+                {renderInputField('Foundation Type', 'LegacyData.foundation_type')}
+                {renderInputField('Scour Risk', 'LegacyData.scour_risk', 'select')}
               </div>
             </div>
 
-            <div className="capture-scroll">
-              {message && (
-                <div style={{
-                  padding: '16px 24px',
-                  borderRadius: '12px',
-                  background: isError ? 'rgba(255, 42, 85, 0.1)' : 'rgba(0, 250, 154, 0.1)',
-                  color: isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)',
-                  border: `1px solid ${isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)'}`,
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  fontWeight: 700, fontSize: '14px'
-                }}>
-                  {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-                  {message}
-                </div>
-              )}
-
-              <div className="capture-grid">
-                {/* Location & Routing Card */}
-                <div className="capture-card">
-                  <h3 className="capture-card-title"><MapPin size={20} color="var(--cap-neon-blue)" /> Location & Routing</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Bridge Number (Unique ID)', 'BridgeNumber')}</div>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Bridge Name', 'BridgeName')}</div>
-                    {renderInputField('Principal Feature', 'RoadDescrPrincipal')}
-                    {renderInputField('Link ID', 'LinkID')}
-                    {renderInputField('District', 'District')}
-                    {renderInputField('Feature Intersected', 'LegacyData.feature_intersected')}
-                    {renderInputField('Latitude', 'Latitude', 'number')}
-                    {renderInputField('Longitude', 'Longitude', 'number')}
-                  </div>
-                </div>
-
-                {/* Structural Components Card */}
-                <div className="capture-card">
-                  <h3 className="capture-card-title"><Database size={20} color="var(--cap-neon-purple)" /> Structural Design</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Superstructure Type', 'LegacyData.superstructure_type')}</div>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Substructure Type', 'LegacyData.substructure_type')}</div>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Main Material Type', 'LegacyData.material_type')}</div>
-                    {renderInputField('Span Arrangement', 'LegacyData.span_arrangement')}
-                    {renderInputField('Foundation Type', 'LegacyData.foundation_type')}
-                    
-                    <div className="capture-field-group">
-                      <label className="capture-label">Scour Risk</label>
-                      <select name="LegacyData.scour_risk" className="capture-input capture-select" value={formData.LegacyData.scour_risk} onChange={handleChange}>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Unknown">Unknown</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dimensions Card */}
-                <div className="capture-card">
-                  <h3 className="capture-card-title"><Maximize size={20} color="var(--cap-neon-green)" /> Dimensions (m)</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-                    <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Total Length (m)', 'LegacyData.total_length', 'number')}</div>
-                    {renderInputField('Overall Width', 'LegacyData.overall_width', 'number')}
-                    {renderInputField('Carriageway Width', 'LegacyData.carriageway_width', 'number')}
-                    {renderInputField('Sidewalks', 'LegacyData.sidewalks', 'number')}
-                    {renderInputField('Clearances', 'LegacyData.clearances', 'number')}
-                    {renderInputField('Detour Length (km)', 'LegacyData.detour_length', 'number')}
-                  </div>
-                </div>
-
-                {/* Admin Card */}
-                <div className="capture-card">
-                  <h3 className="capture-card-title"><FileText size={20} color="var(--cap-neon-orange)" /> Administrative</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0 16px' }}>
-                    {renderInputField('Year Built', 'LegacyData.year_built', 'number')}
-                    {renderInputField('Maintenance Station', 'LegacyData.maintenance_responsibility')}
-                    {renderInputField('Contractor', 'LegacyData.contractor')}
-                    {renderInputField('Consultant', 'LegacyData.consultant')}
-                    
-                    <div className="capture-field-group" style={{ marginTop: '20px', padding: '20px', background: 'rgba(0, 250, 154, 0.05)', borderRadius: '12px', border: '1px solid rgba(0, 250, 154, 0.2)' }}>
-                      <div className="cap-switch-wrapper" onClick={() => setFormData(prev => ({...prev, LegacyData: {...prev.LegacyData, data_checked: !prev.LegacyData.data_checked}}))}>
-                        <div className={`cap-switch ${formData.LegacyData.data_checked ? 'active' : ''}`}></div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: formData.LegacyData.data_checked ? 'var(--cap-neon-green)' : '#fff' }}>
-                            {formData.LegacyData.data_checked ? 'Data Verified' : 'Data Unverified'}
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--cap-text-muted)' }}>Toggle to officially certify this record.</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <div className="ent-card">
+              <div className="ent-card-header"><Maximize size={18} color="var(--ent-primary)" /> Dimensions & Measurements</div>
+              <div className="ent-grid">
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Total Length (m)', 'LegacyData.total_length', 'number')}</div>
+                {renderInputField('Overall Width (m)', 'LegacyData.overall_width', 'number')}
+                {renderInputField('Carriageway Width (m)', 'LegacyData.carriageway_width', 'number')}
+                {renderInputField('Sidewalks (m)', 'LegacyData.sidewalks', 'number')}
+                {renderInputField('Clearances (m)', 'LegacyData.clearances', 'number')}
+                {renderInputField('Detour Length (km)', 'LegacyData.detour_length', 'number')}
               </div>
             </div>
-          </>
+
+            <div className="ent-card">
+              <div className="ent-card-header"><FileText size={18} color="var(--ent-primary)" /> Administrative</div>
+              <div className="ent-grid" style={{ gridTemplateColumns: '1fr' }}>
+                {renderInputField('Year Built', 'LegacyData.year_built', 'number')}
+                {renderInputField('Maintenance Station', 'LegacyData.maintenance_responsibility')}
+                {renderInputField('Contractor', 'LegacyData.contractor')}
+                {renderInputField('Consultant', 'LegacyData.consultant')}
+              </div>
+            </div>
+
+          </div>
         ) : (
-          <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--cap-text-muted)' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <Plus size={40} color="var(--cap-border-focus)" />
-              </div>
-              <h3 style={{ color: '#fff', fontSize: '24px', margin: '0 0 12px 0' }}>Data Capture Hub</h3>
-              <p style={{ maxWidth: '300px', lineHeight: '1.6' }}>Select an existing record from the sidebar to edit, or create a new bridge registry entry.</p>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ent-text-muted)' }}>
+            <Box size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '20px', color: 'var(--ent-text-main)', margin: '0 0 8px 0' }}>Select a Bridge</h3>
+            <p>Choose a record from the left panel to view or edit inventory data.</p>
           </div>
         )}
       </div>
+
+      {/* RIGHT PANE: Summary & Actions */}
+      <div className="ent-summary">
+        <div className="ent-summary-title">Data Quality</div>
+        
+        {selectedId ? (
+          <>
+            <div style={{ height: '160px', width: '100%', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+               <ReactECharts option={gaugeOption} style={{ height: '160px', width: '160px' }} />
+            </div>
+            
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ent-text-main)' }}>Profile Completeness</div>
+              <div style={{ fontSize: '12px', color: 'var(--ent-text-muted)' }}>Required fields populated</div>
+            </div>
+
+            <button className="ent-btn-primary" onClick={handleSave}>
+              <Save size={16} /> Save Changes
+            </button>
+          </>
+        ) : (
+          <div style={{ fontSize: '13px', color: 'var(--ent-text-muted)' }}>No record active.</div>
+        )}
+      </div>
+
     </div>
   );
 }

@@ -118,230 +118,202 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
       };
       try {
         await saveBridge(updated[idx]);
-        setMessage('Inspection ratings and defects saved successfully.');
+        setMessage('Inspection saved successfully.');
         if (onBridgesUpdate) onBridgesUpdate(updated);
       } catch (err) {
-        setMessage(`Error saving inspection: ${err.message}`);
+        setMessage(`Error: ${err.message}`);
         setIsError(true);
       }
     }
   };
 
   const radarOption = useMemo(() => {
-    // Map ratings to a 4-point scale where 1 is best and 4 is worst (in UI), 
-    // but for the chart, a larger area usually implies worse condition, so we map directly.
     const values = RATING_ELEMENTS.map(el => ratings[el.id] ? Number(ratings[el.id]) : 0);
     return {
       radar: {
         indicator: RATING_ELEMENTS.map(el => ({ name: el.label.split('. ')[1], max: 4 })),
         splitNumber: 4,
-        axisName: { color: '#8b8b9e', fontSize: 10, fontWeight: 600 },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-        splitArea: { show: false },
-        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+        axisName: { color: '#64748b', fontSize: 10, fontWeight: 600 },
+        splitLine: { lineStyle: { color: '#e2e8f0' } },
+        splitArea: { show: true, areaStyle: { color: ['#f8fafc', '#ffffff'] } },
+        axisLine: { lineStyle: { color: '#e2e8f0' } }
       },
       series: [{
         type: 'radar',
         data: [{
           value: values,
-          name: 'Condition Profile',
-          itemStyle: { color: '#ff2a55' },
-          areaStyle: { color: 'rgba(255, 42, 85, 0.4)' },
-          lineStyle: { color: '#ff2a55', width: 2 }
+          name: 'Condition',
+          itemStyle: { color: '#2563eb' },
+          areaStyle: { color: 'rgba(37, 99, 235, 0.2)' },
+          lineStyle: { color: '#2563eb', width: 2 }
         }]
       }]
     };
   }, [ratings]);
 
   return (
-    <div className="capture-workspace">
-      {/* Sidebar List */}
-      <div className="capture-sidebar">
-        <div className="capture-sidebar-header">
-          <div style={{ color: 'var(--cap-neon-pink)', fontWeight: 900, fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={20} /> Inspections
-          </div>
-          <div className="capture-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px' }}>
-            <Search size={16} color="var(--cap-text-muted)" />
+    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+      {/* LEFT PANE: List */}
+      <div className="ent-sidebar">
+        <div className="ent-sidebar-header">Bridge Inspections</div>
+        <div style={{ padding: '0 16px 16px' }}>
+          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fff' }}>
+            <Search size={14} color="#64748b" />
             <input 
-              style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%' }}
-              placeholder="Search ID or Name..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
+              placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <div className="capture-list">
+        <div className="ent-list" style={{ padding: '0 16px 16px' }}>
           {filteredBridges.map(b => (
             <div 
               key={b.BridgeNumber}
-              className={`capture-list-item ${selectedId === b.BridgeNumber ? 'active' : ''}`}
+              className={`ent-list-item ${selectedId === b.BridgeNumber ? 'active' : ''}`}
               onClick={() => handleSelectBridge(b)}
             >
-              <div className="capture-item-title">{b.BridgeNumber}</div>
-              <div className="capture-item-sub">{b.BridgeName || 'Unnamed'} • {b.District}</div>
+              <div className="ent-list-title">{b.BridgeNumber}</div>
+              <div className="ent-list-sub">{b.BridgeName || 'Unnamed'}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Main Form Area */}
-      <div className="capture-main">
+      {/* CENTER PANE: Main Form */}
+      <div className="ent-main">
         {selectedId ? (
-          <>
-            <div className="capture-header">
-              <div>
-                <h2 className="capture-title">{bridges.find(b => b.BridgeNumber === selectedId)?.BridgeName || selectedId}</h2>
-                <div style={{ color: 'var(--cap-text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                  Evaluate structural elements. 1 = Excellent, 2 = Fair, 3 = Poor, 4 = Critical.
-                </div>
+          <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <h2 className="ent-page-title">{bridges.find(b => b.BridgeNumber === selectedId)?.BridgeName || selectedId}</h2>
+            <p className="ent-page-subtitle">Submit physical condition ratings for this structure.</p>
+
+            {message && (
+              <div className={`ent-alert ${isError ? 'ent-alert-error' : 'ent-alert-success'}`}>
+                {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+                {message}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.05)', padding: '12px 24px', borderRadius: '12px', border: '1px solid var(--cap-border)' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: 'var(--cap-neon-blue)', fontWeight: 900, fontSize: '24px' }}>
-                      {results?.overallRating !== null ? results.overallRating.toFixed(1) : 'N/A'}
+            )}
+
+            <div className="ent-card">
+              <div className="ent-card-header"><Activity size={18} color="var(--ent-primary)" /> Condition Ratings (1-4)</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {RATING_ELEMENTS.map(el => (
+                  <div key={el.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{el.label}</div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[1, 2, 3, 4].map(num => (
+                        <div 
+                          key={num}
+                          className={`ent-rating-box ${ratings[el.id] == num ? 'active' : ''}`}
+                          style={{ width: '40px' }}
+                          onClick={() => handleRatingSelect(el.id, num)}
+                        >
+                          {num}
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ color: 'var(--cap-text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Condition Index</div>
                   </div>
-                  <div style={{ width: '1px', height: '30px', background: 'var(--cap-border)' }}></div>
-                  <div>
-                    <div style={{ color: 'var(--cap-neon-orange)', fontWeight: 900, fontSize: '24px' }}>
-                      {results?.deficiencyIndex !== null ? results.deficiencyIndex.toFixed(0) : 'N/A'}
-                    </div>
-                    <div style={{ color: 'var(--cap-text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Deficiency Points</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="ent-card">
+              <div className="ent-card-header">Defects & Interventions</div>
+              
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)', marginBottom: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div className="ent-field">
+                    <label className="ent-label">Element</label>
+                    <select className="ent-select" value={defectForm.element} onChange={e => setDefectForm({...defectForm, element: e.target.value})}>
+                      {RATING_ELEMENTS.map(el => <option key={el.id} value={el.id}>{el.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="ent-field">
+                    <label className="ent-label">Activity Code</label>
+                    <input className="ent-input" placeholder="e.g. B-01" value={defectForm.activity} onChange={e => setDefectForm({...defectForm, activity: e.target.value})} />
+                  </div>
+                  <div className="ent-field">
+                    <label className="ent-label">Quantity</label>
+                    <input type="number" className="ent-input" value={defectForm.qty} onChange={e => setDefectForm({...defectForm, qty: e.target.value})} />
+                  </div>
+                  <div className="ent-field">
+                    <label className="ent-label">Unit</label>
+                    <select className="ent-select" value={defectForm.unit} onChange={e => setDefectForm({...defectForm, unit: e.target.value})}>
+                      <option value="m²">m²</option>
+                      <option value="m³">m³</option>
+                      <option value="l.m">l.m</option>
+                      <option value="No">No</option>
+                      <option value="LS">LS</option>
+                    </select>
                   </div>
                 </div>
-                <button className="cap-btn-primary" onClick={handleSave}>
-                  <Save size={18} /> Save Inspection
+                <button className="ent-btn-outline" style={{ width: '100%', borderColor: 'var(--ent-primary)', color: 'var(--ent-primary)', justifyContent: 'center' }} onClick={handleAddDefect}>
+                  <Plus size={14} /> Add Defect
                 </button>
               </div>
-            </div>
 
-            <div className="capture-scroll">
-              {message && (
-                <div style={{
-                  padding: '16px 24px', borderRadius: '12px',
-                  background: isError ? 'rgba(255, 42, 85, 0.1)' : 'rgba(0, 250, 154, 0.1)',
-                  color: isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)',
-                  border: `1px solid ${isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)'}`,
-                  display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '14px'
-                }}>
-                  {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-                  {message}
+              {defectsList.length === 0 ? (
+                <div style={{ color: 'var(--ent-text-muted)', fontSize: '13px', textAlign: 'center', padding: '24px', background: '#f8fafc', borderRadius: '6px' }}>
+                  No defects logged.
                 </div>
-              )}
-
-              <div className="capture-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                
-                {/* Ratings Form Card */}
-                <div className="capture-card" style={{ gridColumn: '1' }}>
-                  <h3 className="capture-card-title"><Activity size={20} color="var(--cap-neon-blue)" /> Element Ratings</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {RATING_ELEMENTS.map(el => (
-                      <div key={el.id}>
-                        <div className="capture-label">{el.label}</div>
-                        <div className="rating-grid">
-                          {[1, 2, 3, 4].map(num => (
-                            <div 
-                              key={num}
-                              className={`rating-box r-${num} ${ratings[el.id] == num ? 'active' : ''}`}
-                              onClick={() => handleRatingSelect(el.id, num)}
-                            >
-                              {num}
-                            </div>
-                          ))}
-                        </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {defectsList.map((d, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#fff', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{d.element} <span style={{ color: 'var(--ent-primary)', marginLeft: '8px' }}>{d.activity}</span></div>
+                        <div style={{ color: 'var(--ent-text-muted)', fontSize: '12px' }}>Qty: {d.qty} {d.unit}</div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right Column: Chart + Defects */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                  
-                  {/* Radar Chart Card */}
-                  <div className="capture-card">
-                    <h3 className="capture-card-title">Condition Radar</h3>
-                    <div style={{ height: '320px', margin: '-20px' }}>
-                      <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
-                    </div>
-                  </div>
-
-                  {/* Defects Card */}
-                  <div className="capture-card">
-                    <h3 className="capture-card-title">Defects & Activities</h3>
-                    
-                    {/* Defect Form */}
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--cap-border)', marginBottom: '24px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                        <div>
-                          <label className="capture-label">Element</label>
-                          <select className="capture-input capture-select" style={{ padding: '10px', fontSize: '13px' }} value={defectForm.element} onChange={e => setDefectForm({...defectForm, element: e.target.value})}>
-                            {RATING_ELEMENTS.map(el => <option key={el.id} value={el.id}>{el.label}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="capture-label">Activity Code</label>
-                          <input className="capture-input" style={{ padding: '10px', fontSize: '13px' }} placeholder="e.g. B-01" value={defectForm.activity} onChange={e => setDefectForm({...defectForm, activity: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="capture-label">Qty</label>
-                          <input type="number" className="capture-input" style={{ padding: '10px', fontSize: '13px' }} value={defectForm.qty} onChange={e => setDefectForm({...defectForm, qty: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="capture-label">Unit</label>
-                          <select className="capture-input capture-select" style={{ padding: '10px', fontSize: '13px' }} value={defectForm.unit} onChange={e => setDefectForm({...defectForm, unit: e.target.value})}>
-                            <option value="m²">m²</option>
-                            <option value="m³">m³</option>
-                            <option value="l.m">l.m</option>
-                            <option value="No">No</option>
-                            <option value="LS">LS</option>
-                          </select>
-                        </div>
-                      </div>
-                      <button className="cap-btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '13px' }} onClick={handleAddDefect}>
-                        <Plus size={14} /> Add Defect Record
+                      <button onClick={() => handleRemoveDefect(idx)} style={{ background: 'transparent', border: 'none', color: 'var(--ent-danger)', cursor: 'pointer', padding: '8px' }}>
+                        <Trash2 size={16} />
                       </button>
                     </div>
-
-                    {/* Defect List */}
-                    {defectsList.length === 0 ? (
-                      <div style={{ color: 'var(--cap-text-muted)', fontSize: '13px', textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                        No defects recorded yet.
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {defectsList.map((d, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--cap-bg-input)', borderRadius: '8px', border: '1px solid var(--cap-border)' }}>
-                            <div>
-                              <div style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>{d.element} <span style={{ color: 'var(--cap-neon-orange)' }}>({d.activity})</span></div>
-                              <div style={{ color: 'var(--cap-text-muted)', fontSize: '12px' }}>Qty: {d.qty} {d.unit}</div>
-                            </div>
-                            <button onClick={() => handleRemoveDefect(idx)} style={{ background: 'transparent', border: 'none', color: 'var(--cap-neon-pink)', cursor: 'pointer', padding: '8px' }}>
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                  </div>
+                  ))}
                 </div>
+              )}
+            </div>
 
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ent-text-muted)' }}>
+            <Activity size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '20px', color: 'var(--ent-text-main)', margin: '0 0 8px 0' }}>Select a Bridge</h3>
+            <p>Choose a record from the left panel to log an inspection.</p>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT PANE: Summary */}
+      <div className="ent-summary">
+        <div className="ent-summary-title">Inspection Results</div>
+        
+        {selectedId ? (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--ent-primary)' }}>
+                  {results?.overallRating !== null ? results.overallRating.toFixed(1) : '-'}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--ent-text-muted)', textTransform: 'uppercase' }}>Cond Index</div>
+              </div>
+              <div style={{ width: '1px', background: 'var(--ent-border)' }}></div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--ent-danger)' }}>
+                  {results?.deficiencyIndex !== null ? results.deficiencyIndex.toFixed(0) : '-'}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--ent-text-muted)', textTransform: 'uppercase' }}>Def Points</div>
               </div>
             </div>
+
+            <div style={{ height: '240px', marginBottom: '24px', marginLeft: '-20px', marginRight: '-20px' }}>
+              <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
+            </div>
+
+            <button className="ent-btn-primary" onClick={handleSave}>
+              <Save size={16} /> Save Inspection
+            </button>
           </>
         ) : (
-          <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--cap-text-muted)' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <Activity size={40} color="var(--cap-neon-pink)" />
-              </div>
-              <h3 style={{ color: '#fff', fontSize: '24px', margin: '0 0 12px 0' }}>Inspection Hub</h3>
-              <p style={{ maxWidth: '300px', lineHeight: '1.6' }}>Select a bridge to perform a structural condition inspection and record defects.</p>
-            </div>
-          </div>
+          <div style={{ fontSize: '13px', color: 'var(--ent-text-muted)' }}>No record active.</div>
         )}
       </div>
     </div>

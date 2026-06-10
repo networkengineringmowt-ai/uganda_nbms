@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { saveCulvert } from '../../services/bmsDataService';
-import { Search, Save, AlertCircle, CheckCircle, Activity, Plus } from 'lucide-react';
+import { Search, Save, AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 const CULVERT_RATING_ELEMENTS = [
@@ -94,177 +94,129 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
   };
 
   const radarOption = useMemo(() => {
-    // 0-9 scale. Reverse it for radar visual weight (0 is worst, 9 is best, so we want a big radar shape for good condition)
-    // Wait, the user is used to a standard radar. Let's just plot the 0-9 scale directly.
     const values = CULVERT_RATING_ELEMENTS.map(el => ratings[el.id] !== '' ? Number(ratings[el.id]) : 0);
     return {
       radar: {
         indicator: CULVERT_RATING_ELEMENTS.map(el => ({ name: el.label.split('. ')[1], max: 9 })),
         splitNumber: 4,
-        axisName: { color: '#8b8b9e', fontSize: 10, fontWeight: 600 },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-        splitArea: { show: false },
-        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+        axisName: { color: '#64748b', fontSize: 10, fontWeight: 600 },
+        splitLine: { lineStyle: { color: '#e2e8f0' } },
+        splitArea: { show: true, areaStyle: { color: ['#f8fafc', '#ffffff'] } },
+        axisLine: { lineStyle: { color: '#e2e8f0' } }
       },
       series: [{
         type: 'radar',
         data: [{
           value: values,
           name: 'Condition Profile',
-          itemStyle: { color: '#b500ff' },
-          areaStyle: { color: 'rgba(181, 0, 255, 0.4)' },
-          lineStyle: { color: '#b500ff', width: 2 }
+          itemStyle: { color: '#8b5cf6' },
+          areaStyle: { color: 'rgba(139, 92, 246, 0.2)' },
+          lineStyle: { color: '#8b5cf6', width: 2 }
         }]
       }]
     };
   }, [ratings]);
 
   return (
-    <div className="capture-workspace">
-      {/* Sidebar List */}
-      <div className="capture-sidebar">
-        <div className="capture-sidebar-header">
-          <div style={{ color: 'var(--cap-neon-purple)', fontWeight: 900, fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={20} /> Culvert Inspections
-          </div>
-          <div className="capture-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px' }}>
-            <Search size={16} color="var(--cap-text-muted)" />
+    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+      {/* LEFT PANE: List */}
+      <div className="ent-sidebar">
+        <div className="ent-sidebar-header">Culvert Inspections</div>
+        <div style={{ padding: '0 16px 16px' }}>
+          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fff' }}>
+            <Search size={14} color="#64748b" />
             <input 
-              style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%' }}
-              placeholder="Search Culvert..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
+              placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <div className="capture-list">
+        <div className="ent-list" style={{ padding: '0 16px 16px' }}>
           {filteredCulverts.map(c => (
             <div 
               key={c.CulvertNumber}
-              className={`capture-list-item ${selectedId === c.CulvertNumber ? 'active' : ''}`}
+              className={`ent-list-item ${selectedId === c.CulvertNumber ? 'active' : ''}`}
               onClick={() => handleSelectCulvert(c)}
             >
-              <div className="capture-item-title">{c.CulvertNumber}</div>
-              <div className="capture-item-sub">{c.River || 'Unnamed Stream'}</div>
+              <div className="ent-list-title">{c.CulvertNumber}</div>
+              <div className="ent-list-sub">{c.River || 'Unnamed Stream'}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Main Form Area */}
-      <div className="capture-main">
+      {/* CENTER PANE: Main Form */}
+      <div className="ent-main">
+        {selectedId ? (
+          <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <h2 className="ent-page-title">{culverts.find(c => c.CulvertNumber === selectedId)?.River || selectedId}</h2>
+            <p className="ent-page-subtitle">Evaluate structural elements using the 0-9 NBI scale.</p>
+
+            {message && (
+              <div className={`ent-alert ${isError ? 'ent-alert-error' : 'ent-alert-success'}`}>
+                {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+                {message}
+              </div>
+            )}
+
+            <div className="ent-card">
+              <div className="ent-card-header"><Activity size={18} color="var(--ent-primary)" /> Condition Ratings (0-9)</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {CULVERT_RATING_ELEMENTS.map(el => (
+                  <div key={el.id} style={{ padding: '16px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>{el.label}</div>
+                    <div className="ent-rating-grid" style={{ gridTemplateColumns: 'repeat(10, 1fr)' }}>
+                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                        <div 
+                          key={num}
+                          className={`ent-rating-box ${ratings[el.id] === num ? 'active' : ''}`}
+                          onClick={() => handleRatingSelect(el.id, num)}
+                          style={ratings[el.id] === num ? { background: '#8b5cf6', borderColor: '#8b5cf6' } : {}}
+                        >
+                          {num}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ent-text-muted)' }}>
+            <Activity size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '20px', color: 'var(--ent-text-main)', margin: '0 0 8px 0' }}>Select a Culvert</h3>
+            <p>Choose a record from the left panel to log an inspection.</p>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT PANE: Summary */}
+      <div className="ent-summary">
+        <div className="ent-summary-title">Inspection Results</div>
+        
         {selectedId ? (
           <>
-            <div className="capture-header">
-              <div>
-                <h2 className="capture-title" style={{ background: 'linear-gradient(90deg, var(--cap-neon-purple), var(--cap-neon-blue))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  {culverts.find(c => c.CulvertNumber === selectedId)?.River || selectedId}
-                </h2>
-                <div style={{ color: 'var(--cap-text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                  Evaluate culvert structural elements using the 0-9 NBI condition scale.
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)' }}>
+              <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#8b5cf6' }}>
+                  {results?.overallRating !== null ? `${results.overallRating}/9` : '-'}
                 </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.05)', padding: '12px 24px', borderRadius: '12px', border: '1px solid var(--cap-border)' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: 'var(--cap-neon-purple)', fontWeight: 900, fontSize: '24px' }}>
-                      {results?.overallRating !== null ? `${results.overallRating}/9` : 'N/A'}
-                    </div>
-                    <div style={{ color: 'var(--cap-text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Avg Rating</div>
-                  </div>
-                  <div style={{ width: '1px', height: '30px', background: 'var(--cap-border)' }}></div>
-                  <div>
-                    <div style={{ color: '#fff', fontWeight: 900, fontSize: '16px', textTransform: 'uppercase' }}>
-                      {results?.category || 'Unrated'}
-                    </div>
-                    <div style={{ color: 'var(--cap-text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>Classification</div>
-                  </div>
-                </div>
-                <button className="cap-btn-primary" onClick={handleSave} style={{ background: 'var(--cap-neon-purple)', boxShadow: '0 4px 15px rgba(181, 0, 255, 0.3)' }}>
-                  <Save size={18} /> Save Inspection
-                </button>
+                <div style={{ fontSize: '11px', color: 'var(--ent-text-muted)', textTransform: 'uppercase' }}>Avg Rating</div>
               </div>
             </div>
 
-            <div className="capture-scroll">
-              {message && (
-                <div style={{
-                  padding: '16px 24px', borderRadius: '12px',
-                  background: isError ? 'rgba(255, 42, 85, 0.1)' : 'rgba(0, 250, 154, 0.1)',
-                  color: isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)',
-                  border: `1px solid ${isError ? 'var(--cap-neon-pink)' : 'var(--cap-neon-green)'}`,
-                  display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '14px'
-                }}>
-                  {isError ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
-                  {message}
-                </div>
-              )}
-
-              <div className="capture-grid" style={{ gridTemplateColumns: '1.2fr 1fr' }}>
-                
-                {/* Ratings Form Card */}
-                <div className="capture-card" style={{ gridColumn: '1' }}>
-                  <h3 className="capture-card-title"><Activity size={20} color="var(--cap-neon-purple)" /> Element Condition Ratings</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {CULVERT_RATING_ELEMENTS.map(el => (
-                      <div key={el.id}>
-                        <div className="capture-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>{el.label}</span>
-                          <span style={{ color: 'var(--cap-neon-blue)' }}>{ratings[el.id] !== '' ? ratings[el.id] : '-'}</span>
-                        </div>
-                        <div className="rating-grid" style={{ gridTemplateColumns: 'repeat(10, 1fr)', gap: '4px' }}>
-                          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                            <div 
-                              key={num}
-                              className={`rating-box ${ratings[el.id] === num ? 'active' : ''}`}
-                              onClick={() => handleRatingSelect(el.id, num)}
-                              style={{ 
-                                padding: '8px 0', 
-                                fontSize: '14px',
-                                borderColor: ratings[el.id] === num ? 'var(--cap-neon-purple)' : 'var(--cap-border)',
-                                color: ratings[el.id] === num ? '#fff' : 'var(--cap-text-muted)',
-                                background: ratings[el.id] === num ? 'var(--cap-neon-purple)' : 'var(--cap-bg-input)',
-                                boxShadow: ratings[el.id] === num ? '0 0 10px var(--cap-neon-purple)' : 'none'
-                              }}
-                            >
-                              {num}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Radar Chart Card */}
-                <div className="capture-card">
-                  <h3 className="capture-card-title">Condition Radar</h3>
-                  <div style={{ height: '380px', margin: '-20px' }}>
-                    <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
-                  </div>
-                  <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--cap-border)' }}>
-                    <h4 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '14px' }}>Scale Guide</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--cap-text-muted)' }}>
-                      <div><strong style={{ color: 'var(--cap-neon-green)' }}>7-9:</strong> Good to Excellent Condition</div>
-                      <div><strong style={{ color: 'var(--cap-neon-orange)' }}>5-6:</strong> Fair Condition (Minor deterioration)</div>
-                      <div><strong style={{ color: 'var(--cap-neon-pink)' }}>0-4:</strong> Poor to Critical Condition</div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
+            <div style={{ height: '240px', marginBottom: '24px', marginLeft: '-20px', marginRight: '-20px' }}>
+              <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
             </div>
+
+            <button className="ent-btn-primary" onClick={handleSave} style={{ background: '#8b5cf6' }}>
+              <Save size={16} /> Save Inspection
+            </button>
           </>
         ) : (
-          <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: 'var(--cap-text-muted)' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                <Activity size={40} color="var(--cap-neon-purple)" />
-              </div>
-              <h3 style={{ color: '#fff', fontSize: '24px', margin: '0 0 12px 0' }}>Culvert Inspection Hub</h3>
-              <p style={{ maxWidth: '300px', lineHeight: '1.6' }}>Select a culvert to perform an NBI structural condition inspection.</p>
-            </div>
-          </div>
+          <div style={{ fontSize: '13px', color: 'var(--ent-text-muted)' }}>No record active.</div>
         )}
       </div>
     </div>

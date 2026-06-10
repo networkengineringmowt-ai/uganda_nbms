@@ -83,20 +83,33 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
   return (
     <>
       {isCaptureMode ? (
-        <div className="modern-theme-root" style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-          <div className="ambient-background"></div>
-          <button 
-            onClick={() => setModernTab('overview')}
-            style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 50, display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--cap-bg)', color: '#fff', border: '1px solid var(--cap-border)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            Back to Dashboard
-          </button>
-          
-          {modernTab === 'capture_bridge' && <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />}
-          {modernTab === 'capture_culvert' && <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
-          {modernTab === 'inspect_bridge' && <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />}
-          {modernTab === 'inspect_culvert' && <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+        <div className="ent-shell">
+          <header className="ent-header">
+            <div className="ent-header-left">
+              <div style={{ color: '#fff', fontWeight: 800, fontSize: '18px', letterSpacing: '1px' }}>
+                MoWT <span style={{ color: '#94a3b8', fontWeight: 400 }}>| BMS Registry</span>
+              </div>
+            </div>
+            
+            <div className="ent-header-nav">
+              <span className={`ent-header-link ${modernTab.startsWith('capture_') ? 'active' : ''}`} onClick={() => setModernTab('capture_bridge')}>Inventory Engine</span>
+              <span className={`ent-header-link ${modernTab.startsWith('inspect_') ? 'active' : ''}`} onClick={() => setModernTab('inspect_bridge')}>Inspection Engine</span>
+            </div>
+
+            <div className="ent-header-right">
+              <button className="ent-btn-outline" onClick={() => setModernTab('overview')}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Exit to Dashboard
+              </button>
+            </div>
+          </header>
+
+          <div className="ent-workspace">
+            {modernTab === 'capture_bridge' && <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />}
+            {modernTab === 'capture_culvert' && <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+            {modernTab === 'inspect_bridge' && <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />}
+            {modernTab === 'inspect_culvert' && <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+          </div>
         </div>
       ) : (
         <div className="bms-shell modern-theme-root">
