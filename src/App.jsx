@@ -2,14 +2,8 @@ import { useEffect, useState } from 'react';
 import {
   MapPin,
   TrendingUp,
-  Printer,
-  FileSpreadsheet,
-  HelpCircle,
   Database,
-  Activity,
   Layers,
-  Settings,
-  Plus,
   ClipboardCheck,
   HardHat
 } from 'lucide-react';

@@ -13,26 +13,28 @@ export default function DocumentGallery({ bridges = [] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
 
-  const loadData = async (currentPage, tab) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (tab === 'photos') {
-        const data = await fetchDocumentPhotos(currentPage, 50);
-        setPhotos(data || []);
-      } else {
-        const data = await fetchDocuments(currentPage, 50);
-        setDocuments(data || []);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData(page, activeTab);
+    let ignore = false;
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (activeTab === 'photos') {
+          const data = await fetchDocumentPhotos(page, 50);
+          if (!ignore) setPhotos(data || []);
+        } else {
+          const data = await fetchDocuments(page, 50);
+          if (!ignore) setDocuments(data || []);
+        }
+      } catch (err) {
+        if (!ignore) setError(err.message);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    
+    loadData();
+    return () => { ignore = true; };
   }, [page, activeTab]);
 
   const handleTabChange = (tab) => {

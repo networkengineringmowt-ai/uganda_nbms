@@ -100,6 +100,16 @@ export function fetchCulvertByNumber(culvertNumber) {
   return loadRecord('culverts', 'data/culverts.json', 'CulvertNumber', culvertNumber);
 }
 
+export async function fetchDocuments(page = 0, limit = 50) {
+  const offset = page * limit;
+  return supabaseRest(`documents?select=*&order=created_at.desc&limit=${limit}&offset=${offset}`);
+}
+
+export async function fetchDocumentPhotos(page = 0, limit = 50) {
+  const offset = page * limit;
+  return supabaseRest(`document_photos?select=*&order=created_at.desc&limit=${limit}&offset=${offset}`);
+}
+
 export async function saveBridge(bridge) {
   const id = bridge?.BridgeNumber;
   if (!id) throw new Error('BridgeNumber is required before saving.');

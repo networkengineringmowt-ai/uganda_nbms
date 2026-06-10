@@ -19,6 +19,12 @@ for (const item of gallery) {
 // Remove the copied images to keep build size tiny (loaded via raw github content in prod)
 await rm(outputImages, { recursive: true, force: true });
 
+// Remove the massive extracted offline data before deploy since it lives in Supabase now
+const distExtractedPhotos = path.resolve('dist/data/extracted_photos');
+const distExtractedMeta = path.resolve('dist/data/extracted_metadata.json');
+await rm(distExtractedPhotos, { recursive: true, force: true });
+await rm(distExtractedMeta, { force: true });
+
 await mkdir(path.dirname(outputIndex), { recursive: true });
 await writeFile(outputIndex, JSON.stringify(selected));
 console.log(`Prepared ${selected.length} representative structure photos for Pages metadata.`);

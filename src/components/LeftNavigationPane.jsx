@@ -91,6 +91,9 @@ export default function LeftNavigationPane({ onOpenWindow }) {
               <button className="nav-btn" onClick={() => onOpenWindow('analytics')}>
                 <TrendingUp size={14} /> Traffic Predictions
               </button>
+              <button className="nav-btn" onClick={() => onOpenWindow('documentGallery')}>
+                <Layers size={14} /> Offline Document & Media Gallery
+              </button>
               <button className="nav-btn" onClick={() => onOpenWindow('parameters')}>
                 <Database size={14} /> System Parameters
               </button>
