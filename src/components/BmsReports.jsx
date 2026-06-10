@@ -229,9 +229,12 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
 
             <div className="panel" style={{ padding: '48px', background: '#fff', color: '#000', borderRadius: '4px', border: '1px solid #ccc', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px double #000', paddingBottom: '16px', marginBottom: '32px' }}>
-                <div>
-                  <h1 style={{ fontSize: '24px', fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>MINISTRY OF WORKS AND TRANSPORT (MoWT)</h1>
-                  <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>DEPARTMENT OF NATIONAL ROADS · BRIDGE MANAGEMENT SYSTEM</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <img src="/mowt.jpg" alt="MoWT Logo" style={{ height: '60px', objectFit: 'contain' }} />
+                  <div>
+                    <h1 style={{ fontSize: '24px', fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>MINISTRY OF WORKS AND TRANSPORT (MoWT)</h1>
+                    <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>DEPARTMENT OF NATIONAL ROADS · BRIDGE MANAGEMENT SYSTEM</span>
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right', fontSize: '13px' }}>
                   <strong>Date Issued:</strong> {printPreviewData.date}<br />
