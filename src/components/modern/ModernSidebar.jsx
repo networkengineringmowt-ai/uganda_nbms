@@ -16,7 +16,7 @@ export default function ModernSidebar({ modernTab, setModernTab, setSelectedBrid
   return (
     <aside className="sidebar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
-          <img src="/mowt.jpg" alt="MoWT Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain', background: '#fff', padding: '2px' }} />
+          <img src="mowt.jpg" alt="MoWT Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain', background: '#fff', padding: '2px' }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <strong style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>MoWT BMS</strong>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>National Roads Registry</span>

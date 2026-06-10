@@ -14,7 +14,7 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
         date: 'Active',
         desc: item.status?.slice(0, 100) + '...',
         ref: item.funder,
-        budget: item.financial_status?.split('\\n')[0] || item.financial_status || '0',
+        budget: item.financial_status?.split('\n')[0] || item.financial_status || '0',
         hasReport: 'Yes'
       }));
       setUpgradesList(mapped);
