@@ -4,19 +4,26 @@ import {
   Database,
   Layers,
   ClipboardCheck,
-  HardHat
+  HardHat,
+  FileText,
+  Settings,
+  ArrowUpCircle,
+  FilePlus,
+  Activity
 } from 'lucide-react';
 
 export default function ModernSidebar({ modernTab, setModernTab, setSelectedBridge }) {
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
-        <div className="brand-mark">BMS</div>
-        <div>
-          <strong>UNRA BMS</strong>
-          <span>Bridge Management</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--gradient-primary)', display: 'grid', placeItems: 'center', color: '#fff' }}>
+            <Activity size={18} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <strong style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>MoWT BMS</strong>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>National Roads Registry</span>
+          </div>
         </div>
-      </div>
       <nav className="sidebar-nav">
         <span className="nav-label">Main Register</span>
         <button className={`sidebar-link ${modernTab === 'overview' ? 'active' : ''}`} onClick={() => setModernTab('overview')}>
@@ -28,15 +35,38 @@ export default function ModernSidebar({ modernTab, setModernTab, setSelectedBrid
         <button className={`sidebar-link ${modernTab === 'inventory' ? 'active' : ''}`} onClick={() => setModernTab('inventory')}>
           <Layers size={16} /> <span>Asset Registers</span>
         </button>
-        <span className="nav-label">Operations</span>
-        <button className={`sidebar-link ${modernTab === 'inspection' ? 'active' : ''}`} onClick={() => setModernTab('inspection')}>
-          <ClipboardCheck size={16} /> <span>Inspections</span>
+        
+        <span className="nav-label">Data Capture</span>
+        <button className={`sidebar-link ${modernTab === 'capture_bridge' ? 'active' : ''}`} onClick={() => setModernTab('capture_bridge')}>
+          <FilePlus size={16} /> <span>Bridge Inventory</span>
         </button>
+        <button className={`sidebar-link ${modernTab === 'capture_culvert' ? 'active' : ''}`} onClick={() => setModernTab('capture_culvert')}>
+          <FilePlus size={16} /> <span>Culvert Inventory</span>
+        </button>
+        <button className={`sidebar-link ${modernTab === 'inspect_bridge' ? 'active' : ''}`} onClick={() => setModernTab('inspect_bridge')}>
+          <Activity size={16} /> <span>Bridge Inspections</span>
+        </button>
+        <button className={`sidebar-link ${modernTab === 'inspect_culvert' ? 'active' : ''}`} onClick={() => setModernTab('inspect_culvert')}>
+          <Activity size={16} /> <span>Culvert Inspections</span>
+        </button>
+        
+        <span className="nav-label">Operations</span>
         <button className={`sidebar-link ${modernTab === 'maintenance' ? 'active' : ''}`} onClick={() => setModernTab('maintenance')}>
           <HardHat size={16} /> <span>Maintenance Planning</span>
         </button>
+        <button className={`sidebar-link ${modernTab === 'upgrades' ? 'active' : ''}`} onClick={() => setModernTab('upgrades')}>
+          <ArrowUpCircle size={16} /> <span>Bridge Upgrades</span>
+        </button>
         <button className={`sidebar-link ${modernTab === 'analytics' ? 'active' : ''}`} onClick={() => setModernTab('analytics')}>
           <TrendingUp size={16} /> <span>Traffic Analytics</span>
+        </button>
+        
+        <span className="nav-label">System</span>
+        <button className={`sidebar-link ${modernTab === 'reports' ? 'active' : ''}`} onClick={() => setModernTab('reports')}>
+          <FileText size={16} /> <span>Reports & Audits</span>
+        </button>
+        <button className={`sidebar-link ${modernTab === 'parameters' ? 'active' : ''}`} onClick={() => setModernTab('parameters')}>
+          <Settings size={16} /> <span>System Parameters</span>
         </button>
       </nav>
       <div className="sidebar-status">

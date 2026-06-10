@@ -92,6 +92,10 @@ export function fetchCulverts() {
   return loadDataset('culverts', 'data/culverts.json');
 }
 
+export function fetchBridgeWorks() {
+  return loadDataset('bridge_works', 'data/bridge_works.json');
+}
+
 export function fetchBridgeByNumber(bridgeNumber) {
   return loadRecord('bridges', 'data/bridges.json', 'BridgeNumber', bridgeNumber);
 }

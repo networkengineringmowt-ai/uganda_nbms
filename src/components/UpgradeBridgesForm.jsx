@@ -1,26 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Save, FilePlus, ArrowUpCircle } from 'lucide-react';
+import { fetchBridgeWorks } from '../../services/bmsDataService';
 
 export default function UpgradeBridgesForm({ bridges = [] }) {
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
-  const [upgradesList, setUpgradesList] = useState([
-    { bridgeNo: 'B001', date: '12/04/2024', desc: 'Deck expansion joint reseal and approach resurfacing', ref: 'MoWT/WKS/23-24/09', budget: 120000000, hasReport: 'Yes' },
-    { bridgeNo: 'B004', date: '05/09/2025', desc: 'Wingwall stabilization and substructure crack injection', ref: 'MoWT/WKS/24-25/12', budget: 85000000, hasReport: 'No' },
-    { bridgeNo: 'B042', date: '18/02/2026', desc: 'Full rehabilitation of superstructure, replacement of bearings', ref: 'MoWT/WKS/25-26/01', budget: 450000000, hasReport: 'Yes' }
-  ]);
+  const [upgradesList, setUpgradesList] = useState([]);
+
+  useEffect(() => {
+    fetchBridgeWorks().then(data => {
+      // Data might have "bridge", "financial_status", "status"
+      const mapped = data.map(item => ({
+        bridgeNo: item.bridge,
+        date: 'Active',
+        desc: item.status?.slice(0, 100) + '...',
+        ref: item.funder,
+        budget: item.financial_status?.split('\\n')[0] || item.financial_status || '0',
+        hasReport: 'Yes'
+      }));
+      setUpgradesList(mapped);
+    }).catch(err => console.error("Failed to fetch bridge works:", err));
+  }, []);
 
   const [formData, setFormData] = useState({
-    date: '',
-    desc: '',
-    ref: '',
-    budget: '',
-    hasReport: 'No'
+    date: '', desc: '', ref: '', budget: '', hasReport: 'No'
   });
 
   const handleAddUpgrade = () => {
     if (!selectedBridgeId || !formData.date || !formData.desc) return;
     
     setUpgradesList(prev => [
-      ...prev,
       {
         bridgeNo: selectedBridgeId,
         date: formData.date,
@@ -28,147 +36,158 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
         ref: formData.ref,
         budget: Number(formData.budget || 0),
         hasReport: formData.hasReport
-      }
+      },
+      ...prev
     ]);
     
-    setFormData({
-      date: '',
-      desc: '',
-      ref: '',
-      budget: '',
-      hasReport: 'No'
-    });
+    setFormData({ date: '', desc: '', ref: '', budget: '', hasReport: 'No' });
   };
 
   return (
-    <div style={{ padding: '10px' }}>
-      <h3 style={{ margin: '0 0 15px 0', color: '#0a246a' }}>Upgrade of Bridges</h3>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ width: '48px', height: '48px', background: 'var(--accent-primary-soft)', color: 'var(--accent-primary)', display: 'grid', placeItems: 'center', borderRadius: '12px' }}>
+          <ArrowUpCircle size={24} />
+        </div>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Bridge Upgrades</h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Record and track historical and planned rehabilitation projects.</p>
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '24px' }}>
         
-        {/* Form fields */}
-        <fieldset className="ms-fieldset" style={{ width: '400px', flexShrink: 0 }}>
-          <legend>Enter Rehabilitation/Upgrade Record</legend>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div className="ms-form-row">
-              <label>Select Bridge:</label>
-              <div className="ms-select-container">
-                <select 
-                  className="ms-select"
-                  value={selectedBridgeId}
-                  onChange={(e) => setSelectedBridgeId(e.target.value)}
-                >
-                  <option value="">-- Choose Bridge --</option>
-                  {bridges.map(b => (
-                    <option key={b.BridgeNumber} value={b.BridgeNumber}>
-                      {b.BridgeNumber} - {b.BridgeName}
-                    </option>
-                  ))}
-                </select>
-                <div className="ms-select-arrow">▼</div>
-              </div>
-            </div>
+        {/* Left Form */}
+        <div className="panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h3 style={{ fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Record New Upgrade</h3>
 
-            <div className="ms-form-row">
-              <label>Date of Upgrade:</label>
-              <input 
-                type="text" 
-                placeholder="dd/MM/yyyy"
-                className="ms-input"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              />
-            </div>
-
-            <div className="ms-form-row">
-              <label>Reference #:</label>
-              <input 
-                type="text" 
-                className="ms-input"
-                value={formData.ref}
-                onChange={(e) => setFormData({ ...formData, ref: e.target.value })}
-              />
-            </div>
-
-            <div className="ms-form-row">
-              <label>Budget (UGX):</label>
-              <input 
-                type="number" 
-                className="ms-input"
-                value={formData.budget}
-                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-              />
-            </div>
-
-            <div className="ms-form-row">
-              <label>Description:</label>
-              <textarea 
-                className="ms-textarea"
-                value={formData.desc}
-                onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
-              />
-            </div>
-
-            <div className="ms-form-row">
-              <label>Has Summary Report:</label>
-              <div className="ms-select-container" style={{ width: '80px', flex: 'none' }}>
-                <select 
-                  className="ms-select"
-                  value={formData.hasReport}
-                  onChange={(e) => setFormData({ ...formData, hasReport: e.target.value })}
-                >
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-                <div className="ms-select-arrow">▼</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button 
-                className="ms-btn" 
-                onClick={handleAddUpgrade}
-                disabled={!selectedBridgeId || !formData.date || !formData.desc}
+          <div className="modern-filter-field">
+            <label>Select Bridge</label>
+            <div className="modern-select-wrapper">
+              <select 
+                value={selectedBridgeId}
+                onChange={(e) => setSelectedBridgeId(e.target.value)}
+                style={{ width: '100%', background: 'rgba(0,0,0,0.02)', color: 'var(--text-primary)', height: '40px' }}
               >
-                Add Upgrade Record
-              </button>
+                <option value="">-- Choose Bridge --</option>
+                {bridges.map(b => (
+                  <option key={b.BridgeNumber} value={b.BridgeNumber}>
+                    {b.BridgeNumber} - {b.BridgeName || 'Unnamed'}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-        </fieldset>
 
-        {/* Existing records grid */}
-        <fieldset className="ms-fieldset" style={{ flex: 1 }}>
-          <legend>Active Upgrades Dataset</legend>
+          <div className="modern-filter-field">
+            <label>Date of Upgrade</label>
+            <input 
+              type="date" 
+              className="toolbar-search" style={{ height: '40px', borderRadius: '8px', width: '100%' }}
+              value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            />
+          </div>
+
+          <div className="modern-filter-field">
+            <label>Reference #</label>
+            <input 
+              type="text" placeholder="e.g. MoWT/WKS/26-27/01"
+              className="toolbar-search" style={{ height: '40px', borderRadius: '8px', width: '100%' }}
+              value={formData.ref} onChange={(e) => setFormData({ ...formData, ref: e.target.value })}
+            />
+          </div>
+
+          <div className="modern-filter-field">
+            <label>Budget (UGX)</label>
+            <input 
+              type="number" placeholder="Enter amount..."
+              className="toolbar-search" style={{ height: '40px', borderRadius: '8px', width: '100%' }}
+              value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+            />
+          </div>
+
+          <div className="modern-filter-field">
+            <label>Description</label>
+            <textarea 
+              placeholder="Describe the scope of works..."
+              className="toolbar-search" style={{ height: '80px', borderRadius: '8px', width: '100%', padding: '12px', resize: 'vertical' }}
+              value={formData.desc} onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
+            />
+          </div>
+
+          <div className="modern-filter-field">
+            <label>Has Summary Report?</label>
+            <div className="modern-select-wrapper">
+              <select 
+                value={formData.hasReport}
+                onChange={(e) => setFormData({ ...formData, hasReport: e.target.value })}
+                style={{ width: '100%', background: 'rgba(0,0,0,0.02)', color: 'var(--text-primary)', height: '40px' }}
+              >
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+
+          <button 
+            className="modern-btn-primary" 
+            onClick={handleAddUpgrade}
+            disabled={!selectedBridgeId || !formData.date || !formData.desc}
+            style={{ marginTop: '16px', gap: '8px', opacity: (!selectedBridgeId || !formData.date || !formData.desc) ? 0.5 : 1 }}
+          >
+            <Save size={16} /> Save Record
+          </button>
+        </div>
+
+        {/* Right Table */}
+        <div className="panel" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
+          <div className="panel-header">
+            <div>
+              <div className="panel-kicker">Dataset</div>
+              <h2>Active Upgrades</h2>
+            </div>
+          </div>
           
-          <div style={{ maxHeight: '280px', overflowY: 'auto', background: '#fff' }} className="ms-bevel-in">
-            <table className="ms-grid-table">
-              <thead>
+          <div className="modern-scroll" style={{ flex: 1, overflowY: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead style={{ background: 'rgba(0,0,0,0.02)', position: 'sticky', top: 0, zIndex: 10 }}>
                 <tr>
-                  <th>Bridge #</th>
-                  <th>Date</th>
-                  <th>Reference</th>
-                  <th>Budget (UGX)</th>
-                  <th>Upgrade Description</th>
-                  <th>Report</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Bridge #</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Date</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Reference</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Description</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>Budget (UGX)</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)' }}>Report</th>
                 </tr>
               </thead>
               <tbody>
-                {upgradesList.map((row, index) => (
-                  <tr key={index}>
-                    <td style={{ fontWeight: 'bold' }}>{row.bridgeNo}</td>
-                    <td>{row.date}</td>
-                    <td>{row.ref || 'N/A'}</td>
-                    <td>{row.budget.toLocaleString()}</td>
-                    <td>{row.desc}</td>
-                    <td>{row.hasReport}</td>
+                {upgradesList.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <FilePlus size={32} style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+                      No upgrades recorded yet.
+                    </td>
+                  </tr>
+                ) : upgradesList.map((row, index) => (
+                  <tr key={index} style={{ borderBottom: '1px solid var(--border-light)', transition: 'background 0.2s' }}>
+                    <td style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--accent-primary)' }}>{row.bridgeNo}</td>
+                    <td style={{ padding: '16px 24px' }}>{row.date}</td>
+                    <td style={{ padding: '16px 24px', color: 'var(--text-muted)' }}>{row.ref || 'N/A'}</td>
+                    <td style={{ padding: '16px 24px', maxWidth: '300px' }}>{row.desc}</td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 600 }}>{row.budget.toLocaleString()}</td>
+                    <td style={{ padding: '16px 24px', textAlign: 'center' }}>
+                      {row.hasReport === 'Yes' ? (
+                        <span style={{ padding: '4px 8px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-primary)', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>YES</span>
+                      ) : (
+                        <span style={{ padding: '4px 8px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-muted)', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>NO</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </fieldset>
-
+        </div>
       </div>
     </div>
   );

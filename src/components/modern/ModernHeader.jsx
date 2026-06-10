@@ -1,21 +1,13 @@
-export default function ModernHeader({ modernTab, pageTitle, pageSubtitle, setViewMode }) {
+export default function ModernHeader({ modernTab, pageTitle, pageSubtitle }) {
   return (
     <header className="topbar glass-header">
       <div className="page-heading">
-        <h1>{pageTitle(modernTab)}</h1>
-        <p>{pageSubtitle(modernTab)}</p>
+        <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 800 }}>{pageTitle(modernTab)}</h1>
+        <p style={{ margin: 0, color: 'var(--text-muted)' }}>{pageSubtitle(modernTab)}</p>
       </div>
       
       <div className="topbar-actions">
-        <div className="role-badge">UNRA Inspector</div>
-        <button 
-          className="icon-button" 
-          onClick={() => setViewMode('classic')}
-          title="Switch to Access Shell"
-          style={{ width: 'auto', padding: '0 12px', fontSize: '11px', fontWeight: 'bold' }}
-        >
-          Access Shell
-        </button>
+        <div className="role-badge">MoWT Inspector</div>
       </div>
     </header>
   );

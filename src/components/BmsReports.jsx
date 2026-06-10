@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
+import { FileText, Printer, CheckCircle, AlertCircle, Database } from 'lucide-react';
 
-export default function BmsReports({ bridges = [], onSaveBridge }) {
+export default function BmsReports({ bridges = [], culverts = [] }) {
   const [activeReport, setActiveReport] = useState('validation');
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
   const [printPreviewData, setPrintPreviewData] = useState(null);
-  const [unitCost, setUnitCost] = useState(1500000); // UGX per sqm
+  const [unitCost, setUnitCost] = useState(1500000); 
 
-  // Data Validation Categories
   const validationData = useMemo(() => {
     const unchecked = bridges.filter(b => !b.LegacyData?.data_checked);
     const checked = bridges.filter(b => b.LegacyData?.data_checked);
@@ -25,45 +25,21 @@ export default function BmsReports({ bridges = [], onSaveBridge }) {
     return { unchecked, checked, outstandingRatings, noInspections };
   }, [bridges]);
 
-  // CRC and CDRC Calculations
   const costSummary = useMemo(() => {
     return bridges.map(b => {
       const length = Number(b.LegacyData?.total_length || 12);
       const width = Number(b.LegacyData?.overall_width || 8);
       const area = length * width;
       const crc = area * unitCost;
-      
       const rating = b.LegacyData?.overall_rating != null ? Number(b.LegacyData.overall_rating) : 9;
-      // In National Roads BMS, 0 is Beyond Repair and 9 is Excellent.
-      // CDRC (Depreciated Cost) = CRC * (9 - Rating) / 9 (higher rating = less depreciation)
-      // The manual says: CDRC = (CRC * Condition) / 9. If condition is 9 (Excellent), CDRC = CRC.
       const cdrc = (crc * rating) / 9;
 
       return {
-        number: b.BridgeNumber,
-        name: b.BridgeName,
-        length,
-        width,
-        area,
-        crc,
-        cdrc,
-        rating
+        number: b.BridgeNumber, name: b.BridgeName,
+        length, width, area, crc, cdrc, rating
       };
     });
   }, [bridges, unitCost]);
-
-  const handleToggleCheck = async (bridge) => {
-    const updated = {
-      ...bridge,
-      LegacyData: {
-        ...(bridge.LegacyData || {}),
-        data_checked: !bridge.LegacyData?.data_checked
-      }
-    };
-    if (onSaveBridge) {
-      await onSaveBridge(updated);
-    }
-  };
 
   const handleGeneratePrintPreview = (type) => {
     if (type === 'bridge' && selectedBridgeId) {
@@ -89,270 +65,216 @@ export default function BmsReports({ bridges = [], onSaveBridge }) {
   };
 
   return (
-    <div className="ms-form-tab-container" style={{ height: '100%' }}>
-      {/* Tabs */}
-      <div className="ms-form-tabs">
+    <div style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ width: '48px', height: '48px', background: 'var(--accent-primary-soft)', color: 'var(--accent-primary)', display: 'grid', placeItems: 'center', borderRadius: '12px' }}>
+          <FileText size={24} />
+        </div>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Reports & Audits</h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Data integrity checks, financial valuations, and printable exports.</p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-light)', marginBottom: '24px', gap: '8px' }}>
         <button 
-          className={`ms-form-tab ${activeReport === 'validation' ? 'active' : ''}`}
           onClick={() => setActiveReport('validation')}
+          style={{ padding: '12px 24px', background: 'transparent', border: 'none', borderBottom: activeReport === 'validation' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeReport === 'validation' ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: activeReport === 'validation' ? 700 : 500, cursor: 'pointer', fontSize: '13px' }}
         >
           Data Validation
         </button>
         <button 
-          className={`ms-form-tab ${activeReport === 'costing' ? 'active' : ''}`}
           onClick={() => setActiveReport('costing')}
+          style={{ padding: '12px 24px', background: 'transparent', border: 'none', borderBottom: activeReport === 'costing' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeReport === 'costing' ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: activeReport === 'costing' ? 700 : 500, cursor: 'pointer', fontSize: '13px' }}
         >
-          CRC & CDRC Costing
+          Financial Valuation (CRC)
         </button>
         <button 
-          className={`ms-form-tab ${activeReport === 'single' ? 'active' : ''}`}
           onClick={() => setActiveReport('single')}
+          style={{ padding: '12px 24px', background: 'transparent', border: 'none', borderBottom: activeReport === 'single' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeReport === 'single' ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: activeReport === 'single' ? 700 : 500, cursor: 'pointer', fontSize: '13px' }}
         >
-          Structure Reports
+          Print Structure Reports
         </button>
         {activeReport === 'print' && (
-          <button className="ms-form-tab active">
+          <button style={{ padding: '12px 24px', background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent-amber)', color: 'var(--accent-amber)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>
             Print Preview
           </button>
         )}
       </div>
 
-      {/* Body */}
-      <div className="ms-form-body">
+      <div className="modern-scroll" style={{ height: 'calc(100vh - 250px)', overflowY: 'auto' }}>
+        
         {activeReport === 'validation' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#0a246a' }}>Data Integrity Audits</h3>
-            
-            <div className="ms-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              {/* Unchecked Data */}
-              <fieldset className="ms-fieldset">
-                <legend>Unchecked Bridge Records ({validationData.unchecked.length})</legend>
-                <div style={{ maxHeight: '180px', overflowY: 'auto', background: '#fff' }} className="ms-bevel-in">
-                  <table className="ms-grid-table">
-                    <thead>
-                      <tr><th>No</th><th>Name</th><th>Action</th></tr>
-                    </thead>
-                    <tbody>
-                      {validationData.unchecked.map(b => (
-                        <tr key={b.BridgeNumber}>
-                          <td>{b.BridgeNumber}</td>
-                          <td>{b.BridgeName}</td>
-                          <td>
-                            <button className="ms-btn" style={{ padding: '2px 6px' }} onClick={() => handleToggleCheck(b)}>
-                              Check
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </fieldset>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div className="panel" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--accent-red)' }}>
+                <AlertCircle size={18} />
+                <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>Unchecked Records ({validationData.unchecked.length})</h3>
+              </div>
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {validationData.unchecked.slice(0, 100).map(b => (
+                  <div key={b.BridgeNumber} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{b.BridgeName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-              {/* Outstanding Ratings */}
-              <fieldset className="ms-fieldset">
-                <legend>Outstanding Main Ratings ({validationData.outstandingRatings.length})</legend>
-                <div style={{ maxHeight: '180px', overflowY: 'auto', background: '#fff' }} className="ms-bevel-in">
-                  <table className="ms-grid-table">
-                    <thead>
-                      <tr><th>No</th><th>Name</th><th>Missing Components</th></tr>
-                    </thead>
-                    <tbody>
-                      {validationData.outstandingRatings.slice(0, 50).map(b => {
-                        const missing = [];
-                        const leg = b.LegacyData || {};
-                        if (!leg.approaches_rating) missing.push('Approaches');
-                        if (!leg.waterway_rating) missing.push('Waterway');
-                        if (!leg.substructure_rating) missing.push('Substructure');
-                        if (!leg.superstructure_rating) missing.push('Superstructure');
-                        return (
-                          <tr key={b.BridgeNumber}>
-                            <td>{b.BridgeNumber}</td>
-                            <td>{b.BridgeName}</td>
-                            <td style={{ color: '#ef4444', fontWeight: 'bold' }}>{missing.join(', ')}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </fieldset>
-
-              {/* No Inspections */}
-              <fieldset className="ms-fieldset" style={{ gridColumn: '1 / -1' }}>
-                <legend>Bridges with No Inspection Available ({validationData.noInspections.length})</legend>
-                <div style={{ maxHeight: '150px', overflowY: 'auto', background: '#fff' }} className="ms-bevel-in">
-                  <table className="ms-grid-table">
-                    <thead>
-                      <tr><th>Bridge No</th><th>Name</th><th>Road Link</th><th>District</th></tr>
-                    </thead>
-                    <tbody>
-                      {validationData.noInspections.slice(0, 30).map(b => (
-                        <tr key={b.BridgeNumber}>
-                          <td>{b.BridgeNumber}</td>
-                          <td>{b.BridgeName}</td>
-                          <td>{b.LinkID} - {b.RoadDescrPrincipal}</td>
-                          <td>{b.District}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </fieldset>
+            <div className="panel" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--accent-amber)' }}>
+                <AlertCircle size={18} />
+                <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>Missing Core Ratings ({validationData.outstandingRatings.length})</h3>
+              </div>
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {validationData.outstandingRatings.slice(0, 100).map(b => (
+                  <div key={b.BridgeNumber} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
+                    <span style={{ color: 'var(--accent-amber)', fontSize: '11px', fontWeight: 700 }}>NEEDS INSPECTION</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {activeReport === 'costing' && (
-          <div>
-            <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '15px' }}>
-              <label style={{ fontWeight: 'bold' }}>Unit Replacement Cost (UGX / m²):</label>
-              <input 
-                type="number" 
-                className="ms-input"
-                style={{ width: '150px' }}
-                value={unitCost} 
-                onChange={(e) => setUnitCost(Number(e.target.value))} 
-              />
-              <button className="ms-btn" onClick={() => handleGeneratePrintPreview('cost')}>
-                Print Cost Summary Report
-              </button>
-            </div>
-
-            <fieldset className="ms-fieldset">
-              <legend>Current Replacement Cost (CRC) & Depreciated Cost (CDRC) Summary</legend>
-              <div style={{ maxHeight: '250px', overflowY: 'auto', background: '#fff' }} className="ms-bevel-in">
-                <table className="ms-grid-table">
-                  <thead>
-                    <tr>
-                      <th>Bridge No</th>
-                      <th>Name</th>
-                      <th>Area (m²)</th>
-                      <th>Condition</th>
-                      <th>CRC (UGX)</th>
-                      <th>CDRC (UGX)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {costSummary.slice(0, 100).map(row => (
-                      <tr key={row.number}>
-                        <td>{row.number}</td>
-                        <td>{row.name}</td>
-                        <td>{row.area.toFixed(1)}</td>
-                        <td style={{ fontWeight: 'bold' }}>{row.rating} / 9</td>
-                        <td>{Math.round(row.crc).toLocaleString()}</td>
-                        <td>{Math.round(row.cdrc).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="panel" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
+            <div className="panel-header" style={{ padding: '24px', background: 'rgba(0,0,0,0.02)' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0' }}>Current Replacement Cost & Depreciated Cost</h2>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Unit Cost (UGX/m²)</label>
+                  <input 
+                    type="number" 
+                    className="toolbar-search" style={{ height: '36px', borderRadius: '8px', width: '200px' }}
+                    value={unitCost} 
+                    onChange={(e) => setUnitCost(Number(e.target.value))} 
+                  />
+                  <button className="modern-btn-primary" onClick={() => handleGeneratePrintPreview('cost')} style={{ height: '36px', padding: '0 16px', gap: '8px' }}>
+                    <Printer size={14} /> Print Summary
+                  </button>
+                </div>
               </div>
-            </fieldset>
+            </div>
+            
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead style={{ background: 'rgba(0,0,0,0.02)', position: 'sticky', top: 0 }}>
+                <tr>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Bridge #</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Name</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>Area (m²)</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>Condition</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>CRC (UGX)</th>
+                  <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>CDRC (UGX)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {costSummary.slice(0, 50).map(row => (
+                  <tr key={row.number} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <td style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--accent-primary)' }}>{row.number}</td>
+                    <td style={{ padding: '16px 24px', color: 'var(--text-muted)' }}>{row.name}</td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>{row.area.toFixed(1)}</td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700 }}>{row.rating} / 9</td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 600 }}>{Math.round(row.crc).toLocaleString()}</td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 600 }}>{Math.round(row.cdrc).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
         {activeReport === 'single' && (
-          <div>
-            <h3 style={{ margin: '0 0 15px 0', color: '#0a246a' }}>Structure Summary Reports</h3>
-            
-            <fieldset className="ms-fieldset" style={{ maxWidth: '500px' }}>
-              <legend>Generate Inventory & Inspection Sheet</legend>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div className="ms-form-row">
-                  <label>Select Bridge:</label>
-                  <div className="ms-select-container">
-                    <select 
-                      className="ms-select"
-                      value={selectedBridgeId}
-                      onChange={(e) => setSelectedBridgeId(e.target.value)}
-                    >
-                      <option value="">-- Choose Bridge --</option>
-                      {bridges.map(b => (
-                        <option key={b.BridgeNumber} value={b.BridgeNumber}>
-                          {b.BridgeNumber} - {b.BridgeName}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="ms-select-arrow">▼</div>
-                  </div>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                  <button 
-                    className="ms-btn" 
-                    onClick={() => handleGeneratePrintPreview('bridge')}
-                    disabled={!selectedBridgeId}
-                  >
-                    Generate Report Sheets
-                  </button>
-                </div>
+          <div className="panel" style={{ padding: '32px', maxWidth: '600px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '24px' }}>Generate PDF Inspection Sheet</h3>
+            <div className="modern-filter-field" style={{ marginBottom: '24px' }}>
+              <label>Select Bridge Structure</label>
+              <div className="modern-select-wrapper">
+                <select 
+                  value={selectedBridgeId}
+                  onChange={(e) => setSelectedBridgeId(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.02)', color: 'var(--text-primary)', height: '48px' }}
+                >
+                  <option value="">-- Choose Bridge --</option>
+                  {bridges.map(b => (
+                    <option key={b.BridgeNumber} value={b.BridgeNumber}>
+                      {b.BridgeNumber} - {b.BridgeName}
+                    </option>
+                  ))}
+                select>
               </div>
-            </fieldset>
+            </div>
+            <button 
+              className="modern-btn-primary" 
+              onClick={() => handleGeneratePrintPreview('bridge')}
+              disabled={!selectedBridgeId}
+              style={{ width: '100%', gap: '8px', opacity: !selectedBridgeId ? 0.5 : 1 }}
+            >
+              <Printer size={16} /> Generate Report PDF
+            </button>
           </div>
         )}
 
         {activeReport === 'print' && printPreviewData && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
-              <button className="ms-btn" onClick={() => window.print()}>
-                Print to PDF / Printer
-              </button>
-              <button className="ms-btn" onClick={() => setActiveReport('validation')}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginBottom: '24px' }}>
+              <button className="modern-btn-secondary" onClick={() => setActiveReport('validation')} style={{ width: '150px' }}>
                 Close Preview
+              </button>
+              <button className="modern-btn-primary" onClick={() => window.print()} style={{ width: '150px', gap: '8px' }}>
+                <Printer size={16} /> Print Document
               </button>
             </div>
 
-            <div className="ms-print-preview ms-bevel-in">
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '20px' }}>
+            <div className="panel" style={{ padding: '48px', background: '#fff', color: '#000', borderRadius: '4px', border: '1px solid #ccc', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px double #000', paddingBottom: '16px', marginBottom: '32px' }}>
                 <div>
-                  <h1 style={{ fontSize: '20px', fontWeight: 'extrabold', margin: 0 }}>UGANDA NATIONAL ROADS AUTHORITY</h1>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold' }}>ASSET MANAGEMENT SYSTEM · BRIDGE MANAGEMENT SECTION</span>
+                  <h1 style={{ fontSize: '24px', fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>MINISTRY OF WORKS AND TRANSPORT (MoWT)</h1>
+                  <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>DEPARTMENT OF NATIONAL ROADS · BRIDGE MANAGEMENT SYSTEM</span>
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '11px' }}>
-                  <strong>Date:</strong> {printPreviewData.date}<br />
-                  <strong>Database:</strong> Supabase live
+                <div style={{ textAlign: 'right', fontSize: '13px' }}>
+                  <strong>Date Issued:</strong> {printPreviewData.date}<br />
+                  <strong>Data Source:</strong> Verified Supabase API
                 </div>
               </div>
 
-              <h2>{printPreviewData.title}</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '32px', textAlign: 'center' }}>{printPreviewData.title}</h2>
 
               {printPreviewData.type === 'bridge' && (
                 <div>
-                  <table style={{ width: '100%', marginBottom: '20px', border: '1px solid #000' }}>
+                  <table style={{ width: '100%', marginBottom: '32px', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <tbody>
                       <tr>
-                        <td style={{ fontWeight: 'bold', width: '150px', background: '#f5f5f5' }}>Bridge Number:</td>
-                        <td>{printPreviewData.bridge.BridgeNumber}</td>
-                        <td style={{ fontWeight: 'bold', width: '150px', background: '#f5f5f5' }}>Bridge Name:</td>
-                        <td>{printPreviewData.bridge.BridgeName}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 700, width: '200px', background: '#f8f9fa' }}>Bridge Number:</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 600 }}>{printPreviewData.bridge.BridgeNumber}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 700, width: '200px', background: '#f8f9fa' }}>Bridge Name:</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 600 }}>{printPreviewData.bridge.BridgeName}</td>
                       </tr>
                       <tr>
-                        <td style={{ fontWeight: 'bold', background: '#f5f5f5' }}>Principal Feature:</td>
-                        <td>{printPreviewData.bridge.RoadDescrPrincipal}</td>
-                        <td style={{ fontWeight: 'bold', background: '#f5f5f5' }}>Link ID:</td>
-                        <td>{printPreviewData.bridge.LinkID}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 700, background: '#f8f9fa' }}>Principal Feature:</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc' }}>{printPreviewData.bridge.RoadDescrPrincipal}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 700, background: '#f8f9fa' }}>Link ID:</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc' }}>{printPreviewData.bridge.LinkID}</td>
                       </tr>
                       <tr>
-                        <td style={{ fontWeight: 'bold', background: '#f5f5f5' }}>Latitude:</td>
-                        <td>{printPreviewData.bridge.Latitude}</td>
-                        <td style={{ fontWeight: 'bold', background: '#f5f5f5' }}>Longitude:</td>
-                        <td>{printPreviewData.bridge.Longitude}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 'bold', background: '#f5f5f5' }}>District / Station:</td>
-                        <td>{printPreviewData.bridge.District} / {printPreviewData.bridge.LegacyData?.station || 'N/A'}</td>
-                        <td style={{ fontWeight: 'bold', background: '#f5f5f5' }}>Overall Condition:</td>
-                        <td style={{ fontWeight: 'bold', color: '#0a246a' }}>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 700, background: '#f8f9fa' }}>District:</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc' }}>{printPreviewData.bridge.District}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 700, background: '#f8f9fa' }}>Overall Condition Index:</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 800 }}>
                           {printPreviewData.bridge.LegacyData?.overall_rating != null ? `${printPreviewData.bridge.LegacyData.overall_rating} / 9` : 'Unrated'}
                         </td>
                       </tr>
                     </tbody>
                   </table>
-
-                  <h3>INSPECTION CONDITION RATINGS</h3>
-                  <table className="ms-grid-table" style={{ width: '100%', border: '1px solid #000' }}>
+                  
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>COMPONENT INSPECTION RATINGS</h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ background: '#f5f5f5' }}><th>Component</th><th>Rating (0-9)</th><th>Descriptor</th></tr>
+                      <tr style={{ background: '#f8f9fa' }}>
+                        <th style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'left' }}>Component</th>
+                        <th style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'center' }}>Rating (0-9)</th>
+                      </tr>
                     </thead>
                     <tbody>
                       {[
@@ -362,26 +284,11 @@ export default function BmsReports({ bridges = [], onSaveBridge }) {
                         { label: 'Superstructure', val: printPreviewData.bridge.LegacyData?.superstructure_rating },
                         { label: 'Roadway (Deck)', val: printPreviewData.bridge.LegacyData?.roadway_rating },
                         { label: 'Expansion Joints', val: printPreviewData.bridge.LegacyData?.expansion_joints_rating },
-                        { label: 'Drainage', val: printPreviewData.bridge.LegacyData?.drainage_rating },
-                        { label: 'Traffic Barriers', val: printPreviewData.bridge.LegacyData?.traffic_barriers_rating },
-                        { label: 'Guardrails & Railings', val: printPreviewData.bridge.LegacyData?.guardrails_rating },
-                        { label: 'Cell Structures / CMP', val: printPreviewData.bridge.LegacyData?.cell_structures_cmp_rating },
+                        { label: 'Drainage', val: printPreviewData.bridge.LegacyData?.drainage_rating }
                       ].map(r => (
                         <tr key={r.label}>
-                          <td style={{ fontWeight: 'bold' }}>{r.label}</td>
-                          <td>{r.val != null ? r.val : 'N/A'}</td>
-                          <td>
-                            {r.val === 9 ? 'Excellent' :
-                             r.val === 8 ? 'Very Good' :
-                             r.val === 7 ? 'Good' :
-                             r.val === 6 ? 'Satisfactory' :
-                             r.val === 5 ? 'Fair' :
-                             r.val === 4 ? 'Marginal' :
-                             r.val === 3 ? 'Poor' :
-                             r.val === 2 ? 'Very Poor' :
-                             r.val === 1 ? 'Critical' :
-                             r.val === 0 ? 'Beyond Repair' : 'Not Inspected'}
-                          </td>
+                          <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 600 }}>{r.label}</td>
+                          <td style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'center', fontWeight: 700 }}>{r.val != null ? r.val : 'N/A'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -390,30 +297,28 @@ export default function BmsReports({ bridges = [], onSaveBridge }) {
               )}
 
               {printPreviewData.type === 'cost' && (
-                <div>
-                  <table className="ms-grid-table" style={{ width: '100%', border: '1px solid #000' }}>
-                    <thead>
-                      <tr style={{ background: '#f5f5f5' }}>
-                        <th>Bridge No</th>
-                        <th>Bridge Name</th>
-                        <th>Condition</th>
-                        <th>CRC (UGX)</th>
-                        <th>CDRC (UGX)</th>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr style={{ background: '#f8f9fa' }}>
+                      <th style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'left' }}>Bridge No</th>
+                      <th style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'left' }}>Name</th>
+                      <th style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'center' }}>Condition</th>
+                      <th style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'right' }}>CRC (UGX)</th>
+                      <th style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'right' }}>CDRC (UGX)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {printPreviewData.costData.map(row => (
+                      <tr key={row.number}>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', fontWeight: 700 }}>{row.number}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc' }}>{row.name}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'center' }}>{row.rating} / 9</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'right' }}>{Math.round(row.crc).toLocaleString()}</td>
+                        <td style={{ padding: '8px', border: '1px solid #ccc', textAlign: 'right', fontWeight: 600 }}>{Math.round(row.cdrc).toLocaleString()}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {printPreviewData.costData.map(row => (
-                        <tr key={row.number}>
-                          <td style={{ fontWeight: 'bold' }}>{row.number}</td>
-                          <td>{row.name}</td>
-                          <td>{row.rating} / 9</td>
-                          <td>{Math.round(row.crc).toLocaleString()}</td>
-                          <td>{Math.round(row.cdrc).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>

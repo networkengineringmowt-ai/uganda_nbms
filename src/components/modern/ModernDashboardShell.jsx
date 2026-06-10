@@ -9,8 +9,15 @@ import CombinedInventory from '../CombinedInventory';
 import InspectionWorkspace from '../InspectionWorkspace';
 import MaintenanceWorkspace from '../MaintenanceWorkspace';
 import AnalyticsDashboard from '../AnalyticsDashboard';
+import BridgeInventoryForm from '../capture/BridgeInventoryForm';
+import BridgeInspectionForm from '../capture/BridgeInspectionForm';
+import CulvertInventoryForm from '../capture/CulvertInventoryForm';
+import CulvertInspectionForm from '../capture/CulvertInspectionForm';
+import BmsReports from '../BmsReports';
+import UpgradeBridgesForm from '../UpgradeBridgesForm';
+import SystemParametersForm from '../SystemParametersForm';
 
-export default function ModernDashboardShell({ bridges, culverts, setBridges, setViewMode }) {
+export default function ModernDashboardShell({ bridges, culverts, setBridges, setCulverts }) {
   const [modernTab, setModernTab] = useState('overview');
   const [selectedBridge, setSelectedBridge] = useState(null);
 
@@ -22,6 +29,13 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
       case 'inspection': return 'Inspections Workspace';
       case 'maintenance': return 'Maintenance Planning';
       case 'analytics': return 'Traffic Analytics';
+      case 'capture_bridge': return 'Bridge Inventory Capture';
+      case 'capture_culvert': return 'Culvert Inventory Capture';
+      case 'inspect_bridge': return 'Bridge Inspection Ratings';
+      case 'inspect_culvert': return 'Culvert Inspection Ratings';
+      case 'reports': return 'Reports & Audits';
+      case 'upgrades': return 'Bridge Upgrades';
+      case 'parameters': return 'System Parameters';
       default: return 'UNRA BMS Dashboard';
     }
   };
@@ -34,13 +48,19 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
       case 'inspection': return 'Record field inspection and overall rating statistics';
       case 'maintenance': return 'Review critical interventions and priority queues';
       case 'analytics': return 'Traffic predictions and vehicle class analysis';
+      case 'capture_bridge': return 'Add or update bridge base inventory data';
+      case 'capture_culvert': return 'Add or update major culvert base inventory data';
+      case 'inspect_bridge': return 'Submit condition ratings for bridges';
+      case 'inspect_culvert': return 'Submit condition ratings for culverts';
+      case 'reports': return 'Generate PDF and Excel reports';
+      case 'upgrades': return 'Plan and cost bridge upgrades';
+      case 'parameters': return 'Configure global BMS variables';
       default: return 'Uganda National Roads Authority BMS';
     }
   };
 
   return (
     <div className="bms-shell modern-theme-root">
-      {/* Animated Background Canvas */}
       <div className="ambient-background"></div>
       
       <ModernSidebar 
@@ -54,7 +74,6 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
           modernTab={modernTab} 
           pageTitle={pageTitle} 
           pageSubtitle={pageSubtitle} 
-          setViewMode={setViewMode} 
         />
         
         <div className="page-content modern-scroll">
@@ -105,6 +124,15 @@ export default function ModernDashboardShell({ bridges, culverts, setBridges, se
             />
           )}
           {modernTab === 'analytics' && <AnalyticsDashboard />}
+          
+          {/* New Modern Forms */}
+          {modernTab === 'capture_bridge' && <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />}
+          {modernTab === 'capture_culvert' && <CulvertInventoryForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+          {modernTab === 'inspect_bridge' && <BridgeInspectionForm bridges={bridges} onBridgesUpdate={setBridges} />}
+          {modernTab === 'inspect_culvert' && <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />}
+          {modernTab === 'reports' && <BmsReports bridges={bridges} culverts={culverts} />}
+          {modernTab === 'upgrades' && <UpgradeBridgesForm bridges={bridges} />}
+          {modernTab === 'parameters' && <SystemParametersForm />}
         </div>
       </main>
     </div>
