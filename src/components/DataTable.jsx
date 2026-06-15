@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 const DataTable = ({ columns, data }) => {
   const [sort, setSort] = useState({ index: null, direction: 'asc' });
@@ -40,7 +41,13 @@ const DataTable = ({ columns, data }) => {
               <th key={i}>
                 <button className="table-sort-button" type="button" onClick={() => toggleSort(i)}>
                   <span>{col.header}</span>
-                  <span aria-hidden="true">{sort.index === i ? (sort.direction === 'asc' ? 'asc' : 'desc') : 'sort'}</span>
+                  <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {sort.index === i ? (
+                      sort.direction === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />
+                    ) : (
+                      <ArrowUpDown size={13} opacity={0.3} />
+                    )}
+                  </span>
                 </button>
               </th>
             ))}
@@ -51,7 +58,7 @@ const DataTable = ({ columns, data }) => {
             <tr key={i}>
               {columns.map((col, j) => {
                 const value = col.accessor ? row[col.accessor] : col.cell(row);
-                return <td key={j}>{value ?? '-'}</td>;
+                return <td key={j}>{value ?? 'Unknown'}</td>;
               })}
             </tr>
           ))}

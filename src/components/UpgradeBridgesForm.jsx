@@ -44,7 +44,7 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '24px' }}>
+    <div style={{ width: '100%', padding: '0 32px', margin: '0 auto', paddingTop: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
         <div style={{ width: '48px', height: '48px', background: 'var(--accent-primary-soft)', color: 'var(--accent-primary)', display: 'grid', placeItems: 'center', borderRadius: '12px' }}>
           <ArrowUpCircle size={24} />

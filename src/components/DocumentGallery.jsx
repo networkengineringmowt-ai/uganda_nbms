@@ -138,13 +138,13 @@ export default function DocumentGallery({ bridges = [] }) {
             <div key={photo.id} style={{ border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
               <div style={{ height: '150px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {photo.storage_url ? (
-                  <img src={photo.storage_url} alt={photo.filename} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} loading="lazy" />
+                  <img src={photo.storage_url} alt="Evidence Image" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} loading="lazy" />
                 ) : (
                   <ImageIcon size={32} color="#ccc" />
                 )}
               </div>
               <div style={{ padding: '8px', fontSize: '12px', wordBreak: 'break-all' }}>
-                {photo.filename}
+                Evidence Source
                 {photo.storage_url && (
                   <a href={photo.storage_url} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: '4px', color: 'var(--bms-blue)' }}>
                     <Download size={12} /> Open Full
@@ -171,7 +171,7 @@ export default function DocumentGallery({ bridges = [] }) {
             {filteredDocs.length === 0 ? <tr><td colSpan="5">No documents found on this page.</td></tr> : null}
             {filteredDocs.map(doc => (
               <tr key={doc.id}>
-                <td style={{ fontWeight: '500' }}>{doc.filename}</td>
+                <td style={{ fontWeight: '500' }}>Evidence Document</td>
                 <td><span style={{ padding: '2px 6px', background: '#e1e8ed', borderRadius: '4px', fontSize: '12px' }}>{doc.file_type}</span></td>
                 <td>{doc.size_mb}</td>
                 <td style={{ fontSize: '12px', color: '#555', maxWidth: '400px' }}>

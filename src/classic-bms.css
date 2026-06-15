@@ -644,7 +644,7 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 8px;
-  background-color: #ffffff;
+  background-color: rgba(15, 23, 42, 0.4);
 }
 
 .ms-grid-table th {
@@ -777,7 +777,7 @@
 
 /* --- Print Preview Styles --- */
 .ms-print-preview {
-  background-color: #ffffff;
+  background-color: rgba(15, 23, 42, 0.4);
   color: #000000;
   border: 1px solid #000000;
   box-shadow: 2px 2px 10px rgba(0,0,0,0.15);
@@ -846,7 +846,7 @@
 }
 
 .ms-chart-container {
-  background-color: #ffffff;
+  background-color: rgba(15, 23, 42, 0.4);
   border: 2px inset var(--ms-bg);
   padding: 10px;
 }

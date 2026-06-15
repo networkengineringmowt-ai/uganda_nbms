@@ -115,12 +115,19 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
     }]
   };
 
-  const renderInputField = (label, name, type = 'text') => {
+  const renderInputField = (label, name, type = 'text', dict = null) => {
     return (
       <div className="ent-field">
         <label className="ent-label">{label}</label>
-        {type === 'select' ? (
-           <select name={name} className="ent-select" value={formData[name]} onChange={handleChange}>
+        {dict ? (
+           <select name={name} className="ent-select" value={formData[name] || ''} onChange={handleChange}>
+             <option value="">Select...</option>
+             {Object.entries(dict).map(([code, desc]) => (
+               <option key={code} value={code}>{code} - {desc}</option>
+             ))}
+           </select>
+        ) : type === 'select' ? (
+           <select name={name} className="ent-select" value={formData[name] || ''} onChange={handleChange}>
              <option value="">Select...</option>
              <option value="Concrete Box">Concrete Box</option>
              <option value="Concrete Pipe">Concrete Pipe</option>
@@ -128,10 +135,10 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
              <option value="Masonry Arch">Masonry Arch</option>
            </select>
         ) : (
-          <input 
-            type={type} name={name} className="ent-input" value={formData[name] || ''} onChange={handleChange}
-            disabled={name === 'CulvertNumber' && selectedId !== 'NEW'}
-          />
+           <input 
+             type={type} name={name} className="ent-input" value={formData[name] || ''} onChange={handleChange}
+             disabled={name === 'CulvertNumber' && selectedId !== 'NEW'}
+           />
         )}
       </div>
     );

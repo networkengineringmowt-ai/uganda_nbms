@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AlertTriangle, MapPin, FileText, Image as ImageIcon } from 'lucide-react';
 import { getPhotoUrl } from '../utils/photoUrlResolver';
+import { getConditionLabel } from '../utils/dataDictionary';
 
 export default function CriticalDashboard() {
   const [data, setData] = useState(null);
@@ -58,7 +59,7 @@ export default function CriticalDashboard() {
                 
                 <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   <strong>Link:</strong> {structure.LinkName || 'Unknown'} | <strong>Station:</strong> {structure.MaintenanceStation || 'N/A'} <br/>
-                  <strong>Dimensions:</strong> {structure.BridgeLength}m x {structure.BridgeWidth}m | <strong>Rating:</strong> {structure.OverallRating}
+                  <strong>Dimensions:</strong> {structure.BridgeLength}m x {structure.BridgeWidth}m | <strong>Condition:</strong> {getConditionLabel(structure.OverallRating)}
                 </div>
                 
                 {img ? (

@@ -1,34 +1,30 @@
 import { useState } from 'react';
 import BridgesDashboard from './BridgesDashboard';
 import CulvertsDashboard from './CulvertsDashboard';
-import RoadNetworkDashboard from './RoadNetworkDashboard';
-import WorksDashboard from './WorksDashboard';
 
-export default function CombinedInventory() {
+export default function CombinedInventory({ bridges = [], culverts = [] }) {
   const [innerTab, setInnerTab] = useState('bridges');
 
   return (
     <div className="inventory-layout">
-      <nav className="subnav">
-          <button className={innerTab === 'bridges' ? 'active' : ''} onClick={() => setInnerTab('bridges')}>
+      <nav className="subnav" style={{ display: 'flex', gap: '8px', padding: '0 0 16px 0', borderBottom: '1px solid var(--border)', marginBottom: '16px' }}>
+          <button 
+            style={{ background: innerTab === 'bridges' ? 'var(--accent-blue)' : 'rgba(255,255,255,0.05)', color: innerTab === 'bridges' ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => setInnerTab('bridges')}
+          >
             Bridges Registry
           </button>
-          <button className={innerTab === 'culverts' ? 'active' : ''} onClick={() => setInnerTab('culverts')}>
+          <button 
+            style={{ background: innerTab === 'culverts' ? 'var(--accent-blue)' : 'rgba(255,255,255,0.05)', color: innerTab === 'culverts' ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => setInnerTab('culverts')}
+          >
             Major Culverts
-          </button>
-          <button className={innerTab === 'network' ? 'active' : ''} onClick={() => setInnerTab('network')}>
-            Road Network & NDPIV
-          </button>
-          <button className={innerTab === 'works' ? 'active' : ''} onClick={() => setInnerTab('works')}>
-            Ongoing Interventions
           </button>
       </nav>
 
       <div className="inner-content">
-        {innerTab === 'bridges' && <BridgesDashboard />}
-        {innerTab === 'culverts' && <CulvertsDashboard />}
-        {innerTab === 'network' && <RoadNetworkDashboard />}
-        {innerTab === 'works' && <WorksDashboard />}
+        {innerTab === 'bridges' && <BridgesDashboard initialBridges={bridges} />}
+        {innerTab === 'culverts' && <CulvertsDashboard initialCulverts={culverts} />}
       </div>
     </div>
   );

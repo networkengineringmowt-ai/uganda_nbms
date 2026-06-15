@@ -1,0 +1,1585 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+ National Roads Authority
+
+
+
+Asset Management System
+
+
+
+Bridge Management System (BMS) User Manual
+
+
+September 2017
+
+
+
+
+
+
+This document contains the BMS User Manual for the Uganda National Roads Authority (UNRA). It forms part of the Asset Management System documentation as shown on the previous page.
+
+
+Copyright
+
+This software, and the printed materials enclosed, are protected by South African copyright law and international agreements.
+
+Aurecon (the copyright owner) grants the license holder of the enclosed software (Uganda National Roads Authority), the right to install the enclosed application at any number of computer locations for exclusive use within the licensee’s organisation.
+
+The license holder may make copies of the application, for archival purposes (for the purpose of backing-up the software and protecting the investment from loss).
+
+This software, and the printed manuals enclosed, may be used by any number of people simultaneously and may be freely moved from one computer to another, as long as the users are part of the licensee’s organisation. The license holder may, therefore, not copy and distribute the software for use at locations not within the licensee’s organisation.
+
+This software may not be sold or re-sold, except by the copyright owner, or by a person holding a valid certificate, signed by the copyright owner, granting this right.
+
+Any attempt at changing any portion of this software by any person except the copyright owner is in violation of this license agreement, and may be performed only with the express written permission or under instruction from the copyright owner.
+
+The developer of this software retains the right to re-use portions of the code, including entire routines, developed specifically for this application.
+
+
+
+
+
+
+
+
+
+
+
+For support on the software and/or manuals, contact:  unra_support@aurecongroup.com
+
+Table of Contents:
+
+
+1	Introduction	1
+1.1	The Bridge Management System Database	1
+1.2	Ranking Module	2
+1.3	Reporting Module	2
+1.4	About this Manual	3
+2	Getting Started	4
+2.1	Getting started	4
+2.1.1	The Menu Structure of the Bridge Management System	5
+2.2	Sub-Menus	5
+2.2.1	The Screens	6
+2.2.2	Text Box	6
+2.2.3	Combo Box	7
+2.2.4	Option Box	7
+2.2.5	Tabs	7
+2.2.6	Record Selectors	9
+3	Menu Items	10
+3.1	File Menu	10
+3.1.1	Import from and to database	10
+3.1.2	‘Set Excel path for graphs’ option	18
+3.1.3	‘Set Drawing path for Drawings’ option	18
+3.1.4	‘Set Path for Photos’ option	18
+3.1.5	Close	18
+3.1.6	Exit	19
+3.2	Adding Data to the System	19
+3.2.1	Bridge Inventory Data	19
+3.2.2	Bridge Inspection Data – Add / Edit	21
+3.2.3	Culvert Inventory Data	23
+3.2.4	Culvert Inspection Data – Add / Edit	24
+3.3	Changing Data that have been recorded	24
+3.4	Deleting Data that have been recorded	26
+4	Reporting	27
+4.1	Single Bridge Reports	27
+4.2	Network of Bridges	28
+4.3	Single Culvert Reports	31
+4.4	Network of Culverts	32
+5	Visual Modules	35
+5.1	Photo Module	35
+5.2	Drawing Module	36
+6	Data Validation	37
+6.1	Outstanding Main Component Rating	37
+6.2	Insufficient Data for Ranking	37
+6.3	Bridge with no Inspection Available	37
+6.4	List of Bridges with *Unchecked Data	37
+6.5	List of Bridges with Checked Data	37
+6.6	Bridges with incomplete Superficial inspections	37
+6.7	Bridges with incomplete Special Inspections	38
+6.8	Bridges with incomplete Principal inspections	38
+6.9	List of Culverts with no Inspections Available	38
+6.10	List of Culverts with Missing Main Component Ratings	38
+6.11	List of Culverts 	38
+7	Open GIS application	39
+7.1	Layers Visibility	39
+7.2	About	40
+7.3	Switch Back To Main BMS Application	40
+7.4	Load Points	40
+7.5	Select / View Loaded Points	42
+7.6	Clear All Loaded / Selected Points	44
+7.7	Map Information	44
+8	Maintain System Parameters	45
+8.1	Maintain code type data fields	45
+8.2	Asset value unit costs	45
+8.3	Enter unit rates for maintenance items for bridges	45
+8.4	Enter unit rates for maintenance items for major culverts	45
+8.5	Overall rating variables	46
+8.6	Ranking variables / Constants	46
+8.7	Future inspections Variables/Constants	46
+9	Change Structure Number	47
+9.1	Bridge number change	47
+9.2	Culvert number change	48
+10	Ranking for Bridges	48
+10.1	Overall Rate Calculation	48
+10.2	The Ranking Formula	50
+10.2.1	Number of Lanes Factor  :  F1	53
+10.2.2	Minimum Acceptable Clear Deck Width (WM)	54
+10.2.3	Vertical Clearance Limits	54
+10.2.4	List of Constants K	55
+10.2.5	Weighting Factors for Bridge Components (Wi)	55
+10.2.6	Bridge Component Condition Rating Coefficient (Ki)	55
+10.2.7	Approach Alignment Coefficient (KAA)	55
+10.2.8	Strategic Importance Factor (Fsi)	56
+11	Ranking for Major Culverts	58
+11.1	Overall Rate Calculation	58
+
+List of Tables:
+Table 1 -  Editing data	25
+Table 2 - Deleting Data that have been recorded	26
+Table 3 - System Parameters/Overall Rating Variables for Bridges	49
+Table 4 - Categorization of Overall Rates into condition categories	50
+Table 5 - The number of lanes factor F1 as a function of the number of lanes and directions of traffic (used in Horizontal Clearance Deficiency)	54
+Table 6 - Goal lane width (WG) and the minimum acceptable width (WM) as a function of the class of road (used in Horizontal Clearance Deficiency)	54
+Table 7 - Vertical clearance limits as a function of the class of road (used in Vertical Clearance Deficiency)	54
+Table 8 - List of constants used in the ranking formula	55
+Table 9 - Weighting factors (Wi) for each bridge component in the Bridge Condition Deficiency Formula (used in bridge condition deficiency)	55
+Table 10 - Bridge component condition rating coefficients (Ki) for each component and condition rating (used in bridge condition deficiency)	55
+Table 11 - Approach alignment coefficients (KAA) for different condition ratings (used in approach alignment deficiency)	56
+Table 12 - Coefficient (fc) for the sub- and superstructure condition rating (used in bridge condition deficiency)	56
+Table 13 – Summary of data requirements for Deficiency Ranking	57
+Table 14 - System Parameters/Overall Rating Variables for Major Culverts)	58
+Table 15 - Categorization of Overall Rates into condition categories	59
+
+
+List of Figures:
+
+Figure 1: Main Menu	5
+Figure 2: Sub-menu	6
+Figure 3: Text Box	6
+Figure 4: Combo Box	7
+Figure 5: Option Box	7
+Figure 6: Tabs	8
+Figure 7: Command Buttons	8
+Figure 8: File Menu	10
+Figure 9: Export and Import Tabs	11
+Figure 10:  Import errors listed	12
+Figure 11:  Error log file dialog box	12
+Figure 12:  Export Bridges to Capturing DB - Selection Options	15
+Figure 13:  Export Bridges to Capturing DB - Option: Per Bridge and Inspection Frequency	16
+Figure 14:  Import TIS Traffic Data – Dialogue Box	17
+Figure 15:  Capture Bridge Inventory Form	20
+Figure 16: Current Inspection Type	22
+Figure 17:  Geometry of a Major Culvert	23
+Figure 18: GIS Viewer Application	39
+Figure 19: Change of Bridge numbers screen	47
+
+
+Introduction
+
+The Bridge Management System (BMS) of the Uganda National Roads Authority (UNRA) is an Information Management and Decision Support System.  The BMS makes inventory and inspection data easily accessible and manageable, and inquiries are easily made concerning bridges and major culverts.
+
+The ultimate purpose of the Bridge Management System is to assist officials in ensuring that all bridges and major culverts are acceptably maintained and therefore provide an acceptable and safe level of service to the public.  The expenditure needed to provide this can be determined, and compared to budgetary constraints.  The system incorporates this by providing the following:-
+Comprehensive record keeping of relevant bridge and major culvert information.
+Identification of bridges and major culverts that need preservation activities (preventive maintenance and rehabilitation) and replacement.
+Short-term planning and prioritization of all work on bridges and major culverts.
+Providing estimates of longer term budgetary requirements to maintain the bridge and major culvert stock at the required level of service.
+The level of service can be used as the primary focal point in managing a public facility.  In this case the level of service gives an indication of the degree to which a bridge provides an acceptable and safe facility to the public.  Failure to meet this level of service could result in costs to the user due to the damage to property, or costs associated with delays due to bridge closure.  On the other hand, the authorities that have to maintain these bridges are financed through taxation of the public.  A BMS should therefore minimize the total cost of the public by finding an optimum balance between acceptable levels of service and the cost of providing these levels of service within the budgetary constraints.
+
+The Bridge Management System Database
+The database of the BMS is the nucleus of the system.  All the information essential to the management of the bridges and major culverts is contained in the database.  This includes the following:-
+Bridge Inventory Data – The data describing each individual bridge.
+Bridge Inspection Data – The data that are entered from inspections done on the bridges.
+Major Culvert Inventory Data – The data describing each individual culvert.
+Major Culvert Inspection Data – The data that are entered from inspections done on culverts.
+Photo Module – Includes inventory photos of the bridges or components of the bridges and major culverts, as well as photos of distresses.
+Drawing Module – Includes scanned drawings of bridges and major culverts, where available.
+Ranking Module
+A primary objective of the system is to identify those bridges and major culverts that need attention.  In order to do this, bridges are ranked according to a deficiency index.  The index is made up of three basic components, as follows:-
+
+The Level of Service Provided to the Public
+The degree to which a bridge meets user demands is based on an evaluation of the following physical properties of the bridge:
+Vertical Clearance.
+Horizontal Clearance.
+Roadway alignment over and/or under the bridge.
+
+Condition of the Bridge
+Maintaining a bridge in an acceptable condition incurs costs.  The lack of maintenance may also lead to user costs, if the condition of the bridge deteriorates to the point where the load capacity of the bridge is affected, or where the wearing surface or joints may damage vehicles.
+
+Importance of the Bridge
+The relevant importance of each bridge can be measured in terms of the traffic volumes that cross the bridge and the strategic importance of the bridge.  Strategic importance is measured in terms of the potential delays in traveling time if the bridge were to be closed.
+
+The contribution of each of the above aspects in the calculation of the deficiency index is governed by a weighting factor assigned to each aspect.  The different weighting factors can be changed to suit the particular emphasis of an investigation.
+
+Reporting Module
+The reporting system is divided into two parts.
+
+The first part of the reporting system is the facility that can be used to print a report on a specific bridge or major culvert using certain criteria.  The “Detection” screen assists the user in finding the number of the bridge or major culvert that a report is required for.  There is a group of standard reports available, once the required structure has been selected.  The following is a list of the standard reports:-
+Inventory Report
+Inspection Report
+Condition Report
+Defect Report
+
+The second part of the reporting system is a facility to print a report on a group (network) of bridges or major culverts.  The “Detection” screen assists the user in finding the bridge / major culvert numbers of the bridges / major culverts that the user wants to report on.  There is a group of standard reports available, once the group (network) of bridges / major culverts has been selected.  
+The following is a list of the standard reports available for bridges:-
+Minimum Vertical Clearance on Link Name
+Minimum Horizontal Clearance on Link Name
+Schedule of Future Inspections
+Inventory Graphs for bridges
+Inspection Graphs for bridges
+Asset Value Report (Detail and Summary)
+Bridges with Principal Inspection Data
+Bridges with Superficial Inspection Data
+Bridges with Special Inspection Data 
+Maintenance Plan for a Specific Bridge and Inspection Date
+Ad hoc reports
+Export of inventory data for bridges based on network detected
+
+The following list of standard reports is available for major culverts:-
+Ranking
+Culvert Inventory Graphs
+Culvert Inspection Graphs
+Asset Value Report
+Major Culverts with Principal Inspection Data
+Major Culverts with Special Inspection Data
+Maintenance Plan for a specific Major Culvert and latest inspection
+Ad hoc reports
+Export of inventory data for major culverts based on network detected
+
+About this Manual
+This manual will assist the user of the Bridge Management System.  The procedures for completing the screens, and for using the various options successfully are discussed in the remaining sections of this document.
+
+
+Getting Started
+Getting started
+DATE FORMAT:
+
+NOTE THAT THE BMS REQUIRES THE SHORT DATE FORMAT OF THE COMPUTER WHERE IT IS INSTALLED TO BE ACCORDING TO THE dd/MM/yyyy FORMAT.  (Use the Start/Control Panel/Regional and Language Options/Regional Options/Customize/Date/Short date format to adjust to this format.)
+
+CURRENCY SETTING:
+	
+NOTE THAT THE BMS USES THE CURRENCY SETTINGS OF THE COMPUTER WHERE IT IS INSTALLED.  (Use the Start/Control Panel/Regional and Language Options/Regional Options/Customize/Currency/Currency Symbol to adjust to your required setting.)
+
+SCREEN RESOLUTION:
+
+The system was designed under screen resolution of 800 x 600, but can be viewed under any screen resolution.  At a screen resolution of 800 x 600, use of scroll bars (vertical and horizontal) will be required, at screen resolutions of more than this, it will typically not be required.  Also, at screen resolutions of more than 800 x 600, the screen may appear to be using the top left hand corner of the screen only.  This is normal for these higher resolutions.  
+
+INSTALLATION REQUIREMENTS:
+
+This system was developed to use MSExcel 2007 or 2010 as well as MSAccess 2007 or 2010 and Windows 7 (64 bit).  If any other versions of MSExcel or MSAccess or Windows are used, do the following to correct the reference to the excel.exe file:
+Find the location of the file excel.exe
+Open the Front End while holding down the shift key.  
+From the navigation panel on the left hand side, select Modules.
+Double click on the first module to open it (it should be ChangeBridgeNumber)
+Visual Basic for Applications (VBA) should be open.
+Select “Tools” -> References from the menu bar.
+The word “MISSING” might appear in front of the Excel reference.  If this is not the case, exit Access and proceed to re-open the Front-end without holding the shift key.
+Else deselect the “Missing” reference.
+Click on the “Browse” button.
+Browse to the location of the excel.exe file.
+Change the Files of Type dropdown box to “Executable files (*.exe, *.dll).
+Select the file excel.exe and click the Open button.
+Click the OK button and exit MS Access.
+Re-open the Front-End without holding the shift button and proceed with entering the password.
+
+ACCESS CONTROL:
+This system features access controlled at two levels:
+Super users – these users are the administrators of the system as well as users on managerial level
+General users – these are the users who want to run network reports, data validation reports or view structures according to criteria on a GIS platform.
+Access control is via a predefined password for each of the above.
+The Menu Structure of the Bridge Management System
+
+The system is divided into separate modules.  The command buttons on the main menu represent the different modules of the system.  The main menu is found under the “Add-Ins”-menu at the top of the screen of the Bridge Management System, next to the “Database Tools”-menu.
+
+The main menu (for the super users) looks like this:
+
+
+
+Figure 1: Main Menu
+
+Note:  The main menu for the general users will not have the “Capture Screens”, “System Parameters” and “Change a Structure Number” menu items.
+Sub-Menus
+A sub-menu is an extension of the main menu.  Most of the menus have drop-down sub-menus that narrow your choice down until you find the screen that you are looking for.
+
+This is what a sub-menu looks like:
+
+ 
+
+Figure 2: Sub-menu
+The Screens
+The Windows-based screens in the system consist of fields.  These fields are used to enter, change or delete data.  The following is an explanation of each kind of field that is in the system.
+Text Box
+Text boxes are used when working with text.  The text can be words, numbers or dates.  Figure 3 is an example of a text box.
+
+
+
+
+Figure 3: Text Box
+
+Text Box Label: The text box label gives you an indication of the data that are required.
+
+Text Box: This is where the data must be inserted.  Enter the text.  To change the text, highlight it and enter the new text.
+Combo Box
+A combo box is a list of options.  A combo box is used when there is a limit to the choice that has to be made.  Combo boxes are useful because you do not have to type anything in; you simply make a choice from the list of options that are available.  This also minimizes spelling and typing errors.  Figure 4 is an example of a combo box.
+
+
+
+
+
+Figure 4: Combo Box
+Option Box
+Option boxes are used when a choice has to be made between two or more options.  Figure 5 is an example of option boxes.
+
+Figure 5: Option Box
+
+Option Box Label: The option box label tells you what data to select.
+
+Option Box: Click on the option box for the choice that you want to make.
+Tabs
+Some of the screens in the system have more than one function.  This occurs when, for example, you work on the inventory screen.  There are different parts to the inventory data.  Each part of the screen has been broken down into a tab.  To enter, edit, or delete data for the specific tab, simply click on it.  This action will then display the screen for the tab.
+
+
+
+Figure 6: Tabs
+
+
+
+
+COMMAND BUTTON
+
+The command buttons are used to perform specific tasks.  The word, words, or picture on the command button will indicate this task.  Click on the command button to select it.
+
+
+
+
+
+Figure 7: Command Buttons
+
+In some cases, the command button may be inactive.  This means that you cannot select it.  The text or picture on the command button will be lighter than on an active button, if the command button is inactive (see for example the binocular icon in Figure 7, which is inactive).
+
+The most prevalent command buttons are given below, along with the action performed using a specific button.
+
+Record Selectors
+The record selectors appear at the bottom of the screen and are used to select records as follows:
+
+
+
+
+
+
+
+Click on  to go to the beginning of the record set.
+Click on  to go to the previous record.
+Click on  to go to the next record.
+Click on  to go to the end of the record set.
+
+
+
+Menu Items
+The options of the system listed below, can be found under the “ADD-INS”-tab on the ribbon at the top of the screen.
+File Menu
+Path: Add-ins / File
+
+
+Figure 8: File Menu
+
+The options to “Import from and to database” and “Export dTIMS Bridge Elements” are only visible to the ‘super user’ and not for the ‘general user’.
+Import from and to database
+Take note that this option is not available for all levels of access.
+‘Import Bridges to main DB’ option 
+
+Path: Add-ins / File / Import from and to database / BMS Import Utility / Import bridges to main DB
+
+The purpose of this option is as follows:
+
+Import bridge inventory data from the Data Capture Program for a selected list of bridges to the BMS on the UNRA Server;
+Append bridge inspection data from the Data Capture Program to the BMS on the UNRA Server;
+This option will automatically import inventory and inspection photos 
+
+Refer to the Data Capture Manual for correct naming of photos and maximum photo sizes.  
+
+Figure 9: Export and Import Tabs
+
+In order to maintain the integrity of the inventory data of the BMS on the UNRA Server, a number of checks are done during the inventory import.  For bridges the most important of these are regarding the number of spans in the 2 databases: If there is a difference between the number of spans in the capturing database and the number of spans in the main database, these bridges will not be imported and a list of bridge numbers will be provided after the import has been completed.  It is considered that should the number of spans be different, then it is most likely not the same bridge for which data are imported. 
+
+If this occurs, the user shall use the available inventory data from the two sources, as well as any photographs, to confirm that the bridge inventory data to be imported is indeed for the existing bridge on the BMS on the UNRA Server. 
+
+In the rare case that it is confirmed that the number of spans on the BMS on the Server is wrong, then the inventory data on the UNRA server has to be adjusted to correct the number of spans.  The import of inventory data can then be repeated. 
+
+Always remember that the inventory import overwrites the existing inventory on the Server, and pre-checks of comparing inventory printouts from both systems are strongly recommended.     
+
+
+After completion, a list of errors identified by the BMS Import Utility, will be listed in the list box “Import errors”:
+
+Figure 10:  Import errors listed
+
+When clicking on the “OK” button, another dialog box will open:
+
+
+Figure 11:  Error log file dialog box
+
+Click on the “OK” button and a “Save As” dialog box will open.  Browse to the folder where this log file should be saved, give the file name an appropriate file name and click on the “Save” button.
+ 
+
+The following criteria will prevent data from being imported/updated from the Data Capture Program to the Main BMS on the Server:
+
+Update the inventory:     
+The Number of Spans in Data Capture is checked vs the Number of Spans in the BMS.  If different, the import of all the data of the specific bridge is abandoned. All bridges not imported are listed.
+If the Link ID differs for a specific bridge, data from the Data Capture Program will not be imported and added to the list of bridges not imported at the end of the import process.
+‘Blank’ fields are not imported to fields where a value exists in the BMS on the Server, existing values are left intact on the BMS.  
+Imported Span Length cannot be 0.  Existing value is left intact in the BMS.
+Imported Overall Bridge Length cannot be 0.  Existing value is left intact in the BMS.
+Imported Vertical Clearance (Principal Feature) cannot be 0.  Existing value is left intact in the BMS.
+Imported Horizontal Clearance (Principal Feature) cannot be 0.  Existing value is left intact in the BMS.
+Imported Vertical Clearance (Secondary Feature) cannot be 0 unless Type Crossing = “Road over road” (03), “Rail over Road” (05), “Canal/Pipe over Road” (06), “Pedestrian over Road” (07) or “Conveyer belt over road” (12).  Existing value is left intact in the BMS.
+Imported Horizontal Clearance (Secondary Feature) cannot be 0 unless Type Crossing = “Road over road” (03), “Rail over Road” (05), “Canal/Pipe over Road” (06), “Pedestrian over Road” (07) or “Conveyer belt over road” (12). Existing value is left intact in the BMS.
+
+Update the inspection data: 
+All inspection records from the capturing database are appended (added) to the BMS. Historic inspection data are never overwritten.
+
+Note that photos are automatically imported from the Data Capture to the Main BMS.  Once you have selected the folder where the photos are stored on the server (as part of this “Import bridges to Main DB” option), and the location of the photos on the local drive, the photos are imported automatically. 
+
+For guidance on photo file names and sizes, refer to the Data Capture Manual.
+
+The backend to be imported from the capturing database can have any .mdb name.  However, as soon as this exported capture backend needs to be opened by the Capture Module Frontend, the name must ALWAYS be “BMS_Data2015_UNRA_Capture.mdb”.
+
+‘Import culverts to main DB’ option
+
+Path: Add-ins / File / Import from and to database / BMS Import Utility / Import culverts to main DB
+
+The purpose of this option is as follows:
+
+Import culvert inventory data from the Data Capture Program for a selected list of culverts to the BMS on the UNRA Server;
+Append culvert inspection data from the Data Capture Program to the BMS on the UNRA Server
+
+In order to maintain the integrity of the inventory data of the BMS on the UNRA Server, a number of checks are done during the inventory import.  The most important of these is the type of culvert in the 2 databases: If there is a difference between the type of culvert in the capturing database and the type of culvert in the main database, these major culverts will not be imported and a list of major culverts will be provided after the import has been completed.  It is considered that should the type of major culvert be different, then it is most likely not the same major culvert for which data are imported. 
+
+If this occurs, the user shall use the available inventory data from the two sources, as well as any photographs, to confirm that the major culvert inventory data to be imported is indeed for the existing major culvert on the BMS on the UNRA Server.  Change either the BMS on the Server or the culvert type of the Data Capture Program and re-import the records.
+
+The following criteria will also prevent major culvert data from being imported/updated from the Data Capture Program to the BMS on the Server:
+
+Update the inventory:     
+The Number of Pipes or Cells in Data Capture Program is checked vs the Number of Pipes or Cells in the BMS.  If it differs, the import of all the data of the specific major culvert is abandoned. All major culverts not imported are listed after the completion of the import process.
+If the Link Name differs for a specific major culvert, data from the Data Capture Program will not be imported and added to the list of major culverts not imported at the end of the import process.
+If any of the following fields in the Data Capture Program differ with more than 20%  of the value in the BMS, the major culvert will not be imported and will be listed after the import process:
+Length of the major culvert
+Overall length of the major culvert (refer to Inventory dictionary)
+Overall width of the major culvert
+Overall cell length
+If the BMS contains data while the Data Capture Program contains null values, the BMS’s values won’t be overwritten with null values and the major culvert will be listed.
+
+Note that photos are automatically imported from the Data Capture to the Main BMS.  Once you have selected the folder where the photos are stored on the server (as part of this “Import Culverts to Main DB” option), and the location of the photos on the local drive, the photos are imported automatically.
+
+For guidance on photo file names and sizes, refer to the Data Capture Manual.
+
+The backend to be imported from the capturing database can have any .mdb name.  However, as soon as this exported capture backend needs to be opened by the Capture Module Frontend, the name must ALWAYS be “BMS_Data2015_UNRA_Capture.mdb”.
+
+‘Export bridges to Capturing database’ option
+
+Path: Add-ins / File / Import from and to database / BMS Import Utility / Export bridges to capturing DB
+
+To export bridges from the BMS to the Data Capture Program, 2 variable options are given to refine selection.
+
+
+Figure 12:  Export Bridges to Capturing DB - Selection Options
+
+
+The first option is to pick the selection method.  The following are options for the selection method:
+Per Region 
+Per District
+Per County
+Per Village
+Per Road Number
+Per Bridge type and inspection frequency
+Per Structure Number
+
+If “Per Bridge type and inspection frequency” was selected, ensure that the checkbox “Use years since last inspection” is checked and select the number of years since last inspection and press the button “Go”.
+
+The following similar screen will appear:
+
+
+Figure 13:  Export Bridges to Capturing DB - Option: Per Bridge and Inspection Frequency
+
+Make a selection of the bridge types (or click on the “Select all bridges” button to select all listed structures) and press the “Apply selection filter” button.  A list box under this button will be populated with the bridges meeting the criteria of the above selection.  These bridge types also have check boxes in front of them and should you wish not to include a specific bridge type to the selection, just unselect the check box in front of that bridge type.
+
+If you would like to clear the bridges already in the capturing database and delete all of the related data regarding these tables, ensure that the check box in front of “Delete all existing bridges” is checked.  If you would like to append the bridges to be exported to those already in the capturing database, uncheck the checkbox “Delete all existing bridges”.  The final step for the export process to start is to click on the button “Export selected bridges”. 
+
+The Main backend data of the bridges to be exported to the capturing database can have any .mdb name.  However, as soon as this exported capture backend needs to be opened by the Capture Module Frontend, the name must ALWAYS be “BMS_Data2015_UNRA_Capture.mdb”.
+
+
+NB: TRY NOT TO EXPORT ALL THE BRIDGES FROM THE MAIN DATABASE TO THE EXPORT DATABASE. THIS WOULD INCREASE THE RISK OF OVERWRITING UPDATED DATA IN THE MAIN DATABASE WITH “OLD” DATA DURING THE SUBSEQUENT IMPORT PROCESS.
+
+After the export process was completed, the following pop-up message box will appear:
+
+
+
+‘Export Culverts to Capturing Database’ option
+
+Path: Add-ins / File / Import from and to database / BMS Import Utility / Export culverts to capturing DB
+
+Similar to paragraph ‎3.1.1.3, select the necessary criteria for the major culverts to be exported to the Data Capture Program.
+
+NB: TRY NOT TO EXPORT ALL THE CULVERTS FROM THE MAIN DATABASE TO THE EXPORT DATABASE. THIS WOULD INCREASE THE RISK OF OVERWRITING UPDATED DATA IN THE MAIN DATABASE WITH “OLD” DATA DURING THE SUBSEQUENT IMPORT PROCESS.
+‘Import TIS Traffic Data’ option
+
+Path: Add-ins / File / Import from and to database / BMS Import Utility / Import TIS traffic data
+
+Use this tab to import the traffic data exported from TIS to the BMS.
+
+When clicking on this tab, the following dialog box will appear:
+
+
+Figure 14:  Import TIS Traffic Data – Dialogue Box
+
+
+Steps for traffic data import:
+
+Select the latest TIS MDB aris.mdb file, as exported from the TIS.
+Select the BMS back-end database.
+Click on “Import traffic data”.  The traffic information will now be updated in the backend of the BMS.
+‘Import New Links Data’ option
+
+Path: Add-ins / File / Import from and to database / BMS Import Utility / Import new links data
+
+Use this tab to import the new links data exported from dTIMS to the BMS.
+ This program imports and overwrites the existing “LINKS UNRA” table with the latest issued official links data for the next financial year. No imports should be done during a financial year, during which the links and spatial map will be fixed. Data collection and reporting will thus be done on the same road network.
+
+The import option checks the existing structures are located on the imported links by using the link number and km distance of every structure in the BMS.  Structures not located on the imported links, will be shown in an error table and have to be individually investigated and corrected.
+
+The queries in the BMS use the link number and km position of the structure for identifying structures in a specific region, district, maintenance station, etc. from this import of links data.
+
+Steps for links data import:
+Select the new link mdb exported using dTIMS
+Select the backend mdb on the server
+Click on the “Import” button.
+Print the list of errors. These are structures with unknown link numbers and/or wrong kilometre positions. Investigate and correct all errors. Not correcting these errors will result in structures not being selected in any queries based on link numbers and/or region, district, maintenance station, etc.
+‘Set Excel path for graphs’ option
+Path: Add-ins / File / Set Excel path for graphs 
+
+Enter the path where the folder XCEL resides.  When working on the desktop version, this path will be:  C:\Databases\BMS\XCEL\.  Make sure that the last character of the string is a “\”.
+‘Set Drawing path for Drawings’ option
+Path: Add-ins / File / Drawings 
+
+Enter the path where the folder Drawing resides on the server.  This path would typically be similar to:  S:\Drawings\.  Please ensure that the last character of the string is a “\”.
+‘Set Path for Photos’ option
+Path: Add-ins / File / Photos 
+
+Enter the path where the folder Photos resides.  When working on the Main BMS, this path will be:  S:\Photos\ - i.e. on the Server of UNRA (See the Administration Manual for the setup of the S-server).  Make sure that the last character of the string is a “\”.  Remember to enter this path during the setup of the GIS Viewer as well.  When working on the capture program, this path will always be “C:\Databases\BMS Capture Module\Photos\”.
+Close
+Path: Add-ins / File / Close 
+
+This item closes the current object, e.g. a form or a database.
+Exit
+Path: Add-ins / File / Exit
+
+Select this option to exit the application.
+
+Adding Data to the System
+This section explains in detail how to complete each of the input screens in the system.  An input screen is the screen that is used to add data to the system.  For most of the input screens in the system, a similar screen can be used to change or delete data.  
+Bridge Inventory Data 
+Path: Add-ins / Capture Screens / Bridge Inventory 
+
+Use the “Bridge Inventory” screen under the “Capture Screens” command button to add bridge inventory data for a new bridge to the system as well as edit existing inventory data of a bridge already captured on the BMS.  The default screen is to add new bridge data to the system. 
+
+
+
+This screen has tabs that represent the different parts of the inventory data form.  
+
+
+
+Figure 15:  Capture Bridge Inventory Form
+
+The form is divided into the following categories:
+Location: physical location of the bridge and the details of the surrounding features
+Diagram: showing directional orientation of the bridge in an areal diagram
+General Data: type of bridge construction, deck and abutments, piers, parapets / railings of the bridge
+Spans: type, number, length and depth of all deck spans
+Piers: number, type, dimensions and foundations of piers
+Abutment, Joints: type, height, foundations of abutments; number and type of expansion joints
+Design: characteristics and history regarding design and construction, including design code and live loads
+Geometry: leading dimensions; accident statistics
+Traffic Data: number of lanes, shoulders, sidewalk, traffic characteristics and counts
+Maintenance, Services, Archive 
+Access, Remarks
+
+Note: You need the completed “BMS Inventory Data Sheet” to enter the data on this part of the system.  Each heading on this form corresponds to a field on the screen.  Enter the data at the relevant fields using the data directly from the form.  Use the tab key to move from a completed field to the next one.
+
+Some of the data fields could be disabled. This happens when the fields on the screen do not relate to the type of bridge that you are working with.  You will not be able to enter data into a field if the field is disabled.  Continue to enter data at the fields that are not disabled.
+
+On the design screen where dates are required in the fields ‘design approval date’, ‘completion date’, and ‘major rehabilitation date’ enter dates in this format:  YYYY, e.g. 2015. 
+
+In case of uncertainty about the data format for any field, the BMS Bridge Data Dictionary that describes data inventory for bridges may be consulted.
+
+The number of spans that was entered in the ‘number of spans’ field on the span data screen will determine the number of lines made available to the user on the screen for capturing details about the individual spans.  The user must then enter the data for each of the spans; for example, if you enter three spans for a bridge, the system will add three lines under the heading so that you can enter data for each of the three spans.
+
+Always complete the screens in a logical format, left to right and top to bottom on the different screens. Make sure that the “Save” button  is clicked to store the newly captured data, at the end of the capturing of the inventory report sheet.  After the “Save” button was clicked, the “Add Inspection” button will be enabled and an inspection can be added for the specific bridge.
+Bridge Inspection Data – Add / Edit
+Path: Add-ins / Capture Screens / Add Bridge Inspection 
+Path: Add-ins / Capture Screens / Edit Bridge Inspection
+
+The Add Bridge Inspection option will only be used should the manually completed inspection forms have to be captured directly on the Main BMS. Where already captured in the Data Capture database, it shall be imported through the “Import Bridges to Main DB” option.   
+
+The Add Bridge Inspection option will then be used to capture the inspection data from the inspection sheets. Editing of existing data already captured will be done with the Edit Bridge Inspection option. 
+
+
+
+The capturing of a bridge inspection report should always be preceded by the capturing of the relevant bridge inventory data. Click on the arrow in the “Bridge Number” combo box to display all the bridges with completed inventories. Select the applicable bridge with the mouse and proceed to capture the inspection data.
+
+The current inspection to be captured can be indicated by one of three options:
+
+
+Figure 16: Current Inspection Type
+
+There are 3 types of inspection.  A Superficial inspection is only a summary inspection and only the “Final” tab of the inspection sheet is filled in.  The Principal and Special inspections are complete inspections and the complete inspection forms must be completed for these types.
+
+Note: You need the completed “BMS Field Inspection Sheet” form to enter the data on this part of the system.  Each heading on this form corresponds to a field on the screen.
+
+Enter the data at the relevant fields using the data on the form. The different fields are accessed with the following tabs:
+
+Diagram
+Signs
+Services
+Main Component:
+Approaches: inspection data, defects, repair and maintenance recommendations regarding the approaching roadway
+Waterway: inspection data, defects, repair and maintenance recommendations concerning the river beneath the bridge (where applicable)
+Note: The system will not show this screen if the bridge does not have a river flowing under it.  Proceed with the next screen.
+Sub-structure: inspection data, defects, repair and maintenance recommendations concerning the supports of the bridge (abutments and piers)
+Superstructure: inspection data, defects, repair and maintenance recommendations concerning the deck spans of the bridge
+Roadway: inspection data, defects, repair and maintenance recommendations concerning the road on the bridge
+Expansion Joints: inspection data, defects, repair and maintenance recommendations regarding the deck expansion joints.
+Final: The summary condition ratings for Waterway (optional), Substructure, Superstructure, Roadway and Approach MUST ALL be entered, before the “Calculate Overall Rate” button at the bottom of the screen is pressed.  If Waterway is not applicable, make sure the checkbox next to the rating for the Waterway is checked – indicating that the Waterway is not applicable.  If all of these four or five main components are not rated, obtain the ratings from the Bridge Inspector who did the inspection.  You MUST also press the “Calculate Overall Rate” button before exiting this screen.  Also add any additional remarks concerning the bridge condition.  
+
+Make sure that the “Save” button is clicked to store the newly captured data, at the end of the inspection report sheet.
+Culvert Inventory Data
+Path: Add-ins / Capture Screens / Culvert Inventory 
+
+Click on “Capture Screens” and select “Culvert Inventory”.  This screen is used both to add new culvert data to the system as well as edit existing data.  The default screen is to add inventory data for a new culvert to the system.  This screen has tabs that represent the different parts of the inventory data form.  The form is divided into the following categories:
+
+Location: physical location of the culvert (including the road number, link number and km distance) and the geographical details of the surrounding area (including the GIS-coordinates and map detail)
+Design of the culvert: direction of flow, town or village on each side as well as indication of abutment (left or right).
+Geometry: overall length, overall width, minimum clear width, minimum road width, approach width, angle of skew, maximum fill height, minimum vertical clearance, maximum cell width and height and minimum depth of fill over.
+ 
+Figure 17:  Geometry of a Major Culvert
+
+The following conclusions can be made from Figure 17:
+OL >= Maximum Cell Size - width
+If Angle of Skewº = 0, then OL = Maximum Cell Size - width
+OCL >= OW
+Approach width >= Minimum Road Width
+Comments: general remarks
+
+Note: You need the completed “ Culvert Inventory Data Form” to enter the data on this part of the system.  Each heading on this form corresponds to a field on the screen.  Enter the data at the relevant fields using the data directly from the form.  Use the tab key to move from a completed field to the next one.
+
+In case of uncertainty about the data format for any field, the BMS Major Culvert Data Dictionary that describes data inventory for major culverts may be consulted.
+
+Always complete the screens in a logical format, left to right and top to bottom on the different screens. Make sure that the “Save” button  is clicked to store the newly captured data, at the end of the inventory report sheet.
+Culvert Inspection Data – Add / Edit
+Path: Add-ins / Capture Screens / Culvert Add Inspection
+Path: Add-ins / Capture Screens / Culvert Edit Inspection
+
+The Culvert Add Inspection option will only be used should the manually completed inspection forms have to be captured directly on the Main BMS. Where already captured in the Data Capture database, it shall be imported through the “Import Culverts to Main DB” option. 
+
+This screen is used both to add new inspection data for a culvert to the system as well as edit existing inspection data for culverts already on the system.  The default screen is to add new culvert inspection data to the system.
+
+Enter the date of inspection in the format: dd/mm/yyyy.  After entering the road number, km and inspector, click on the ‘Save’ button to populate the form.
+
+Note: You need the completed “Culvert Inspection Sheet” to enter the data on this part of the system.  
+
+Enter the data in the relevant fields using the data on the form.  Make sure that the “Save” button  is clicked to store the newly captured data.
+Changing Data that have been recorded
+Certain screens in the system have a function that can be used to change data.
+
+Table 1 below displays a list of all the screens where data can be changed, should it be incorrect.
+
+The first column is a list of all the names of the screens for changing data.
+
+The second column is the name that appears on the command buttons on the menus.  Click on these command buttons to gain access to the screen that you want to use to change the incorrect data.  Remember that this column only applies to the screens that we use to change data.
+
+Table 1 -  Editing data
+
+Deleting Data that have been recorded
+Certain screens in the system have a function that you can use, should you need to delete data.
+
+Table 2 is a list of all screens from which data can be deleted, if the data are incorrect.
+
+The first column is a list of all the names of the screens for deleting data.
+
+The second column is the name that appears on the command buttons on the menus.  Click on these command buttons to gain access to the screen that you want to use to delete the incorrect data.  Remember that this column only applies to the screens that are used to delete data.
+
+Table 2 - Deleting Data that have been recorded
+
+Reporting
+Single Bridge Reports
+Inventory, inspection, condition, maintenance and defect reports including ratings can be printed for a single bridge from the “Capture Screens” section, if the structure number is known, as follows: 
+
+Inventory Report
+Select “Capture Screens”
+Select “Bridge Inventory”
+Click on the “Edit data” button on the toolbar.  Now the combo box to select a bridge from the list is enabled.
+Select the appropriate bridge from the combo box where the bridge numbers are listed
+Click on the “Generate Report” button on the toolbar.  You can view or print it.  
+Click on the “Close” button          on the toolbar when finish.
+Inspection Report
+Select “Capture Screens”
+Select “Bridge Inspection”
+Click on the “Edit data” button on the toolbar.  Now the combo box to select a bridge from the list is enabled.
+Select the appropriate bridge from the combo box where the bridge numbers are listed as well as a date from the combo box
+Hover the mouse over the “Generate Report” button on the toolbar.  A dropdown box will appear, giving you the option to preview one of the following reports:
+Condition Report – Prints a condition report for the selected bridge per sub-component
+Defect Report – Prints a defect report for the selected bridge per sub-component
+Maintenance Report – Prints the bridge inspector’s recommended maintenance activities for the selected bridge per sub-component.
+Inspection Report – Prints a specific inspection of a specific bridge with inspection details indicated by the inspector.
+You can view or print the selected report.  
+Click on the “Close” button          on the toolbar when finish.
+
+Alternatively, if the structure number is not known, use the Detection option (Path: Add-ins / Detection / Single Bridge) to detect a single structure.
+This “Detection” screen provides access to the facility to detect a specific single bridge. The “Single Bridge” button will enable you to specify the selection criteria that will assist you in finding a bridge number.  These criteria include link number, river name, region, district, maintenance station, county, village, type crossing, and design firm.  Once the criteria are selected, click on “Detect Bridges”.
+Network of Bridges
+In this part of the reporting system, you can print a report for a selected group of bridges.  Click on “Detection” and then “Network Bridge” (Path: Add-ins / Detection / Network Bridge) to enable the selection of a group of bridges.  You can specify any combination of criteria to detect a network (selection) of bridges.  After the network of bridges has been identified, you can close the screen and select “Network Reports” to print a variety of reports concerning the identified bridges only.
+
+The system uses the previous selection that was made if you do not specify new criteria.
+
+
+Select the type of data that you want in your report from the options listed under the heading “Selection Criteria”, which is divided into two categories “Inventory” and “Inspection” and include the following:
+
+Inventory:
+General – Select the general (related inventory) field from the combo box.
+Span – Select the related span field from the combo box.
+Pier – Select the related pier support field from the combo box.
+Abutment - Select the related abutment field from the combo box.
+Expansion Joint - Select the related expansion joint field from the combo box.
+Service – Select the related service field from the combo box.
+Inspection:
+General - Select the general (related inspection) field from the combo box.
+Signs - Select the related signs field from the combo box.
+Condition - Select the related condition field from the combo box.
+Defects - Select the related defects field from the combo box.
+Maintenance – Select the related maintenance field from the combo box.
+
+In specifying values for the criteria selected, the following wildcards may be used:
+ “* wild cards” – Will match any type and number of character/s.
+“? wild cards” – Use the ? to match any single character.
+“! not wild cards” – The exact name and the exact spelling must be used.
+
+Click on “run query” after each time that you select criteria.  A list of bridges that comply with the criteria that you have just selected will then be listed in the “Distinct Query” list box.  The bridges that comply with all subsequent criteria that you have selected will then be listed in the “Multiple Query” list box (current network selection that is used for network reports and for data validation report) after you have completed running all the queries.  A ticked “Append” box for running the queries means that all the bridges complying with criteria 1  criteria 2 and so on will be selected, while an unticked “Append” box means that those bridges complying either with criteria 1 OR criteria 2 and so on will be selected.
+
+Click on “reset query” to reset the queries and start over again.
+
+
+Under the “Network Reports” section (Path: Add-ins / Network Reports) the following options are found:
+“Ranking of bridges” – Ranks all the bridges according to the deficiency index of the bridges.
+“Export basic bridge inventory data to Excel based on detected network” – Lists basic bridge inventory data in a spreadsheet based on network detected. 
+“Ad Hoc Bridge Reporting” – User generated report.
+“Network Status Report for bridges” – Lists bridges according to road number or region per “Overall Condition Rating” percentages.
+ “Short Term Budget Needs for Bridges” – Lists the costs required for maintenance sorted according to either of the following:	
+Bridge Number
+Deficiency Index
+Priority (This report can be exported to Excel as a flat file for further analysis.)
+
+“Detail Short Term Budgets”:
+“Inspection Details for bridges with marginal substructures and marginal superstructures” – Ad hoc report where fields can be selected but with a fixed criteria that the substructures and superstructures are marginal.  These are a sub selection of the network of bridges detected.
+“Maintenance and Repair – Short Term Budget – Per Maintenance Station” – All maintenance and repair activities are listed on the short term budget with the criteria: sorted per district, per road, per km, per activity excluding bridges with marginal superstructures and substructures.
+
+“Summary of Maintenance and Repair Activities” – Maintenance and Repair activities expressed as currency per priority.
+“Minimum Vertical Clearance on Link Name for bridges” – Lists the minimum vertical clearance per bridge.
+“Minimum Horizontal Clearance on Link Name for bridges” – Lists the minimum horizontal clearance per bridge.
+“Schedule Future Inspections for bridges” – Display a prediction for future inspections.
+ “Inventory Graphs for bridges” – A choice of the following graphs can be made for a specified period or all of the data.  Take note that the network detected has an influence on these graphs.
+Completion date distribution
+Type of Crossing
+Number of Deck Spans
+Overall Bridge Length
+ Width
+Bridge Type
+Deck Surfacing
+Type of Bearing
+Parapet Type
+Type of Expansion Joints
+Vertical Clearance for Road over Road and for Rail over Road
+
+“Inspection graphs” – A choice of the following graphs can be made for a specified period or all of the data.  Take note that the network detected has an influence on these graphs.
+Overall Rating
+Main Component Rating
+
+“Asset value report for bridges – detail” – Provides a detailed report on asset values for bridges.  It is important to update the unit costs per square meter of deck per type of bridge before printing these reports.  Use Add-ins / System Parameters / Asset Value Unit Costs.
+“Asset value report for bridges – summary” – Shows the CRC (Current Replacement Cost) and CDRC (Current Depreciated Replacement Cost) for selected bridges and a Summary per Bridge type. 
+The Asset Value Report – Detail gives the CRC (Current Replacement Cost) and CDRC (Current Depreciated Replacement Cost) of each bridge in the detected network.  The Summary Report gives the sum of the CRC and the CDRC of each bridge type in the detected network.  The CRC and CDRC are calculated as follow:
+CRC = Overall bridge length x Overall bridge width x Unit Cost x Factor (Maximum Pier Height).  The factor can be looked up the following table:
+
+These factors are hard coded in the BMS. 
+CDRC = (CRC x Condition*) / 9
+*Condition refers to the overall rating of the condition of the bridge.
+“Bridges with Principal Inspection Data” – List the bridges where a principal inspection was done.
+ “Bridges with Superficial inspection Data” – List the bridges where only a superficial inspection was done.
+“Bridges with Special Inspection Data” – List the bridges where a special inspection was done.
+Single Culvert Reports
+Inventory and inspection reports including rating and maintenance details can be printed for a single culvert from the “Capture Screens” section, if the structure number is known. 
+
+The way to generate single culvert reports for specific culverts (if the structure number is known) is as follows:
+Inventory Report
+Select “Capture Screens”
+Select “Culvert Inventory”
+Click on the “Edit data” button on the toolbar.  Now the combo box to select a culvert from the list is enabled.
+Select the appropriate culvert from the combo box where the culvert numbers are listed
+Click on the “Generate Report” button on the toolbar.  You can view or print it.  
+Click on the “Close” button          on the toolbar when finish.
+Inspection Report
+Select “Capture Screens”
+Select “Culvert Inspection”
+Click on the “Edit data” button on the toolbar.  Now the combo box to select a culvert from the list is enabled.
+Select the appropriate culvert from the combo box where the culvert numbers are listed as well as a date from the combo box
+Hover the mouse over the “Generate Report” button on the toolbar.  A dropdown box will appear, giving you the option to preview one of the following reports:
+Condition Report – Prints a condition report for the selected culvert per sub-component
+Defect Report – Prints a defect report for the selected culvert per sub-component
+Maintenance Report – Prints the maintenance items for the selected culvert per sub-component.
+Inspection Report – Prints the complete Inspection Report containing the above-mentioned Condition Report, Defect Report and Maintenance Report.
+You can view or print the selected report.  
+Click on the “Close” button          on the toolbar when finish.
+
+
+
+Alternatively, if the structure number is not known, use the Detection option (Path: Add-ins / Detection / Single Culvert) to detect a single structure.
+The “Single Culvert” button will enable you to specify the selection criteria that will assist you in finding a culvert number.  These criteria include road number, or link number, design load, and culvert type.  Once the criteria are selected, click on “Detect Culverts”. 
+Network of Culverts
+In this part of the reporting system, you can print a report for a selected group of culverts.  Click on “Detection” and then “Network Culvert” (Path: Add-ins / Detection / Network Culverts) to enable the selection of a group of culverts.  You can specify any combination of criteria to detect a network of culverts.  After the network of culverts has been identified, you can close the screen and select “Network Reports” to print a variety of reports concerning the identified culverts only.
+
+The system uses the previous selection that was made if you do not specify new criteria.
+
+
+
+Select the type of data that you want in your report from the options listed under the heading “Selection Criteria”, which is divided into two categories “Inventory” and “Inspection” and include the following:
+
+General – Select the general (related inventory) field from the combo box.
+Inspection – Select the related inspection field from the combo box.
+
+In specifying values for the criteria selected, the following wildcards may be used:
+“* wild cards” – Will match any type and number of character/s.
+“? wild cards” – Use the ? to match any single character.
+“! not wild cards” – The exact name and the exact spelling must be used.
+
+Click on “run query” after each time that you select criteria.  A list of culverts that comply with the criteria that you have just selected will then be listed in the “Single Query” list box.  The culverts that comply with all subsequent criteria that you have selected will then be listed in the “Multiple Query” list box (current network selection that is used for network reports and for data validation report) after you have completed running all the queries.  A ticked “Append” box for running the queries means that all the culverts complying with criteria 1  criteria 2 and so on will be selected, while an unchecked “Append” box means that those culverts complying either with criteria 1 OR criteria 2 and so on will be selected.
+
+Click on “reset query” to reset the queries and start over again.
+
+
+
+Under the “Network Reports” section select Culverts (Path: Add-ins / Network Reports / Culverts).  The following options are available:
+
+“Ranking” – Ranks all the culverts according to the deficiency of the culvert.
+“Ad Hoc Reporting” – User generated report.
+ “Network Status” – A list of components per overall conditioning rating.
+“Culvert Inventory Graphs” – A choice of the following reports can be made for a specified period or all of the data.  Take note that the network detected has an influence on these graphs.
+Number of Pipes/Cells
+Overall Culvert Length
+Overall Width
+Culvert Type
+
+“Culvert Inspection Graphs” – A choice of the following reports can be made for a specified period or all of the data.  Take note that the network detected has an influence on these graphs.
+Overall Rating
+Main Component Rating
+
+“Asset value report for Culverts – Detail” – Provides a detailed report on Asset Values, where CRC = culvert length x width x unit cost x no of pipes or cells x factor (Max fill height)
+These factors are hard coded in the BMS.  
+“Asset value report for Culverts – Summary” – Provides a summary report per culvert type, where CDRC = CRC x overall rating / 9.
+“Major Culverts with Principal Inspection Data” – Provides a list of Major Culverts with principal inspections.
+“Major Culverts with Special Inspection Data” – Provides a list of Major Culverts with special inspections.
+
+
+Visual Modules
+Photo Module
+The photo module contains a selection of photos for each bridge and major culvert in the system.  You can use this section to add, delete or view bridge and culvert photos and data concerning the relevant photos.  There is a facility available whereby you can change the description of the bridge and culvert photos.
+
+The photo module is divided into six parts:
+
+Add Bridge Photos
+Delete a captured Bridge photo
+Bridge Album
+Add Culvert Photos
+Delete a captured Culvert photo
+Culvert Album
+
+The photos are stored in a folder S:\Photos\ followed by another subfolder with the number of the structure. The particular photos must be copied to these folders after capturing of inventory and inspection data, and thus prior to using the Photo Module to view photographs.
+
+The Photo menu item is used to add new photos to the system and to view existing photos in the system.  There are 2 types of photos:  inventory photos and inspection photos.  The bridge inventory photos usually consists of 9 photos (7 only for major culverts).  The inspection photos don’t have a restriction, but take note that only the first 35 photos will be displayed under the album.  
+
+It is a requirement of the system that the photo files be named as follows:
+
+For Bridge Inventory Photos:
+
+B……._YY_01.jpg for General Elevation of the bridge
+B……._YY_02.jpg for View from Approach along Centre Line of Deck 
+B……._YY_03.jpg for Bridge Number or Number Plate or place where bridge number is supposed to be if not shown on the bridge
+B……._YY_04.jpg for Underside of deck
+B……._YY_05.jpg for Typical pier
+B……._YY_06.jpg for Typical abutment
+B……._YY_07.jpg for Typical expansion joint
+B……._YY_08.jpg for Typical parapet
+B……._YY_09.jpg for Feature crossed
+
+
+Where:   B……. = Bridge number
+	_YY = Year of photo (last two digits of YYYY)
+	_01 = Sequence number (always 01 for general elevation view, always _02 for view from approach, always _03 for bridge number, etc.)
+
+For Bridge Inspection Photos:
+
+B……._YY_10.jpg for first photo of distress (the first distress photo is always _10)
+B……._YY_11.jpg for second photo of distress, etc. for further photos of distresses
+
+
+For Major Culvert Inventory Photos:
+
+C……._YY_01.jpg for General Elevation of the major culvert
+C……._YY_02.jpg for view from approach along centre line of deck
+C……._YY_03.jpg for culvert number plate or number or position for number
+C……._YY_04.jpg for picture of underside of deck
+C……._YY_05.jpg for a picture of a typical wing wall
+C……._YY_06.jpg for a picture of a typical parapet / guardrail.
+C……._YY_07.jpg for a picture of the feature crossed.
+
+For Major Culvert Inspection Photos:
+
+C……._YY_08.jpg for first photo of distress
+C……._YY_09.jpg for second photo of distress, etc.
+
+Where
+C……. = Culvert Number
+	_YY = Year of photo (last two digits of YYYY)
+_01 = Sequence number of the photo, where 01 will always be a general elevation photo of major culvert, etc.
+Drawing Module
+The Drawing Module contains the available as built drawings or detailed design drawings of selected bridges or major culverts in the network.  You can use this section to add, view or delete bridge and culvert drawings.
+
+The Drawing Module is divided into six parts:
+
+Add Bridge Drawings
+Delete a Bridge Drawing
+View Bridge Drawing Album
+Add a Culvert Drawing
+Delete a Culvert Drawing
+View Culvert Drawing Album
+
+The actual drawings are stored on the server in a pdf-format.  This path can be changed under Add-ins->File->Set Drawing path for drawings.  This path should normally be ‘S:\Drawings’.
+
+
+Data Validation
+Data validation will assist you in determining errors as well as incomplete data on the system (Path: Add-ins / Data Validation Reports).  The data validation reports are the following:
+Outstanding Main Component Rating
+List all the bridges that have incomplete main component ratings.
+Insufficient Data for Ranking
+List all the bridges that have insufficient ranking data.
+Bridge with no Inspection Available
+List all the bridges that do not have inspection data available.
+List of Bridges with *Unchecked Data
+List all the bridges that have unchecked data. It is recommended that this option be used to check that data has been captured correctly, from the inventory sheets initially, or imported correctly from the Data Capture Program later. 
+*To change an “unchecked” bridge to “checked” the following must be done:
+Click on the “Capture Screens” menu item
+Select “Bridge Inventory”
+Once the form has opened, click on the “Edit”-button .
+Select the appropriate bridge number from the drop down box
+On the far right hand side there is a “Data checked” check box. 
+Click to check it and click on the “Save” button.  Now the selected bridge is ‘checked’.
+List of Bridges with Checked Data
+A list of all bridges with checked data.
+Bridges with incomplete Superficial inspections
+List all the bridges with incomplete superficial inspections.
+Bridges with incomplete Special Inspections
+List all the bridges with incomplete special inspections.
+Bridges with incomplete Principal inspections
+List all the bridges with incomplete principal inspections.
+List of Culverts with no Inspections Available
+List all the culverts that do not have any inspection data available, or missing data in any of the inspections.
+List of Culverts with Missing Main Component Ratings 
+List all the culverts that are missing main component ratings.
+
+Open GIS application
+This menu item opens the BMS-GIS-Viewer application.  Before this option is used, ensure that the latest Viewer is installed as described in the manual: Installation Manual V1.3.docx.  If the application was installed successfully, a similar screen will appear:
+
+
+Figure 18: GIS Viewer Application
+
+Layers Visibility
+Start current Background layers are displayed in the following Tree-View. This is all the default information being displayed on the Map e.g. Regions, Roads/Links, Rivers etc.  (More layers can be added at a later stage)
+
+All Layers marked with are visible. Click in the box to toggle visibility. When the application is closed, the last visibility settings are stored and when the application is opened the saved visibility options are restored.
+
+About
+Basic information about the PC and the BMS-GIS-Viewer is displayed.
+Switch Back To Main BMS Application
+Click on the “Switch to main App”-button and if the BMS application is open, it will be displayed in the foreground.  If not, check your setup that the “BMS Main Window”-name was entered and spelled correctly.
+
+
+Load Points
+Click on the Load Points button and the following screen will be displayed. All previously loaded points will be cleared when new points are loaded.
+
+
+
+
+
+General Information about the use of this screen:
+Set All Years (only in structure type) – change ALL years to the exact number of years since the last inspection.
+Do Filter – enable filtering on that specific category
+All On – set the selections all ON
+All Off – set the selections all OFF
+If All Off was selected for a category, make sure that at least one item under that category was selected before clicking on the “Accept” button.
+Click in the Heading to sort that column.
+
+Structures Options:
+All (Both Bridges and Major Culverts)
+Bridges Only
+Major Culverts Only
+
+Structure Types and Inspection:
+The list will be loaded depending on the Structure option selected (See above)
+Select one or more type and change the Year in the Year column to specify to only show Structure Types that was inspected that number of years ago. 
+
+District:
+Select one or more districts to search on. 
+
+Station:
+Select one or more stations to search on. 
+
+Region:
+Select one or more regions to search on. 
+
+Links:
+Select one or more roads/links to search on. 
+E.g. To search on all links – Link03, click on the Heading ‘Link’ to sort on that column. Then select only all Link03:
+
+
+
+Rating:
+Select one or more rating to search on. 
+
+Surface Type:
+All (Both Sealed/Bituminous and Unsealed)
+Sealed/Bituminous Only
+Unsealed Only
+
+Click Accept and all points will be Loaded with the Filtering selected.
+
+Select / View Loaded Points
+The number of points loaded is displayed as follows:
+
+
+
+The map will look like this: 
+
+
+Click on  and then on a point on the map to view the selected point
+
+Click  to view and go to the first point loaded.
+
+Click  to view and go to the previous point loaded.
+
+Click  to view and go to the next point loaded.
+
+Click  to view and go to the last point loaded.
+
+
+
+Selected Point information will be displayed as follows on the screen:
+
+
+Selected Point information will be displayed as follows on the Map:
+ There is a frame around and the text is in a bigger font.
+
+There will also be new Tabs next to the Map tab:
+
+
+
+Click on Information for more information about the point selected
+
+Click on Photos to view photos for the point selected
+Clear All Loaded / Selected Points
+Click on the Load Points button and the following screen will be displayed. All previously selected/loaded points will be cleared when new points are loaded.
+Map Information
+The map engine being used is MapSuite/ThinkGEO
+
+ - select this option and then you can move the map around by click and drag on the map
+ - select this option to zoom IN on the map. Click on the map and keep the mouse button in, then move the mouse and you will see the box below. If you leave the mouse button the map will zoom into the box
+
+ - select this option to zoom OUT on the map. Just click with the mouse and the map will zoom out at the clicked location
+ - select this option to measure a distance on the map. Click on the map once and then again and again etc. Double click to end and the measured line will be displayed in Red.
+
+The following picture displayed the length at the bottom of the map
+
+ - not used
+ - Select Raster Layers if installed
+ - Select the Vector scale. If you click on this button you will have an option from Level 1 to 6 where 1 is Street Level and 6 is zoomed out to almost country level. See Setup to change the default scale for each Zoom Level
+ - zoom out to country level
+ - keep the current zoom level but move the map to the default location
+ - This status bar at the bottom of the map will always display the Longitude/Latitude location of the mouse cursor on the map. Sometimes more information is displayed to the right e.g. distance measured
+
+Maintain System Parameters
+The screens in this part of the system are used to edit all required calculation data as well as codes for data storing.  The following is an indication of the data that can be edited on each of the screens. Note that these options can only be adjusted by super users of the system.
+Maintain code type data fields
+Use this part of the system to add, change or delete the codes that are used on the system. However, these should not be changed without consultation with a bridge engineer and the system developers.
+
+To Add a Code:
+Enter the description for the code at the field “Description” under the heading “Input / Selection Criteria”.  Add the code to the description sequential to the bulk number of codes.
+Asset value unit costs
+Use this screen the update the unit construction costs, per type of bridge or major culvert, per square meter deck area.  If the total deck area is multiplied by the unit cost, on the date of the unit cost, the replacement cost of the specific type of bridge or major culvert would be available.  The date of the unit cost should also be provided in the mm/YYYY format. 
+Enter unit rates for maintenance items for bridges
+A list of maintenance items per bridge type will be displayed.  Edit the rate per unit and select whether the specific item can be classified as one of “Routine”, “Preservation” or “Repair/Replace”.
+Enter unit rates for maintenance items for major culverts
+A list of maintenance items per culvert type will be displayed.  Edit the rate per unit and select whether the specific item can be classified as one of “Routine”, “Preservation” or “Repair/Replace”.
+Overall rating variables
+You can edit the following fields on this screen. However, these should not be changed without consultation with a bridge engineer and the system developers.
+“Category 0 – 9” for:
+Approaches
+Waterway
+SubStructure
+SuperStructure
+Roadway
+For major culverts the weighted factors for the following components can be changed:
+Waterway
+Inlet Outlet
+Structure
+Roadway
+Ranking variables / Constants
+This is for bridges only. Each tab on this screen contains the fields that you can edit.  Select the tab of the screen that you want to edit.  However, these should not be changed without consultation with a bridge engineer and the system developers. The following is a list of the tabs that appear in ranking part:
+Ranking Criteria
+General Constants
+Number of Lanes Factor
+Horizontal Clearance Limits
+Vertical Clearance Limits
+Sub- and Super Structure Condition Rating
+Weighted Factors per Bridge Components
+Bridge Condition Rating Coefficient
+Approach Alignment Deficiency
+
+The weighting factors used in the calculation of the overall bridge deficiency index can be set here, depending on the emphasis that the deficiency index must carry.  
+Future inspections Variables/Constants
+You can edit the fields on the screen to determine the bridges requiring future inspections, based on a number of perspectives. 
+Change Structure Number
+Bridge number change
+There is only one item under this menu item, i.e. Bridge number Change.  The BMS system contains many related tables.  This menu item helps the operator to change the Bridge number throughout the entire system.
+
+
+Figure 19: Change of Bridge numbers screen
+
+If the system will not allow the changing of a number, the bridge may have multiple records.  To prevent this from happening, it is crucial that all numbers are entered in accordance with the set convention and that this convention is made clear at the briefings with the inspection teams.  Bridge numbers are case sensitive and are affected by the positioning of spaces within the number.
+
+If a Bridge number is changed, the photos to the bridge would still be linked to the changed number, however the physical name of the bridge photos are not changed, only the link to these photos. 
+
+It is however recommended, to ensure integrity between the system as well as the photos, that the photos are renamed to the new numbers in the “Photos” folder on the S-drive.  Thereafter the photo records in the system should be changed to refer to the correct photos with the new bridge number. Unfortunately this is a tedious process.  First delete all the photos for the old structure and thereafter re-capture all the photos under the correct Bridge number.  This applies to the change of Culvert numbers as well.
+Culvert number change
+This brief module contains a function to change the culvert number throughout the database in all the associated records.  
+
+If the system will not allow the changing of a number, the culvert may have multiple records.  To prevent this from happening, it is crucial that all numbers are entered in accordance with the set convention and that this convention is made clear at the briefings with the inspection teams.  Culvert numbers are case sensitive and are affected by the positioning of spaces within the number.
+
+Refer to the last paragraph of ‎9.1 how to change the applicable photo names of the applicable photos and recapture the new photos referring to the changed culvert number.
+
+Ranking for Bridges
+Overall Rate Calculation
+The Overall Rate Calculation formula is used to calculate an overall rating for a bridge from the five condition ratings for the five bridge components (approach, waterway, substructure, superstructure, and roadway).  The Overall Rate is calculated once the principal (or special or superficial) bridge inspection condition ratings have been entered and the “Calculate Overall Rate” button is pressed (BMS: Capture Screens / Add inspection / Final).  
+
+To calculate the Overall Rate it is important that:
+If the specific rating for any of the five components is not known because some of the components do not exist, then an average rating for these components must still be estimated.  Tick the NA blocks for the specific components.  Do not use a default rating of 9 (excellent) where a component does not exist.
+If the specific rating for any of the five components is not known because some of the components could not be rated due to being inaccessible, then an average rating for these components must still be estimated.  Add a comment in this regard in the comments column.  Do not use a default rating of 0 (beyond repair) where a component is not accessible and could not be seen to be rated.  
+
+If the type of crossing of a bridge is either ‘Road over road’ or ‘Road over rail’ then the component Waterway is not applicable.  The formula is similar to the one below, but with Waterway omitted.
+
+Use the Data Validation Reports from the BMS to identify bridges with outstanding main component ratings (BMS / Data validation Reports / Outstanding Main Component Rating).
+
+The weighted factors per rating for each of the five bridge component condition ratings are shown below. 
+
+
+
+
+ (BMS: System Parameters / Overall Rating Variables)
+Table 3 - System Parameters/Overall Rating Variables for Bridges
+(Condition j:  0 = Beyond repair, 9 = Excellent)
+
+Formula for calculating Overall Rate:
+
+Components:
+i = 1 for Approaches
+     2 for Waterway
+     3 for Substructure
+     4 for Superstructure
+     5 for Roadway
+
+User Input:
+yi = Actual user input for ith item.
+
+x ij = Weighting for component i, condition j, where i = 1 to 5, and j = 0 to 9
+
+Overall rating	 =	
+Where j=yi.
+
+Example:
+A BMS Engineer rated a Bridge as follows:
+
+Approach:		4
+Waterway:		6
+Substructure:		5
+Superstructure:	6
+Roadway:		7
+
+Overall rating	=	
+
+		=	
+
+		=	5.8
+
+Round (5.8)	=	6
+
+
+
+The Overall Rate is rounded to an integer before being used to categorize bridges into 5 condition categories, i.e. critical, poor, marginal, satisfactory, good, as follows:
+
+Table 4 - Categorization of Overall Rates into condition categories
+
+The Ranking Formula
+The user can specify the ranking criteria under Add-ins -> System Parameters -> Ranking Variables.  This can only be seen and modified by the super users.
+
+The Overall Deficiency ranking formula is used to rank bridges for specific purposes, based on user definable criteria that include the horizontal clearance, vertical clearance, approach alignment and bridge condition.  The user can also indicate if traffic volumes and strategic importance should be considered in the ranking formula.  
+
+A primary objective of the system is to identify those bridges that need attention.  In order to do this, bridges are ranked according to a deficiency index.  The index is made up of three basic components, as follows:-
+
+The Level of Service Provided to the Public
+The degree to which a bridge meets user demands is based on an evaluation of the following physical properties of the bridge:
+Vertical Clearance.
+Horizontal Clearance.
+Roadway alignment over and/or under the bridge.
+
+Condition of the Bridge
+Maintaining a bridge in an acceptable condition incurs costs.  The lack of maintenance may also lead to user costs, if the condition of the bridge deteriorates to the point where the load capacity of the bridge is affected, or where joints may damage vehicles.
+
+Importance of the Bridge
+The relevant importance of each bridge can be measured in terms of the traffic volumes that cross the bridge and the strategic importance of the bridge.  
+Strategic importance is measured in terms of the potential delays in traveling time if the bridge were to be closed.
+
+The contribution of each of the above aspects in the calculation of the deficiency index is governed by a weighting factor assigned to each aspect.  The different weighting factors can be changed to suit the particular emphasis of an investigation.”
+
+The Overall Condition Deficiency Index is given by the following expression:
+
+D  =  DHC + DVC + DAA + DC 
+D = 100 indicates a bridge with major defects, D = 0 indicates a bridge with only minor or no defects.
+
+Where:
+DHC   =		Horizontal clearance deficiency
+DVC  =		Vertical clearance deficiency
+DAA  =		Approach alignment deficiency
+DC   =		Bridge condition deficiency;  
+
+And:
+
+
+
+
+
+
+
+Where:
+WHC	=	Weighting factor for horizontal clearance deficiency
+WVC	=	Weighting factor for vertical clearance deficiency
+WAA	=	Weighting factor for approach alignment deficiency
+WC	=	Weighting factor for bridge condition deficiency
+(A weighting can thus be placed on the 4 deficiencies, depending on whether all or only some or only one is to be included in the ranking.  The four weightings should add up to 100.  If only the bridge condition has to be considered in the ranking, then Wc = 100 and the others are all 0)  
+
+And:
+For horizontal clearance deficiency:
+WHC	=	Weighting factor for horizontal clearance deficiency (see above)
+F1	=	Number of lanes factor
+ADTO	=	Average daily traffic over the bridge
+ADTB	=	Average daily traffic base volume
+WG	=	Desirable width
+WM	=	Minimum acceptable width
+WO	=	Actual width
+K1	=	A constant
+	=	A constant
+
+And:
+For vertical clearance deficiency:
+WVC	=	Weighting factor for vertical clearance deficiency (see above)
+ADTU	=	Average daily traffic under the bridge
+ADTB	=	Average daily traffic base volume
+VCG	=	Desirable height (clearance)
+VCM	=	Minimum acceptable height (clearance)
+VCO	=	Actual height (clearance)
+K1	=	A constant
+	=	A constant
+
+And:
+For approach alignment deficiency:
+WAA	=	Weighting factor for approach alignment deficiency
+
+ADTO	=	Average daily traffic over the bridge
+ADTB	=	Average daily traffic base volume
+K1	=	A constant
+KAA	=	Approach alignment condition rating coefficient
+
+And:
+For bridge condition deficiency:
+WC	=	Weighting factor for bridge condition deficiency
+ADTO	=	Average daily traffic over the bridge
+ADTB	=	Average daily traffic base volume
+K3	=	A constant
+K4	=	A constant
+t	=	Detour impact on travel time (minutes)
+FSI	=	Strategic importance factor
+ki	=	Bridge component (i) condition rating coefficient
+wi	=	Weighting factor for bridge component (i) condition rating
+n	=	number of components
+(Condition rating coefficients for all bridge components are considered here, ie superstructure, substructure, roadway, approach and waterway, based on their weights.)
+
+To calculate the Overall Condition Deficiency Index it is important to note that:
+If the data as required for a specific deficiency (DHC or DVC or DAA or DC) to be included in the ranking is not known, then it should not be included. 
+The data requirements for the five condition ratings for the five bridge components have to be met (refer to “Overall Rate Calculation” regarding the data requirements for the approach, waterway, substructure, superstructure and roadway).    
+
+Use the Data Validation Reports from the BMS to identify bridges with outstanding data (BMS / Data validation Reports / Outstanding Main Component Rating and Insufficient Data for Ranking).
+
+The values or expressions for the above variables are set out in the following tables and formulas:
+Number of Lanes Factor  :  F1
+(BMS: System Parameters / Ranking Variables / Number of Lanes Factor)  
+Table 5 - The number of lanes factor F1 as a function of the number of lanes and directions of traffic (used in Horizontal Clearance Deficiency)
+Minimum Acceptable Clear Deck Width (WM)
+(BMS: System Parameters / Ranking Variables / Horizontal Clearance Limits)  
+Table 6 - Goal lane width (WG) and the minimum acceptable width (WM) as a function of the class of road (used in Horizontal Clearance Deficiency)
+
+ (Note the specific road class codes being used here, these codes should also be used in the database for road classification.)
+Vertical Clearance Limits
+(BMS: System Parameters / Ranking Variables / Vertical Clearance Limits)  
+Table 7 - Vertical clearance limits as a function of the class of road (used in Vertical Clearance Deficiency)
+
+(Note the specific road class codes being used here, these codes should also be used in the database for road classification.)
+List of Constants K 
+(BMS: System Parameters / Ranking Variables / General Constants)  
+Table 8 - List of constants used in the ranking formula
+Weighting Factors for Bridge Components (Wi)
+(BMS: System Parameters / Ranking Variables / Weighted Factors per Bridge Components)
+Table 9 - Weighting factors (Wi) for each bridge component in the Bridge Condition Deficiency Formula (used in bridge condition deficiency)
+Bridge Component Condition Rating Coefficient (Ki)
+(BMS: System Parameters / Ranking Variables / Bridge Condition Rating Coefficient)
+Table 10 - Bridge component condition rating coefficients (Ki) for each component and condition rating (used in bridge condition deficiency)
+Approach Alignment Coefficient (KAA)
+(BMS: System Parameters / Ranking Variables / Approach Alignment Deficiency)
+Table 11 - Approach alignment coefficients (KAA) for different condition ratings (used in approach alignment deficiency)
+Strategic Importance Factor (Fsi)
+Expression for FSI
+
+
+Where
+t     =  detour impact on travel time (minutes)
+K3  =  constant
+fc   =  factor for substructure/superstructure condition rating.  (Use the worst rating of the substructure or superstructure rating.)
+
+(BMS: System Parameters / Ranking Variables / Sub-Superstructure Condition Rating)
+Table 12 - Coefficient (fc) for the sub- and superstructure condition rating (used in bridge condition deficiency)
+
+The following limits and conditions are set:
+
+0  DHC  WHC
+0  DVC  WVC
+0  DAA  WAA
+0  DC  WC
+
+
+
+
+
+Table 13 – Summary of data requirements for Deficiency Ranking
+
+
+Ranking for Major Culverts
+Overall Rate Calculation
+The Overall Rate Calculation formula is used to calculate an overall rating for a major culvert from the four condition ratings for the four culvert components (waterway, inlet-outlet, structure, and roadway).  The Overall Rate is calculated once the principal (or special or superficial) major culvert inspection condition ratings have been entered and the “Calculate Overall Rate” button is pressed (BMS: Capture Screens / Add culvert inspection / Final).  
+
+To calculate the Overall Rate it is important that:
+If the specific rating for any of the four components is not known because some of the components do not exist, then an average rating for these components must still be estimated.  Tick the NA blocks for the specific components.  Do not use a default rating of 9 (excellent) where a component does not exist.
+If the specific rating for any of the four components is not known because some of the components could not be rated due to being inaccessible, then an average rating for these components must still be estimated.  Add a comment in this regard in the comments column.  Do not use a default rating of 0 (beyond repair) where a component is not accessible and could not be seen to be rated.  
+
+Formula for calculating Overall Rate:
+
+Table 14 - System Parameters/Overall Rating Variables for Major Culverts)
+
+Components:
+n = 1 for Waterway
+     2 for Inlet / Outlet
+     3 for Structure
+     4 for Roadway
+
+User Input:
+yi = Actual user input for ith item. (Condition i:  0 = Beyond repair, 9 = Excellent)
+
+x i = Weighting for component i, where i = 1 to 4
+
+Overall rating	 =	  
+
+
+Example:
+A BMS Engineer rated a Major Culvert as follows:
+
+Waterway:		4
+Inlet / Outlet:		6
+Structure:		5
+Roadway:		6
+
+Overall rating	=	
+
+		=	0.8 + 1.5 + 2.25 + 0.6
+
+		=	5.15
+
+Round (5.15)	=	5
+
+
+
+The Overall Rate is rounded to an integer before being used to categorize major culverts into 5 condition categories, i.e. critical, poor, marginal, satisfactory, good, as follows:
+
+Table 15 - Categorization of Overall Rates into condition categories
+
+
+
+
+
+Asset Management System Documentation Map
+	 ADD DATA 
+	 FIND DATA 
+	 SAVE DATA 
+	 EDIT DATA 
+	 EXIT / CLOSE SCREEN 
+	 GENERATE REPORT 
+	DELETE ENTRY
+	 UNDO MOST RECENT ACTION
+ 	CLOSE SCREEN
+Name of the screen 	How do I edit the relevant data?
+Bridge Inventory Data	“Capture Screens” “Bridge Inventory” “Edit data” button   Click arrow in “Bridge Number” combo box Select appropriate bridge number Overwrite previous date with current date Edit data   Click the “Save” button  to store updated data and the “Close” button to exit
+Bridge Inspection	“Capture Screens” “Edit Bridge Inspection” Click arrow in “Bridge Number” combo box Select appropriate bridge number Select the applicable inspection date from the “Date” combo box Edit data Click the “Save” button to store updated data and the “Close” button to exit
+Culvert Inventory Data	“Capture Screens” “Culvert Inventory” “Edit data” button   Click arrow in “Culvert Number” combo box Select appropriate culvert number Edit data   Click the “Save” button  to store updated data and the “Close” button to exit
+Culvert Inspection	“Capture Screens” “Culvert Edit Inspection” On the pop-up screen, select the applicable “Culvert Number” as well as the applicable “Inspection Date” from the drop-down boxes.  Click the “Edit Inspection Data”-button. Edit data Click the “Save” button to store updated data and the  “Close” button to exit
+Photo Module      	“Photos” “Bridge Album” / “View Culvert Album” Select the “Bridge / Culvert Number” Select ”Inspection” or “ Inventory” Click on the photo. Edit the description at the field “Description” Click the “Save” button to store updated data and the “Close” button to exit
+BMS System Variables	“System Parameters” Select the appropriate heading to be edited Edit data Click the “Close” button to exit
+Name of the screen 	How do I get to the relevant screen?
+Bridge Inventory Data	“Capture Screens” “Bridge Inventory” “Edit data” button  Select appropriate record “Delete” button 
+Bridge Inspection Data 	“Capture Screens” “Edit Bridge Inspection” Select applicable “Bridge Number” and “Date”  “Delete” button
+Culvert Inventory Data	“Capture “Screens” “Culvert Inventory” “Edit data” button Select appropriate “Culvert Number” “Delete” button
+Culvert Inspection Data	“Capture Screens” “Culvert Edit Inspection” Select applicable “Culvert Number” and “Date” “Delete” button
+Bridge Photo	“Photos” “Delete a captured bridge photo” Select the applicable “Bridge Number”, “Category” and “Folder” Click on “Navigate to delete photos”-button Click on the -button of the relevant photo to be deleted.
+Culvert Photo	“Photos” “Delete a captured culvert photo” Select the applicable “Culvert number”, “Category” and “Folder” Click on the “Navigate to delete photos”-button Click on the -button of the relevant photo to be deleted.
+Bridge Drawing	“Drawings” “Delete a bridge drawing” Select the applicable “Bridge number” from the dropdown box. Click on the “Navigate to delete drawings”-button Click on the -button of the relevant drawing to be deleted.
+Culvert Drawing	“Drawings” “Delete a culvert drawing” Select the applicable “Culvert number” from the dropdown box. Click on the “Navigate to delete drawings”-button Click on the -button of the relevant drawing to be deleted.
+Detect a Single Bridge
+Detect a Network of Bridges
+Network Reports
+Maximum Pier height (m)	Factor
+>=0 and <= 8	1
+>8 and <=30	1.5
+>30 and <=9999	2
+Detect a Single Culvert
+Detect a Network of Culverts
+Network Reports
+Max Fill Height (m)	Factor (Max Fill Height)
+>=0 and <=3	1
+>3 and <= 6	1.2
+>6 and <= 10	1.4
+>10 and <=9999	1.6
+i	Condition j    Components	0	1	2	3	4	5	6	7	8	9
+1	Approaches	6	6	6	2	2	0,25	0,25	0,25	0,25	0,25
+2	Waterway	8	8	8	2	2	1	1	1	1	1
+3	Substructure	8	8	8	4	4	2	2	2	2	2
+4	Superstructure	8	8	8	4	4	2	2	2	2	2
+5	Roadway	6	6	6	2	2	0,5	0,5	0,5	0,5	0,5
+Calculated Overall Rate	Condition Category
+0 and 1	Critical
+2 and 3	Poor
+4 and 5	Marginal
+6	Satisfactory
+7 to 9	Good
+Total number of lanes	Two way traffic (single)	One way traffic (dual)
+1	1,0	0,8
+2	1,0	0,8
+3	1,0	0,6
+4	0,8	0,4
+5	0,8	0,4
+6	0,6	0,4
+7	0,6	0,4
+8	0,6	0,4
+9	0,6	0,4
+10	0,6	0,4
+Road Class	Goal lane  width (m)	Minimum lane width (m)	Description	Goal Shoulder width (m)
+A	3,7	3,7	Primary	2,6
+B	 3,7	3,7	Secondary	2,6
+C	 3,7	3,7	Tertiary	2,6
+Def	3,7	3,4	Default	2,6
+Road Class	Desirable clearance (m)	Minimum clearance (m)	Description
+A	5,2	4,7	Primary
+B	5,2	4,7	Secondary
+C	5,2	4,7	Tertiary
+Def	5,2	4,7	Default
+ADTB	=	5400
+K1	=	0,4
+	=	1,5
+K3	=	1,5
+K4	=	0,2
+Category	Wi
+Superstructure	1,00
+Substructure	1,00
+Roadway	0,50
+Approach	0,25
+Waterway	0,83
+Condition Rating	Super Structure	Sub Structure	Roadway	Approaches	Waterway
+0	1,0	1,0	1,0	1,0	1,0
+1	1,000	1,000	1,000	1,000	1,000
+2	1,000	1,000	1,000	1,000	1,000
+3	0,500	0,500	0,625	0,700	0,425
+4	0,250	0,250	0,425	0,450	0,200
+5	0,100	0,100	0,250	0,250	0,100
+6	0,025	0,025	0,125	0,100	0,030
+7	0,000	0,000	0,000	0,000	0,000
+8	0,000	0,000	0,000	0,000	0,000
+9	0,000	0,000	0,000	0,000	0,000
+Condition Rating	Coefficient KAA
+0	1,0
+1	1,0
+2	1,0
+3	1,0
+4	0,5
+5	0,2
+6	0,0
+7	0,0
+8	0,0
+9	0,0
+Substructure/Superstructure condition rating	Coefficient fc
+0	1,09
+1	1,09
+2	1,09
+3	1,09
+4	0,43
+5	0,17
+6	0,04
+7	0,04
+8	0,04
+9	0,04
+Deficiency to be included in calculation of Overall Deficiency ranking	Requirements for data in BMS	Selections
+Horizontal clearance deficiency	ADT for all bridges (ADT and truck factor) (see * below at Traffic in column ‘Selections’) Actual horizontal clearances for all bridges	WHC > 0  (in System Parameters / Ranking Variables / Ranking Criteria)
+Vertical clearance deficiency	ADT under bridge for relevant over-road bridges (ADT and truck factor) (see * below at Traffic in column ‘Selections’) Actual vertical clearances for all relevant bridges	WVC > 0  (in System Parameters / Ranking Variables / Ranking Criteria)
+Approach alignment deficiency	ADT for all bridges (ADT and truck factor) (see * below at Traffic in column ‘Selections’) All approach alignments to be rated	WAA > 0 (in System Parameters / Ranking Variables / Ranking Criteria)
+Bridge condition deficiency	ADT for all bridges (ADT and truck factor) (see * below at Traffic in column ‘Selections’) All bridge component condition ratings, even if not accessible to rate or not existent	WC > 0 (in System Parameters / Ranking Variables / Ranking Criteria)
+Strategic importance factor	Not operational 	Tick (in System Parameters / Ranking Variables / Ranking Criteria) (not operational)
+Traffic	ADT for all bridges and truck factor	Tick (in System Parameters / Ranking Variables / Ranking Criteria) (* if not ticked, then traffic is also not required for the other deficiency calculations)
+Components	% Weight
+Waterway	20%
+Inlet Outlet	25%
+Structure	45%
+Roadway	10%
+Calculated Overall Rate	Condition Category
+0 and 1	Critical
+2 and 3	Poor
+4 and 5	Marginal
+6	Satisfactory
+7 to 9	Good

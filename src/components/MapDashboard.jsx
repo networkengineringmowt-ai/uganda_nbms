@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, useMap, ScaleControl, Polyline, useMapEvents } from 'react-leaflet';
+import { Ruler, Trash2, Plus, Minus, Home } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { fetchBridgeByNumber, fetchCulvertByNumber } from '../services/bmsDataService';
 
@@ -83,6 +84,129 @@ function SelectedMarker({ bridge }) {
   );
 }
 
+function ArcGISControls() {
+  const map = useMap();
+  const [isMeasuring, setIsMeasuring] = useState(false);
+  const [points, setPoints] = useState([]);
+  const [mousePos, setMousePos] = useState(null);
+
+  useMapEvents({
+    click(e) {
+      if (isMeasuring) {
+        setPoints(pts => [...pts, e.latlng]);
+      }
+    },
+    mousemove(e) {
+      if (isMeasuring) {
+        setMousePos(e.latlng);
+      }
+    }
+  });
+
+  const distance = points.reduce((acc, pt, i, arr) => {
+    return i > 0 ? acc + pt.distanceTo(arr[i-1]) : 0;
+  }, 0);
+
+  const formatDist = (d) => d > 1000 ? `${(d/1000).toFixed(2)} km` : `${d.toFixed(0)} m`;
+
+  const handleZoomIn = (e) => { e.stopPropagation(); map.zoomIn(); };
+  const handleZoomOut = (e) => { e.stopPropagation(); map.zoomOut(); };
+  const handleHome = (e) => { e.stopPropagation(); map.setView([1.3733, 32.2903], 7); };
+
+  const toolBtnStyle = (active = false) => ({
+    width: '34px', height: '34px',
+    background: active ? '#3b82f6' : 'rgba(15, 23, 42, 0.85)',
+    color: active ? '#fff' : '#cbd5e1',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '6px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    backdropFilter: 'blur(8px)',
+    transition: 'all 0.15s ease',
+  });
+
+  return (
+    <>
+      {/* ── Horizontal Toolbar at Top-Left ── */}
+      <div style={{
+        position: 'absolute', top: 10, left: 10, zIndex: 1000,
+        pointerEvents: 'auto',
+        display: 'flex', alignItems: 'center', gap: '6px',
+        background: 'rgba(15, 23, 42, 0.85)',
+        backdropFilter: 'blur(12px)',
+        padding: '6px 8px', borderRadius: '10px',
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+      }}>
+        {/* Navigation Group */}
+        <button onClick={handleHome} title="Default Extent" style={toolBtnStyle()}>
+          <Home size={16} />
+        </button>
+        <button onClick={handleZoomIn} title="Zoom In" style={toolBtnStyle()}>
+          <Plus size={16} />
+        </button>
+        <button onClick={handleZoomOut} title="Zoom Out" style={toolBtnStyle()}>
+          <Minus size={16} />
+        </button>
+
+        {/* Divider */}
+        <div style={{ width: '1px', height: '22px', background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
+
+        {/* Measure Tool */}
+        <button
+          onClick={(e) => { e.stopPropagation(); setIsMeasuring(!isMeasuring); setPoints([]); }}
+          title="Measure Distance"
+          style={toolBtnStyle(isMeasuring)}
+        >
+          <Ruler size={16} />
+        </button>
+
+        {/* Live Measurement Readout */}
+        {isMeasuring && points.length > 0 && (
+          <>
+            <div style={{
+              padding: '4px 10px', borderRadius: '6px',
+              background: 'rgba(59, 130, 246, 0.15)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              display: 'flex', alignItems: 'center', gap: '6px'
+            }}>
+              <strong style={{ fontSize: '13px', color: '#38bdf8', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                {formatDist(distance)}
+              </strong>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPoints([]); }}
+                title="Clear measurement"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.3)', padding: '2px',
+                  borderRadius: '4px', cursor: 'pointer', display: 'flex'
+                }}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Measurement Polylines */}
+      {points.length > 0 && (
+        <Polyline
+          positions={points}
+          color="#ef4444"
+          weight={4}
+          dashArray="10, 10"
+        />
+      )}
+      {points.map((pt, i) => (
+        <CircleMarker key={i} center={pt} radius={5} pathOptions={{ color: '#ef4444', fillColor: '#fff', fillOpacity: 1, weight: 2 }} />
+      ))}
+      {isMeasuring && points.length > 0 && mousePos && (
+        <Polyline positions={[points[points.length-1], mousePos]} color="#ef4444" weight={2} opacity={0.5} dashArray="5, 5" />
+      )}
+    </>
+  );
+}
+
 export default function MapDashboard({ selectedBridge, onSelectBridge }) {
   const [networkData, setNetworkData] = useState(null);
   const [waterData, setWaterData] = useState(null);
@@ -148,28 +272,31 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
   return (
     <div className="network-map">
       
-      <div className="map-legend">
-        <h4 style={{margin: '0 0 12px 0', color: 'var(--text-primary)'}}>Map Legend</h4>
-        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#1e40af'}}></div>
-          <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Bridges ({bridges.length})</span>
-        </div>
-        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-          <div style={{width: 12, height: 12, borderRadius: '50%', background: '#d89a18'}}></div>
-          <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Major Culverts ({culverts.length})</span>
-        </div>
-        {Object.entries(ROAD_CLASS_STYLE).map(([roadClass, style]) => (
-          <div key={roadClass} style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px'}}>
-            <div style={{width: 24, height: 3, borderRadius: 2, background: style.color}}></div>
-            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Class {roadClass}</span>
+      {!selectedBridge && (
+        <div className="modern-map-legend">
+          <h4 style={{margin: '0 0 12px 0', color: 'var(--text-primary)'}}>Map Legend</h4>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
+            <div style={{width: 12, height: 12, borderRadius: '50%', background: '#1e40af'}}></div>
+            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Bridges ({bridges.length})</span>
           </div>
-        ))}
-      </div>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
+            <div style={{width: 12, height: 12, borderRadius: '50%', background: '#d89a18'}}></div>
+            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Major Culverts ({culverts.length})</span>
+          </div>
+          {Object.entries(ROAD_CLASS_STYLE).map(([roadClass, style]) => (
+            <div key={roadClass} style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px'}}>
+              <div style={{width: 24, height: 3, borderRadius: 2, background: style.color}}></div>
+              <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Class {roadClass}</span>
+            </div>
+          ))}
 
-      <MapContainer center={[1.3733, 32.2903]} zoom={7} preferCanvas style={{ height: '100%', width: '100%', background: '#dce6df' }}>
+        </div>
+      )}
+
+      <MapContainer center={[1.3733, 32.2903]} zoom={7} zoomControl={false} preferCanvas style={{ height: '100%', width: '100%', background: '#dce6df' }}>
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+          url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+          attribution="&copy; Google Maps"
         />
         {waterData && <GeoJSON data={waterData} style={{ color: '#0055ff', weight: 1.5, opacity: 0.7, fillColor: '#002288', fillOpacity: 0.3 }} />}
         {networkData && (
@@ -179,6 +306,8 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
             interactive={false}
           />
         )}
+        
+
         
         {bridges.map((b, i) => {
           const point = getPoint(b);
@@ -223,6 +352,8 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
         {/* Selected marker overlay */}
         <FlyToSelected selectedBridge={selectedBridge} />
         <SelectedMarker bridge={selectedBridge} />
+        <ArcGISControls />
+        <ScaleControl position="bottomleft" metric={true} imperial={false} />
       </MapContainer>
     </div>
   );

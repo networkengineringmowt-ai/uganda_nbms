@@ -1,61 +1,102 @@
-# Uganda BMS Dashboard
+# Uganda Bridge Management System
 
-React/Vite dashboard for the Ministry of Works and Transport bridge and major culvert inventory.
+The Uganda Bridge Management System (BMS) is a React/Vite operational workspace for managing the national bridge and major-culvert inventory. It combines inventory capture, condition inspection, GIS mapping, maintenance prioritisation, traffic analytics, data validation, valuation reports, and administrative tools.
 
-## Data Architecture
+Live application: <https://priscananjehe1996.github.io/uganda_bms/>
 
-The app now supports three data modes:
+## Current Dataset
 
-- Static JSON fallback from `public/data`, which keeps GitHub Pages fast and reliable.
-- Supabase/PostgreSQL through the REST endpoint at `https://udionwmqmjcfzbdhoetv.supabase.co/rest/v1`.
-- A local Express companion server that writes JSON updates directly to the Google Drive synced folder at `G:\My Drive\MOWT\Bridge stuff\uganda_bms_data`.
+The bundled public dataset contains:
 
-GitHub Pages remains static. It cannot run Express, so public hosting reads from Supabase where available and falls back to bundled JSON. Local editing can run the Express server beside Vite.
+| Dataset | Records |
+| --- | ---: |
+| Bridges | 546 |
+| Major culverts | 452 |
+| Road-network links | 1,023 |
+| Critical structures | 69 |
+| Historical traffic records | 691 |
+| Documents | 51 |
 
-## Commands
+The application can read from Supabase and falls back to the bundled JSON files in `public/data`.
+
+## Main Workspaces
+
+- **Overview:** national structure totals, condition distribution, regional coverage, and priority structures.
+- **GIS Map:** bridge and culvert locations, road classes, waterways, structure search, detail records, and evidence photos.
+- **Inventory:** bridge, culvert, road-network, and intervention registers.
+- **Maintenance:** prioritised structures and active works.
+- **Analytics:** interactive 3D condition, traffic, regional, and data-dictionary categorical analysis.
+- **Reports:** validation audits, current replacement cost, depreciated replacement cost, and printable structure reports.
+- **Photos:** structure-first chronological inspection evidence timelines with source lineage.
+- **Digital Twin:** parametric 3D bridge and major-culvert models generated from inventory and condition fields.
+- **Sources & Evidence:** admin documentation library, source-document register, evidence coverage, and operational data lineage.
+- **Data Capture:** bridge and culvert inventory forms plus condition-inspection forms.
+- **Administration:** upgrades, system parameters, architecture, and algorithm reference views.
+
+## Access Profiles
+
+The current static deployment presents three role profiles:
+
+- `bms`: data-entry workspaces.
+- `super`: dashboard, map, inventory, maintenance, analytics, and reports.
+- `admin`: all dashboard, data-entry, and administration workspaces.
+
+The current login is a client-side role gate for controlled demonstration and internal use. It is **not** a production authentication boundary. See [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md#security-boundary).
+
+## Quick Start
+
+Requirements:
+
+- Node.js 20 or later
+- npm
 
 ```bash
+npm ci
 npm run dev
+```
+
+Open the local URL printed by Vite.
+
+To run the frontend and the local Google Drive JSON writer together:
+
+```bash
 npm run dev:full
+```
+
+Useful commands:
+
+```bash
+npm run lint
 npm run build
+npm run build:pages
+npm run preview
+npm run deploy
 npm run seed:supabase
 ```
 
-`npm run dev:full` starts both the React app and the local Express backend from `server/bridgeSyncServer.cjs`.
+## Data Modes
 
-The Express backend can also be started directly:
+| Mode | Reads | Writes | Intended use |
+| --- | --- | --- | --- |
+| Static | `public/data/*.json` | None | Public fallback and reliable read-only browsing |
+| Supabase | PostgreSQL JSONB through PostgREST | Only when an appropriate write policy exists | Shared hosted data |
+| Local companion server | Google Drive-synchronised JSON files | Yes | Controlled local data-entry workstation |
 
-```bash
-npm run server
-```
+Copy `.env.example` to `.env.local` to override development settings. Never commit service-role keys.
 
-Health check:
+## Documentation
 
-```bash
-curl http://localhost:3001/api/health
-```
+- [User Guide](docs/USER_GUIDE.md)
+- [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)
+- [Data and Engineering Methods](docs/DATA_AND_ENGINEERING.md)
+- [Operations and Deployment Runbook](docs/OPERATIONS_AND_DEPLOYMENT.md)
+- [Photo Evidence and Digital Twin Guide](docs/PHOTO_EVIDENCE_AND_DIGITAL_TWIN.md)
+- [Photogrammetry and Reality Twin](docs/PHOTOGRAMMETRY_REALITY_TWIN.md)
+- [Open-Source Enterprise GIS Architecture](docs/ENTERPRISE_GIS_ARCHITECTURE.md)
 
-## Supabase Setup
+## Important Limitations
 
-Apply `supabase/schema.sql` in the Supabase SQL editor. It creates the `bridges` and `culverts` tables as PostgreSQL `jsonb` records with public read policies.
-
-To seed the corrected JSON inventory:
-
-```bash
-set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-npm run seed:supabase
-```
-
-The anonymous browser key is safe for public reads when Row Level Security is configured, but it should not be used for public writes. If a controlled internal deployment really needs anonymous browser writes, apply `supabase/anon-write-policy.local-only.sql` deliberately.
-
-## Environment
-
-Copy `.env.example` to `.env.local` to override defaults during local development.
-
-Important variables:
-
-- `VITE_SUPABASE_REST_URL`
-- `VITE_SUPABASE_ANON_KEY`
-- `VITE_BMS_DATA_SOURCE`: `auto` or `static`
-- `VITE_LOCAL_BMS_API`
-- `SUPABASE_SERVICE_ROLE_KEY` for seeding only
+- GitHub Pages is static and cannot securely perform privileged writes by itself.
+- The displayed role gate must be replaced by real identity authentication before use as an internet-facing write-enabled system.
+- System-parameter and upgrade additions currently update interface state only unless connected to a persistent backend.
+- Public evidence photos are resolved from the repository's raw-content URL in production to keep the Pages artifact small.

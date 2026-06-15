@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, ChevronDown, ChevronRight, MapPin, Activity, Filter } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, MapPin, Activity, Filter, Camera } from 'lucide-react';
 import { fetchBridgeByNumber, fetchCulvertByNumber } from '../services/bmsDataService';
 
 const CONDITION_COLORS = {
@@ -10,13 +10,13 @@ const CONDITION_COLORS = {
 
 const getConditionColor = (rating) => CONDITION_COLORS[rating] || '#5a668a';
 
+import { CONDITION_RATINGS } from '../utils/dataDictionary';
+
 const getConditionLabel = (rating) => {
-  if (rating >= 8) return 'Good';
-  if (rating >= 6) return 'Fair';
-  if (rating >= 4) return 'Poor';
-  if (rating >= 1) return 'Critical';
-  return '-';
+  return CONDITION_RATINGS[rating] || '-';
 };
+
+import { calculateBridgeDeficiencyIndex, calculateAssetValue } from '../utils/bmsAlgorithms';
 
 export default function StructureListPanel({ selectedBridge, onSelectBridge, dynamicBridges = [], dynamicCulverts = [] }) {
   const [bridges, setBridges] = useState([]);
@@ -32,6 +32,8 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
   const [filterRegion, setFilterRegion] = useState('All');
   const [filterCondition, setFilterCondition] = useState('All'); // 'All', 'Good', 'Fair', 'Poor', 'Critical'
   const [filterAuditStatus, setFilterAuditStatus] = useState('All'); // 'All', 'Checked', 'Unchecked'
+  const [sortBy, setSortBy] = useState('Default'); // 'Default', 'Deficiency', 'AssetValue'
+  const [photoMap, setPhotoMap] = useState(new Map());
 
   useEffect(() => {
     const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
@@ -56,6 +58,20 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
         Lon: feature.geometry?.coordinates?.[0],
         _summaryIndex: index,
       }))))
+      .catch(console.error);
+
+    fetch(url('gallery/index.json'))
+      .then(r => r.json())
+      .then(photos => {
+        const map = new Map();
+        photos.forEach(p => {
+          const filename = p.file_name || p.filename;
+          if (p.structure_id && filename && !map.has(p.structure_id) && !p.duplicate_of) {
+            map.set(p.structure_id, url(`gallery/thumbnails/${filename.replace(/\\.[^/.]+$/, ".jpg")}`));
+          }
+        });
+        setPhotoMap(map);
+      })
       .catch(console.error);
   }, []);
 
@@ -99,20 +115,49 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
     if (filterCondition !== 'All') {
       result = result.filter(b => {
         const rating = b.OverallConditionRating ?? b.LegacyData?.overall_rating;
-        const condLabel = rating != null ? getConditionLabel(rating) : (b.OverallCondition ? getConditionLabelFromCategory(b.OverallCondition) : null);
-        return condLabel === filterCondition;
+        const detailedLabel = rating != null ? getConditionLabel(rating) : b.OverallCondition;
+        const broadLabel = getConditionLabelFromCategory(detailedLabel);
+        return broadLabel === filterCondition;
       });
     }
 
     if (filterAuditStatus !== 'All') {
       result = result.filter(b => {
-        const isChecked = !!b.LegacyData?.data_checked;
-        return filterAuditStatus === 'Checked' ? isChecked : !isChecked;
+        const legacy = b.LegacyData || {};
+        if (filterAuditStatus === 'Checked') return !!legacy.data_checked;
+        if (filterAuditStatus === 'Unchecked') return !legacy.data_checked;
+        if (filterAuditStatus === 'Missing Component Ratings') {
+          return legacy.approaches_rating == null || legacy.roadway_rating == null || legacy.substructure_rating == null || legacy.superstructure_rating == null || legacy.waterway_rating == null;
+        }
+        if (filterAuditStatus === 'Insufficient Ranking Data') {
+          return !b.Traffic?.aadt_2026 || !b.MinVerticalClearance || !b.MinClearWidth;
+        }
+        return true;
+      });
+    }
+
+    if (sortBy === 'Deficiency') {
+      result = [...result].sort((a, b) => {
+        const defA = calculateBridgeDeficiencyIndex({
+          approaches: a.LegacyData?.approaches_rating, roadway: a.LegacyData?.roadway_rating,
+          substructure: a.LegacyData?.substructure_rating, superstructure: a.LegacyData?.superstructure_rating, waterway: a.LegacyData?.waterway_rating
+        }) || 0;
+        const defB = calculateBridgeDeficiencyIndex({
+          approaches: b.LegacyData?.approaches_rating, roadway: b.LegacyData?.roadway_rating,
+          substructure: b.LegacyData?.substructure_rating, superstructure: b.LegacyData?.superstructure_rating, waterway: b.LegacyData?.waterway_rating
+        }) || 0;
+        return defB - defA;
+      });
+    } else if (sortBy === 'AssetValue') {
+      result = [...result].sort((a, b) => {
+        const valA = calculateAssetValue(a, false)?.crc || 0;
+        const valB = calculateAssetValue(b, false)?.crc || 0;
+        return valB - valA;
       });
     }
 
     return result;
-  }, [sourceBridges, term, filterType, filterRegion, filterCondition, filterAuditStatus]);
+  }, [sourceBridges, term, filterType, filterRegion, filterCondition, filterAuditStatus, sortBy]);
 
   const sourceCulverts = dynamicCulverts.length ? dynamicCulverts : culverts;
 
@@ -137,28 +182,35 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
     if (filterCondition !== 'All') {
       result = result.filter(c => {
         const rating = c['Overall Rating'] != null ? Number(c['Overall Rating']) : null;
-        let condLabel = null;
-        if (rating != null) {
-          condLabel = getConditionLabel(rating);
-        } else {
-          const cat = c['Condition Category'] || c['Condition Category.4'];
-          if (cat) {
-            condLabel = getConditionLabelFromCategory(cat);
-          }
-        }
-        return condLabel === filterCondition;
+        const detailedLabel = rating != null
+          ? getConditionLabel(rating)
+          : c['Condition Category'] || c['Condition Category.4'];
+        const broadLabel = getConditionLabelFromCategory(detailedLabel);
+        return broadLabel === filterCondition;
       });
     }
 
     if (filterAuditStatus !== 'All') {
       result = result.filter(c => {
-        const isChecked = !!(c.CheckedBy || c.LegacyData?.data_checked);
-        return filterAuditStatus === 'Checked' ? isChecked : !isChecked;
+        if (filterAuditStatus === 'Checked') return !!(c.CheckedBy || c.LegacyData?.data_checked);
+        if (filterAuditStatus === 'Unchecked') return !(c.CheckedBy || c.LegacyData?.data_checked);
+        if (filterAuditStatus === 'Missing Component Ratings') {
+          return c.LegacyData?.waterway_rating == null || c.LegacyData?.inlet_outlet_rating == null || c.LegacyData?.structure_rating == null || c.LegacyData?.roadway_rating == null;
+        }
+        return true;
+      });
+    }
+
+    if (sortBy === 'AssetValue') {
+      result = [...result].sort((a, b) => {
+        const valA = calculateAssetValue(a, true)?.crc || 0;
+        const valB = calculateAssetValue(b, true)?.crc || 0;
+        return valB - valA;
       });
     }
 
     return result;
-  }, [sourceCulverts, term, filterType, filterRegion, filterCondition, filterAuditStatus]);
+  }, [sourceCulverts, term, filterType, filterRegion, filterCondition, filterAuditStatus, sortBy]);
 
   const availableRegions = useMemo(() => {
     const set = new Set();
@@ -250,17 +302,24 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
               onClick={() => handleSelect(b, 'bridge')}
             >
               <div className="slp-item-header">
-                <span className="slp-item-number">{b.BridgeNumber}</span>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                  {photoMap.get(b.BridgeNumber) ? (
+                    <img src={photoMap.get(b.BridgeNumber)} alt="evidence" style={{width: 24, height: 24, borderRadius: 4, objectFit: 'cover'}} />
+                  ) : (
+                    <div style={{width: 24, height: 24, borderRadius: 4, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><Camera size={12} color="#64748b"/></div>
+                  )}
+                  <span className="slp-item-number">{b.BridgeNumber}</span>
+                </div>
                 {rating != null && (
                   <span
                     className="slp-condition-badge"
                     style={{ background: getConditionColor(rating) + '22', color: getConditionColor(rating), borderColor: getConditionColor(rating) + '44' }}
                   >
-                    {rating} - {getConditionLabel(rating)}
+                    {getConditionLabel(rating)}
                   </span>
                 )}
               </div>
-              <div className="slp-item-name">{b.BridgeName || '-'}</div>
+              <div className="slp-item-name">{b.BridgeName || b.bridge_nam || '-'}</div>
               <div className="slp-item-meta">
                 <MapPin size={11} />
                 <span>{b.RoadDescrPrincipal || b.LinkID || '-'}</span>
@@ -295,9 +354,16 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
               onClick={() => handleSelect(c, 'culvert')}
             >
               <div className="slp-item-header">
-                <span className="slp-item-number">{c.CulvertNumber}</span>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                  {photoMap.get(c.CulvertNumber) ? (
+                    <img src={photoMap.get(c.CulvertNumber)} alt="evidence" style={{width: 24, height: 24, borderRadius: 4, objectFit: 'cover'}} />
+                  ) : (
+                    <div style={{width: 24, height: 24, borderRadius: 4, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><Camera size={12} color="#64748b"/></div>
+                  )}
+                  <span className="slp-item-number">{c.CulvertNumber}</span>
+                </div>
               </div>
-              <div className="slp-item-name">{c.River || '-'}</div>
+              <div className="slp-item-name">{c.CulvertName || c.River || '-'}</div>
               <div className="slp-item-meta">
                 <MapPin size={11} />
                 <span>{c.Road || '-'}</span>
@@ -370,6 +436,21 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
                     <option value="All">All Records</option>
                     <option value="Checked">Audited & Checked</option>
                     <option value="Unchecked">Outstanding / Unchecked</option>
+                    <option value="Missing Component Ratings">Missing Component Ratings</option>
+                    <option value="Insufficient Ranking Data">Insufficient Ranking Data</option>
+                  </select>
+                  <ChevronDown size={14} className="modern-select-arrow" />
+                </div>
+              </div>
+
+              {/* Sort By Filter */}
+              <div className="modern-filter-field">
+                <label>Sort Output</label>
+                <div className="modern-select-wrapper">
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <option value="Default">Default Order</option>
+                    <option value="Deficiency">Highest Deficiency Score</option>
+                    <option value="AssetValue">Highest Replacement Cost</option>
                   </select>
                   <ChevronDown size={14} className="modern-select-arrow" />
                 </div>
@@ -382,6 +463,7 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
                 setFilterRegion('All');
                 setFilterCondition('All');
                 setFilterAuditStatus('All');
+                setSortBy('Default');
               }}>
                 Reset
               </button>

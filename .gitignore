@@ -29,4 +29,7 @@ dist-ssr
 # Extraction Outputs
 public/data/extracted_photos/
 public/data/extracted_metadata.json
+photogrammetry/
+enterprise-gis/.env
+enterprise-gis/backups/
 

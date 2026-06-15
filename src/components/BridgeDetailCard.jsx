@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, MapPin, Truck, Camera, AlertTriangle, Layers, Gauge } from 'lucide-react';
-import { getPhotoUrl } from '../utils/photoUrlResolver';
+import { X, MapPin, Truck, Camera, AlertTriangle, Layers, Gauge, Box } from 'lucide-react';
+import DigitalTwin from './DigitalTwin';
+import EvidenceTimeline from './EvidenceTimeline';
 
 import ReactECharts from 'echarts-for-react';
-const RATING_LABELS = {
-  9: 'Excellent', 8: 'Very Good', 7: 'Good', 6: 'Satisfactory',
-  5: 'Fair', 4: 'Marginal', 3: 'Poor', 2: 'Very Poor', 1: 'Critical', 0: 'Beyond Repair',
-};
 
 const EMPTY = '-';
 
@@ -17,10 +14,12 @@ const ratingColor = (r) => {
   return '#be3a34';
 };
 
-const CROSSING_TYPE = {
-  1: 'River/Stream', 2: 'Railway', 3: 'Road Over Road',
-  4: 'Pedestrian', 5: 'Flyover/Interchange',
-};
+import {
+  TYPE_CROSSING, TYPE_BRIDGE, TYPE_DECK_MATERIAL, TYPE_DECK,
+  TYPE_ABUTMENT, TYPE_PIERS, TYPE_PARAPET_RAILING,
+  TYPE_EXPANSION_JOINTS, TYPE_CULVERT, getConditionLabel, getDictionaryLabel
+} from '../utils/dataDictionary';
+import { calculateBridgeDeficiencyIndex, calculateAssetValue } from '../utils/bmsAlgorithms';
 
 export default function BridgeDetailCard({ bridge, onClose }) {
   const [gallery, setGallery] = useState([]);
@@ -52,6 +51,17 @@ export default function BridgeDetailCard({ bridge, onClose }) {
 
   const overallRating = legacy.overall_rating ?? bridge.OverallConditionRating;
 
+  const rawRatings = {
+    approaches: legacy.approaches_rating,
+    roadway: legacy.roadway_rating,
+    substructure: legacy.substructure_rating,
+    superstructure: legacy.superstructure_rating,
+    waterway: legacy.waterway_rating
+  };
+  const deficiency = !isCulvert ? calculateBridgeDeficiencyIndex(rawRatings) : null;
+  const assetVal = calculateAssetValue(bridge, isCulvert);
+  const fmtMoney = (m) => m ? new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumFractionDigits: 0 }).format(m) : null;
+
   // Traffic pie chart
   const classShareEntries = Object.entries(traffic.class_shares || {});
   const trafficChartOption = classShareEntries.length ? {
@@ -68,8 +78,9 @@ export default function BridgeDetailCard({ bridge, onClose }) {
     }]
   } : null;
 
-  // Find gallery photo
-  const photo = gallery.find(g => g.structure_id === id || g.filename?.includes(id));
+  const photos = gallery
+    .filter(g => !g.duplicate_of && (g.structure_id === id || g.filename?.includes(id)))
+    .sort((a, b) => b.filename.localeCompare(a.filename));
 
   return (
     <div className="bridge-detail-card">
@@ -81,7 +92,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
           {overallRating != null && (
             <div className="bdc-overall-rating" style={{ color: ratingColor(overallRating) }}>
               <Gauge size={16} />
-              <span>Overall: {overallRating}/10 - {RATING_LABELS[overallRating] || EMPTY}</span>
+              <span>Overall: {getConditionLabel(overallRating)}</span>
             </div>
           )}
         </div>
@@ -123,7 +134,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
               <>
                 <div className="bdc-field">
                   <span className="bdc-label">Crossing</span>
-                  <span className="bdc-value">{CROSSING_TYPE[bridge.TypeCrossing] || legacy.river || EMPTY}</span>
+                  <span className="bdc-value">{getDictionaryLabel(TYPE_CROSSING, bridge.TypeCrossing || legacy.type_crossing) || legacy.river || EMPTY}</span>
                 </div>
                 <div className="bdc-field">
                   <span className="bdc-label">River</span>
@@ -134,11 +145,45 @@ export default function BridgeDetailCard({ bridge, onClose }) {
           </div>
         </div>
 
+        {/* Digital Twin 3D View */}
+        <div className="bdc-section">
+          <h4 className="bdc-section-title"><Box size={14} /> Digital Twin</h4>
+          <DigitalTwin asset={bridge} isCulvert={isCulvert} />
+        </div>
+
         {/* Structural Section */}
         {!isCulvert && (
           <div className="bdc-section">
             <h4 className="bdc-section-title"><Layers size={14} /> Structural Details</h4>
             <div className="bdc-grid">
+              <div className="bdc-field">
+                <span className="bdc-label">Bridge Type</span>
+                <span className="bdc-value">{getDictionaryLabel(TYPE_BRIDGE, legacy.type_bridge) || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Deck Type</span>
+                <span className="bdc-value">{getDictionaryLabel(TYPE_DECK, legacy.type_deck) || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Material</span>
+                <span className="bdc-value">{getDictionaryLabel(TYPE_DECK_MATERIAL, legacy.type_deck_material) || legacy.reference_attributes?.material || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Abutments</span>
+                <span className="bdc-value">{getDictionaryLabel(TYPE_ABUTMENT, legacy.type_abutment_l || legacy.type_abutments?.split('/')[0]?.trim()) || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Piers Type</span>
+                <span className="bdc-value">{getDictionaryLabel(TYPE_PIERS, legacy.type_piers) || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Parapet/Railing</span>
+                <span className="bdc-value">{getDictionaryLabel(TYPE_PARAPET_RAILING, legacy.type_para_rail) || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Expansion Joints</span>
+                <span className="bdc-value">{getDictionaryLabel(TYPE_EXPANSION_JOINTS, legacy.type_exp_joints) || EMPTY}</span>
+              </div>
               <div className="bdc-field">
                 <span className="bdc-label">Length</span>
                 <span className="bdc-value">{legacy.length || legacy.bridge_len || EMPTY} m</span>
@@ -152,7 +197,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
                 <span className="bdc-value">{legacy.no_of_spans || legacy.no_of_span || EMPTY}</span>
               </div>
               <div className="bdc-field">
-                <span className="bdc-label">Piers</span>
+                <span className="bdc-label">Piers Count</span>
                 <span className="bdc-value">{legacy.no_of_piers ?? legacy.no_of_pier ?? EMPTY}</span>
               </div>
               <div className="bdc-field">
@@ -169,13 +214,68 @@ export default function BridgeDetailCard({ bridge, onClose }) {
                   {legacy.scour_risk === 'Y' ? 'Yes' : legacy.scour_risk === 'N' ? 'No' : legacy.scour_risk || EMPTY}
                 </span>
               </div>
+            </div>
+          </div>
+        )}
+
+        {isCulvert && (
+          <div className="bdc-section">
+            <h4 className="bdc-section-title"><Layers size={14} /> Structural Details</h4>
+            <div className="bdc-grid">
               <div className="bdc-field">
-                <span className="bdc-label">Road Class</span>
-                <span className="bdc-value">{legacy.road_class || EMPTY}</span>
+                <span className="bdc-label">Type</span>
+                <span className="bdc-value">{bridge.Type || getDictionaryLabel(TYPE_CULVERT, legacy.type_culvert) || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Pipes/Cells</span>
+                <span className="bdc-value">{bridge.NoOfPipesOrCells || legacy.no_of_pipes || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Span/Diameter</span>
+                <span className="bdc-value">{bridge.SpanOrDiameter || legacy.span_diameter || EMPTY}</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Overall Length</span>
+                <span className="bdc-value">{bridge['Overall Length'] || legacy.culvert_len || EMPTY} m</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Overall Width</span>
+                <span className="bdc-value">{bridge['Overall Width'] || legacy.overall_width || EMPTY} m</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Min Clear Width</span>
+                <span className="bdc-value">{bridge['Min Clear Width'] || legacy.min_clear_width || EMPTY} m</span>
+              </div>
+              <div className="bdc-field">
+                <span className="bdc-label">Max Fill Height</span>
+                <span className="bdc-value">{bridge.FillHeight || legacy.fill_height || EMPTY} m</span>
               </div>
             </div>
           </div>
         )}
+
+        {/* Engineering Analytics */}
+        <div className="bdc-section">
+          <h4 className="bdc-section-title"><Gauge size={14} /> Engineering Analytics</h4>
+          <div className="bdc-grid">
+            <div className="bdc-field">
+              <span className="bdc-label">Replacement Cost (CRC)</span>
+              <span className="bdc-value bdc-value-highlight">{fmtMoney(assetVal?.crc) || EMPTY}</span>
+            </div>
+            <div className="bdc-field">
+              <span className="bdc-label">Depreciated Cost (CDRC)</span>
+              <span className="bdc-value" style={{ color: '#be3a34' }}>{fmtMoney(assetVal?.cdrc) || EMPTY}</span>
+            </div>
+            {!isCulvert && (
+              <div className="bdc-field">
+                <span className="bdc-label">Deficiency Score</span>
+                <span className="bdc-value" style={{ fontWeight: 'bold', color: deficiency >= 50 ? '#be3a34' : deficiency >= 20 ? '#e3a008' : '#168257' }}>
+                  {deficiency != null ? `${deficiency.toFixed(1)} / 100` : EMPTY}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Condition Ratings */}
         {ratings.length > 0 && (
@@ -191,7 +291,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
                       style={{ width: `${(r.value / 10) * 100}%`, background: ratingColor(r.value) }}
                     />
                   </div>
-                  <span className="bdc-rating-value" style={{ color: ratingColor(r.value) }}>{r.value}</span>
+                  <span className="bdc-rating-value" style={{ color: ratingColor(r.value) }}>{getConditionLabel(r.value)}</span>
                 </div>
               ))}
             </div>
@@ -248,33 +348,15 @@ export default function BridgeDetailCard({ bridge, onClose }) {
           </div>
         )}
 
-        {/* Photo */}
-        {photo && (
+        {/* Photos */}
+        {photos.length > 0 && (
           <div className="bdc-section">
-            <h4 className="bdc-section-title"><Camera size={14} /> Evidence Photo</h4>
-            <div className="bdc-photo">
-              <img src={getPhotoUrl(photo)} alt={id} loading="lazy" />
-            </div>
+            <h4 className="bdc-section-title"><Camera size={14} /> Evidence Photos ({photos.length})</h4>
+            <EvidenceTimeline photos={photos} structureId={id} compact />
           </div>
         )}
 
-        {/* Inspector Info */}
-        <div className="bdc-section bdc-section-footer">
-          <div className="bdc-grid">
-            <div className="bdc-field">
-              <span className="bdc-label">Firm</span>
-              <span className="bdc-value">{bridge.Firm || legacy.firm || EMPTY}</span>
-            </div>
-            <div className="bdc-field">
-              <span className="bdc-label">Inspector</span>
-              <span className="bdc-value">{bridge.Inspector || legacy.inspector || EMPTY}</span>
-            </div>
-            <div className="bdc-field">
-              <span className="bdc-label">Last Modified</span>
-              <span className="bdc-value">{bridge.DateModified || legacy.date_modified || EMPTY}</span>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );

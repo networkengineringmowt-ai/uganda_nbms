@@ -4,7 +4,6 @@ import {
   TrendingUp,
   Database,
   Layers,
-  ClipboardCheck,
   HardHat,
   FileText,
   Settings,
@@ -17,21 +16,26 @@ export default function ModernSidebar({ modernTab, setModernTab, setSelectedBrid
   const [clickCount, setClickCount] = useState(0);
 
   useEffect(() => {
-    if (clickCount > 0) {
-      const timer = setTimeout(() => setClickCount(0), 1000);
-      if (clickCount >= 5) {
-        if (onSecretClick) onSecretClick();
-        setClickCount(0);
-      }
-      return () => clearTimeout(timer);
+    if (clickCount === 0) return undefined;
+    const timer = setTimeout(() => setClickCount(0), 1000);
+    return () => clearTimeout(timer);
+  }, [clickCount]);
+
+  const handleBrandClick = () => {
+    const nextCount = clickCount + 1;
+    if (nextCount >= 5) {
+      onSecretClick?.();
+      setClickCount(0);
+      return;
     }
-  }, [clickCount, onSecretClick]);
+    setClickCount(nextCount);
+  };
 
   return (
     <aside className="sidebar">
         <div 
           style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', userSelect: 'none' }}
-          onClick={() => setClickCount(c => c + 1)}
+          onClick={handleBrandClick}
           title="MoWT BMS National Roads Registry"
         >
           <img src="mowt.jpg" alt="MoWT Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'contain', background: '#fff', padding: '2px' }} />

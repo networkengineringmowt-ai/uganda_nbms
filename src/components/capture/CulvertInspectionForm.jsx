@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { saveCulvert } from '../../services/bmsDataService';
+import { CONDITION_RATINGS, getConditionColor, getConditionLabel } from '../../utils/dataDictionary';
 import { Search, Save, AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
@@ -101,7 +102,7 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
         splitNumber: 4,
         axisName: { color: '#64748b', fontSize: 10, fontWeight: 600 },
         splitLine: { lineStyle: { color: '#e2e8f0' } },
-        splitArea: { show: true, areaStyle: { color: ['#f8fafc', '#ffffff'] } },
+        splitArea: { show: true, areaStyle: { color: ['rgba(30, 41, 59, 0.5)', 'rgba(15, 23, 42, 0.5)'] } },
         axisLine: { lineStyle: { color: '#e2e8f0' } }
       },
       series: [{
@@ -123,7 +124,7 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
       <div className="ent-sidebar">
         <div className="ent-sidebar-header">Culvert Inspections</div>
         <div style={{ padding: '0 16px 16px' }}>
-          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fff' }}>
+          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(15, 23, 42, 0.4)' }}>
             <Search size={14} color="#64748b" />
             <input 
               style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
@@ -150,7 +151,7 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
         {selectedId ? (
           <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
             <h2 className="ent-page-title">{culverts.find(c => c.CulvertNumber === selectedId)?.River || selectedId}</h2>
-            <p className="ent-page-subtitle">Evaluate structural elements using the 0-9 NBI scale.</p>
+            <p className="ent-page-subtitle">Evaluate each structural element using the standard condition descriptions.</p>
 
             {message && (
               <div className={`ent-alert ${isError ? 'ent-alert-error' : 'ent-alert-success'}`}>
@@ -160,22 +161,33 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
             )}
 
             <div className="ent-card">
-              <div className="ent-card-header"><Activity size={18} color="var(--ent-primary)" /> Condition Ratings (0-9)</div>
+              <div className="ent-card-header"><Activity size={18} color="var(--ent-primary)" /> Condition Categories</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {CULVERT_RATING_ELEMENTS.map(el => (
-                  <div key={el.id} style={{ padding: '16px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
+                  <div key={el.id} style={{ padding: '16px', background: 'rgba(30, 41, 59, 0.3)', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
                     <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>{el.label}</div>
-                    <div className="ent-rating-grid" style={{ gridTemplateColumns: 'repeat(10, 1fr)' }}>
-                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                        <div 
-                          key={num}
-                          className={`ent-rating-box ${ratings[el.id] === num ? 'active' : ''}`}
-                          onClick={() => handleRatingSelect(el.id, num)}
-                          style={ratings[el.id] === num ? { background: '#8b5cf6', borderColor: '#8b5cf6' } : {}}
-                        >
-                          {num}
-                        </div>
-                      ))}
+                    <div className="ent-rating-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => {
+                        const label = CONDITION_RATINGS[num];
+                        const color = getConditionColor(label);
+                        return (
+                          <div 
+                            key={num}
+                            className={`ent-rating-box ${ratings[el.id] === num ? 'active' : ''}`}
+                            onClick={() => handleRatingSelect(el.id, num)}
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              whiteSpace: 'nowrap',
+                              background: ratings[el.id] === num ? color : 'transparent',
+                              borderColor: ratings[el.id] === num ? color : 'var(--ent-border)',
+                              color: ratings[el.id] === num ? '#fff' : '#64748b'
+                            }}
+                          >
+                            {label}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -198,12 +210,12 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
         
         {selectedId ? (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', background: 'rgba(30, 41, 59, 0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)' }}>
               <div style={{ textAlign: 'center', flex: 1 }}>
                 <div style={{ fontSize: '24px', fontWeight: 700, color: '#8b5cf6' }}>
-                  {results?.overallRating !== null ? `${results.overallRating}/9` : '-'}
+                  {results?.overallRating !== null ? getConditionLabel(results.overallRating) : '-'}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--ent-text-muted)', textTransform: 'uppercase' }}>Avg Rating</div>
+                <div style={{ fontSize: '11px', color: 'var(--ent-text-muted)', textTransform: 'uppercase' }}>Overall condition</div>
               </div>
             </div>
 

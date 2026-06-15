@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { saveBridge } from '../../services/bmsDataService';
+import { TYPE_BRIDGE, TYPE_DECK_MATERIAL, TYPE_ABUTMENT } from '../../utils/dataDictionary';
 import { Search, Save, Plus, AlertCircle, CheckCircle, MapPin, Maximize, FileText, Database, Box } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
@@ -132,13 +133,20 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
     }]
   };
 
-  const renderInputField = (label, name, type = 'text') => {
+  const renderInputField = (label, name, type = 'text', dict = null) => {
     const val = name.startsWith('LegacyData.') ? formData.LegacyData[name.split('.')[1]] : formData[name];
     return (
       <div className="ent-field">
         <label className="ent-label">{label}</label>
-        {type === 'select' ? (
-           <select name={name} className="ent-select" value={val} onChange={handleChange}>
+        {dict ? (
+           <select name={name} className="ent-select" value={val || ''} onChange={handleChange}>
+             <option value="">Select...</option>
+             {Object.entries(dict).map(([code, desc]) => (
+               <option key={code} value={code}>{code} - {desc}</option>
+             ))}
+           </select>
+        ) : type === 'select' ? (
+           <select name={name} className="ent-select" value={val || ''} onChange={handleChange}>
              <option value="">Select...</option>
              <option value="Yes">Yes</option>
              <option value="No">No</option>
@@ -162,7 +170,7 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
           <button className="ent-btn-primary" onClick={handleNewRecord} style={{ marginBottom: '16px' }}>
             <Plus size={16} /> New Bridge
           </button>
-          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fff' }}>
+          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(30, 41, 59, 0.3)' }}>
             <Search size={14} color="#64748b" />
             <input 
               style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
@@ -215,9 +223,9 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
             <div className="ent-card">
               <div className="ent-card-header"><Database size={18} color="var(--ent-primary)" /> Structural Characteristics</div>
               <div className="ent-grid">
-                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Superstructure Type', 'LegacyData.superstructure_type')}</div>
-                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Substructure Type', 'LegacyData.substructure_type')}</div>
-                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Main Material Type', 'LegacyData.material_type')}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Superstructure Type', 'LegacyData.superstructure_type', 'text', TYPE_BRIDGE)}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Substructure Type', 'LegacyData.substructure_type', 'text', TYPE_ABUTMENT)}</div>
+                <div style={{ gridColumn: '1 / -1' }}>{renderInputField('Main Material Type', 'LegacyData.material_type', 'text', TYPE_DECK_MATERIAL)}</div>
                 {renderInputField('Span Arrangement', 'LegacyData.span_arrangement')}
                 {renderInputField('Foundation Type', 'LegacyData.foundation_type')}
                 {renderInputField('Scour Risk', 'LegacyData.scour_risk', 'select')}

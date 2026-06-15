@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, HardHat, Search, Wrench } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
+import { getConditionLabel } from '../utils/dataDictionary';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
@@ -27,26 +28,16 @@ export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
   }, []);
 
   const filtered = useMemo(() => critical.filter((row) => {
-    const matchesFilter = filter === 'All' || row.OverallRating === filter;
+    const matchesFilter = filter === 'All' || getConditionLabel(row.OverallRating) === filter;
     const term = query.trim().toLowerCase();
     const matchesQuery = !term || [row.BridgeNumber, row.BridgeName, row.LinkName, row.MaintenanceStation, row.Comment]
       .some((value) => String(value || '').toLowerCase().includes(term));
     return matchesFilter && matchesQuery;
   }), [critical, filter, query]);
 
-  const summary = useMemo(() => critical.reduce((acc, row) => {
-    const key = row.OverallRating || 'Review';
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {}), [critical]);
-
   return (
     <div className="maintenance-layout">
-      <section className="kpi-grid compact">
-        <article className="kpi-card"><div className="kpi-icon red"><AlertTriangle size={20} /></div><span className="kpi-eyebrow">Priority programme</span><strong>{critical.length}</strong><p>Structures identified for intervention</p></article>
-        <article className="kpi-card"><div className="kpi-icon red"><Wrench size={20} /></div><span className="kpi-eyebrow">Poor condition</span><strong>{summary.Poor || 0}</strong><p>Minor to major repairs required</p></article>
-        <article className="kpi-card"><div className="kpi-icon amber"><HardHat size={20} /></div><span className="kpi-eyebrow">Active works record</span><strong>{work ? 1 : 0}</strong><p>{work?.bridge || 'No current works record'}</p></article>
-      </section>
+
 
       <section className="panel maintenance-panel">
         <div className="panel-header maintenance-header">
@@ -67,7 +58,7 @@ export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
                 <span><strong>{row.BridgeNumber}</strong><small>{row.BridgeName || 'Unnamed bridge'}</small></span>
                 <span><strong>{row.LinkName || row.LinkID || 'Unlinked'}</strong><small>{row.BridgeLength || '-'} m long / {row.BridgeWidth || '-'} m wide</small></span>
                 <span>{row.MaintenanceStation || 'Unassigned'}</span>
-                <span><em className={`condition-pill ${conditionClass(row.OverallRating)}`}>{row.OverallRating || 'Review'}</em></span>
+                <span><em className={`condition-pill ${conditionClass(getConditionLabel(row.OverallRating))}`}>{getConditionLabel(row.OverallRating)}</em></span>
                 <span>{row.Comment || 'Engineering assessment required'}</span>
                 <button className="icon-button" disabled={!asset} onClick={() => asset && onSelectAsset({ ...asset, _structureType: 'bridge' })} title="Open on map"><ArrowRight size={16} /></button>
               </div>

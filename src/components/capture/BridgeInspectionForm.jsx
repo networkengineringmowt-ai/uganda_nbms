@@ -4,18 +4,45 @@ import { calculateOverallRating, calculateConditionDeficiency, getConditionCateg
 import { Search, Save, AlertCircle, CheckCircle, Activity, Plus, Trash2 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
-const RATING_ELEMENTS = [
-  { id: 'approaches', label: '1. Approaches' },
-  { id: 'waterway', label: '2. Waterway' },
-  { id: 'substructure', label: '3. Substructure' },
-  { id: 'superstructure', label: '4. Superstructure' },
-  { id: 'roadway', label: '5. Roadway (Deck)' },
-  { id: 'expansion_joints', label: '6. Expansion Joints' },
-  { id: 'drainage', label: '7. Drainage' },
-  { id: 'traffic_barriers', label: '8. Traffic Barriers' },
-  { id: 'guardrails', label: '9. Guardrails' },
-  { id: 'cell_structures_cmp', label: '10. Cell Structures / CMP' }
+const RATING_GROUPS = [
+  {
+    title: 'Superstructure',
+    elements: [
+      { id: 'main_girders', label: 'Main Girders' },
+      { id: 'cross_girders', label: 'Cross Girders' },
+      { id: 'deck_slab', label: 'Deck Slab' },
+      { id: 'bearings', label: 'Bearings' },
+    ]
+  },
+  {
+    title: 'Substructure',
+    elements: [
+      { id: 'abutments', label: 'Abutments' },
+      { id: 'piers', label: 'Piers' },
+      { id: 'foundations', label: 'Foundations' },
+      { id: 'wingwalls', label: 'Wingwalls' },
+    ]
+  },
+  {
+    title: 'Roadway & Ancillary',
+    elements: [
+      { id: 'surfacing', label: 'Surfacing' },
+      { id: 'expansion_joints', label: 'Expansion Joints' },
+      { id: 'footways', label: 'Footways / Kerbs' },
+      { id: 'parapets', label: 'Parapets / Handrails' },
+    ]
+  },
+  {
+    title: 'Channel & Approaches',
+    elements: [
+      { id: 'approaches', label: 'Approaches' },
+      { id: 'embankment', label: 'Embankment / Pitching' },
+      { id: 'waterway', label: 'Waterway / Channel' },
+    ]
+  }
 ];
+
+const RATING_ELEMENTS = RATING_GROUPS.flatMap(g => g.elements);
 
 export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,10 +50,9 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
 
-  const [ratings, setRatings] = useState({
-    approaches: '', waterway: '', substructure: '', superstructure: '', roadway: '',
-    expansion_joints: '', drainage: '', traffic_barriers: '', guardrails: '', cell_structures_cmp: ''
-  });
+  const [ratings, setRatings] = useState(
+    RATING_ELEMENTS.reduce((acc, el) => ({ ...acc, [el.id]: '' }), {})
+  );
 
   const [defectsList, setDefectsList] = useState([]);
   const [defectForm, setDefectForm] = useState({
@@ -38,23 +64,41 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
     b.BridgeName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getVisibleGroups = (bridge) => {
+    if (!bridge) return RATING_GROUPS;
+    const leg = bridge.LegacyData || {};
+    const spans = Number(bridge.Spans || leg.spans || 1);
+    
+    return RATING_GROUPS.map(group => {
+      let elements = group.elements.filter(el => {
+        if (el.id === 'piers' && (spans <= 1 || leg.pier_type === '97' || leg.pier_type === 'None')) return false;
+        if (el.id === 'bearings' && (leg.bearing_type === '97' || leg.bearing_type === 'None')) return false;
+        if (el.id === 'expansion_joints' && (leg.expansion_joint_type === '97' || leg.expansion_joint_type === 'None')) return false;
+        if (el.id === 'surfacing' && (leg.surfacing_type === '97' || leg.surfacing_type === 'None')) return false;
+        if (el.id === 'footways' && (leg.footway_type === '97' || leg.footway_type === 'None')) return false;
+        if (el.id === 'parapets' && (leg.parapet_type === '97' || leg.parapet_type === 'None' || leg.parapet_railing === '97')) return false;
+        if (el.id === 'wingwalls' && (leg.wingwall_type === '97' || leg.wingwall_type === 'None')) return false;
+        return true;
+      });
+      return { ...group, elements };
+    }).filter(group => group.elements.length > 0);
+  };
+
+  const visibleGroups = useMemo(() => {
+    const bridge = bridges.find(b => b.BridgeNumber === selectedId);
+    return getVisibleGroups(bridge);
+  }, [selectedId, bridges]);
+
   const handleSelectBridge = (bridge) => {
     setMessage('');
     setSelectedId(bridge.BridgeNumber);
     
     const leg = bridge.LegacyData || {};
-    setRatings({
-      approaches: leg.approaches_rating ?? '',
-      waterway: leg.waterway_rating ?? '',
-      substructure: leg.substructure_rating ?? '',
-      superstructure: leg.superstructure_rating ?? '',
-      roadway: leg.roadway_rating ?? '',
-      expansion_joints: leg.expansion_joints_rating ?? '',
-      drainage: leg.drainage_rating ?? '',
-      traffic_barriers: leg.traffic_barriers_rating ?? '',
-      guardrails: leg.guardrails_rating ?? '',
-      cell_structures_cmp: leg.cell_structures_cmp_rating ?? ''
+    const initialRatings = {};
+    RATING_ELEMENTS.forEach(el => {
+      initialRatings[el.id] = leg[`${el.id}_rating`] ?? '';
     });
+    setRatings(initialRatings);
     setDefectsList(leg.defects || []);
   };
 
@@ -80,8 +124,16 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
       parsedRatings[el.id] = ratings[el.id] === '' || ratings[el.id] === undefined ? null : Number(ratings[el.id]);
     });
 
-    const overall = calculateOverallRating(parsedRatings);
-    const dc = calculateConditionDeficiency(parsedRatings, 15000000); 
+    const engineRatings = {
+      superstructure: Math.max(parsedRatings.main_girders || 0, parsedRatings.cross_girders || 0, parsedRatings.deck_slab || 0, parsedRatings.bearings || 0) || null,
+      substructure: Math.max(parsedRatings.abutments || 0, parsedRatings.piers || 0, parsedRatings.foundations || 0, parsedRatings.wingwalls || 0) || null,
+      roadway: Math.max(parsedRatings.surfacing || 0, parsedRatings.expansion_joints || 0, parsedRatings.footways || 0, parsedRatings.parapets || 0) || null,
+      approaches: Math.max(parsedRatings.approaches || 0, parsedRatings.embankment || 0) || null,
+      waterway: parsedRatings.waterway || null
+    };
+
+    const overall = calculateOverallRating(engineRatings);
+    const dc = calculateConditionDeficiency(engineRatings, 15000000); 
     
     return {
       overallRating: overall,
@@ -99,23 +151,13 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
     const idx = updated.findIndex(b => b.BridgeNumber === selectedId);
     
     if (idx > -1) {
-      updated[idx] = {
-        ...updated[idx],
-        LegacyData: {
-          ...(updated[idx].LegacyData || {}),
-          approaches_rating: ratings.approaches,
-          waterway_rating: ratings.waterway,
-          substructure_rating: ratings.substructure,
-          superstructure_rating: ratings.superstructure,
-          roadway_rating: ratings.roadway,
-          expansion_joints_rating: ratings.expansion_joints,
-          drainage_rating: ratings.drainage,
-          traffic_barriers_rating: ratings.traffic_barriers,
-          guardrails_rating: ratings.guardrails,
-          cell_structures_cmp_rating: ratings.cell_structures_cmp,
-          defects: defectsList
-        }
-      };
+      let c = updated[idx];
+      if (!c.LegacyData) c.LegacyData = {};
+      RATING_ELEMENTS.forEach(el => {
+        c.LegacyData[`${el.id}_rating`] = ratings[el.id];
+      });
+      c.LegacyData.defects = defectsList;
+      
       try {
         await saveBridge(updated[idx]);
         setMessage('Inspection saved successfully.');
@@ -135,7 +177,7 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
         splitNumber: 4,
         axisName: { color: '#64748b', fontSize: 10, fontWeight: 600 },
         splitLine: { lineStyle: { color: '#e2e8f0' } },
-        splitArea: { show: true, areaStyle: { color: ['#f8fafc', '#ffffff'] } },
+        splitArea: { show: true, areaStyle: { color: ['rgba(30, 41, 59, 0.5)', 'rgba(15, 23, 42, 0.5)'] } },
         axisLine: { lineStyle: { color: '#e2e8f0' } }
       },
       series: [{
@@ -157,7 +199,7 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
       <div className="ent-sidebar">
         <div className="ent-sidebar-header">Bridge Inspections</div>
         <div style={{ padding: '0 16px 16px' }}>
-          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fff' }}>
+          <div className="ent-input" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'rgba(15, 23, 42, 0.4)' }}>
             <Search size={14} color="#64748b" />
             <input 
               style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
@@ -194,20 +236,39 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
             )}
 
             <div className="ent-card">
-              <div className="ent-card-header"><Activity size={18} color="var(--ent-primary)" /> Condition Ratings (1-4)</div>
+              <div className="ent-card-header"><Activity size={18} color="var(--ent-primary)" /> Condition Categories</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {RATING_ELEMENTS.map(el => (
-                  <div key={el.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{el.label}</div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {[1, 2, 3, 4].map(num => (
-                        <div 
-                          key={num}
-                          className={`ent-rating-box ${ratings[el.id] == num ? 'active' : ''}`}
-                          style={{ width: '40px' }}
-                          onClick={() => handleRatingSelect(el.id, num)}
-                        >
-                          {num}
+                {visibleGroups.map(group => (
+                  <div key={group.title} style={{ marginBottom: '24px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ent-primary)', marginBottom: '12px', borderBottom: '1px solid var(--ent-border)', paddingBottom: '4px' }}>
+                      {group.title}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {group.elements.map(el => (
+                        <div key={el.id} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(30, 41, 59, 0.3)', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 500, minWidth: '150px' }}>{el.label}</div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {[
+                              { num: 1, label: 'Good', color: '#22c55e' },
+                              { num: 2, label: 'Fair', color: '#eab308' },
+                              { num: 3, label: 'Poor', color: '#f97316' },
+                              { num: 4, label: 'Severe', color: '#ef4444' }
+                            ].map(({ num, label, color }) => (
+                              <div 
+                                key={num}
+                                className={`ent-rating-box ${ratings[el.id] == num ? 'active' : ''}`}
+                                style={{ 
+                                  padding: '4px 12px', 
+                                  background: ratings[el.id] == num ? color : 'transparent',
+                                  borderColor: ratings[el.id] == num ? color : 'var(--ent-border)',
+                                  color: ratings[el.id] == num ? '#fff' : '#64748b'
+                                }}
+                                onClick={() => handleRatingSelect(el.id, num)}
+                              >
+                                {label}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -219,7 +280,7 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
             <div className="ent-card">
               <div className="ent-card-header">Defects & Interventions</div>
               
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)', marginBottom: '24px' }}>
+              <div style={{ background: 'rgba(30, 41, 59, 0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)', marginBottom: '24px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div className="ent-field">
                     <label className="ent-label">Element</label>
@@ -252,13 +313,13 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
               </div>
 
               {defectsList.length === 0 ? (
-                <div style={{ color: 'var(--ent-text-muted)', fontSize: '13px', textAlign: 'center', padding: '24px', background: '#f8fafc', borderRadius: '6px' }}>
+                <div style={{ color: 'var(--ent-text-muted)', fontSize: '13px', textAlign: 'center', padding: '24px', background: 'rgba(30, 41, 59, 0.3)', borderRadius: '6px' }}>
                   No defects logged.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {defectsList.map((d, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#fff', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(8, 18, 40, 0.86)', borderRadius: '6px', border: '1px solid var(--ent-border)' }}>
                       <div>
                         <div style={{ fontSize: '14px', fontWeight: 600 }}>{d.element} <span style={{ color: 'var(--ent-primary)', marginLeft: '8px' }}>{d.activity}</span></div>
                         <div style={{ color: 'var(--ent-text-muted)', fontSize: '12px' }}>Qty: {d.qty} {d.unit}</div>
@@ -288,12 +349,12 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
         
         {selectedId ? (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', background: 'rgba(30, 41, 59, 0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--ent-border)' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--ent-primary)' }}>
-                  {results?.overallRating !== null ? results.overallRating.toFixed(1) : '-'}
+                  {results?.category || '-'}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--ent-text-muted)', textTransform: 'uppercase' }}>Cond Index</div>
+                <div style={{ fontSize: '11px', color: 'var(--ent-text-muted)', textTransform: 'uppercase' }}>Overall condition</div>
               </div>
               <div style={{ width: '1px', background: 'var(--ent-border)' }}></div>
               <div style={{ textAlign: 'center' }}>
