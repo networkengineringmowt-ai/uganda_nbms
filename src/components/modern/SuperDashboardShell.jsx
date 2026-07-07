@@ -7,6 +7,7 @@ import BridgeDetailCard from '../BridgeDetailCard';
 import CombinedInventory from '../CombinedInventory';
 import InspectionWorkspace from '../InspectionWorkspace';
 import MaintenanceWorkspace from '../MaintenanceWorkspace';
+import InvestmentDashboard from '../InvestmentDashboard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
 import BmsReports from '../BmsReports';
 import PhotoLibrary from '../PhotoLibrary';
@@ -81,6 +82,7 @@ export default function SuperDashboardShell({ bridges, culverts }) {
               readOnly={true}
             />
           )}
+          {modernTab === 'investment' && <InvestmentDashboard />}
           {modernTab === 'analytics' && <AnalyticsDashboard />}
           {modernTab === 'reports' && <BmsReports bridges={bridges} culverts={culverts} />}
           {modernTab === 'photos' && <PhotoLibrary bridges={bridges} culverts={culverts} />}

@@ -20,6 +20,7 @@ import CulvertInspectionForm from '../capture/CulvertInspectionForm';
 
 import UpgradeBridgesForm from '../UpgradeBridgesForm';
 import SystemParametersForm from '../SystemParametersForm';
+import InvestmentDashboard from '../InvestmentDashboard';
 import ArchitectureSchematic from './ArchitectureSchematic';
 import AdminAlgorithms from '../admin/AdminAlgorithms';
 import CriticalStructures from './CriticalStructures';
@@ -101,6 +102,7 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
             />
           )}
           {modernTab === 'works' && <WorksDashboard />}
+          {modernTab === 'investment' && <InvestmentDashboard />}
           {modernTab === 'analytics' && <AnalyticsDashboard />}
           {modernTab === 'reports' && <BmsReports bridges={bridges} culverts={culverts} />}
           {modernTab === 'photos' && <PhotoLibrary bridges={bridges} culverts={culverts} />}

@@ -85,6 +85,7 @@ const sectionDefinitions = [
         tabs: [
           { id: 'maintenance', label: 'Maintenance', icon: HardHat },
           { id: 'works', label: 'Ongoing Works', icon: HardHat },
+          { id: 'investment', label: 'Investment Plan', icon: TrendingUp },
         ],
       },
     ],
