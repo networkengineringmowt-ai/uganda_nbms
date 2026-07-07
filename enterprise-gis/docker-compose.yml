@@ -1,0 +1,156 @@
+name: uganda-bms-enterprise-gis
+
+services:
+  postgis:
+    image: postgis/postgis:16-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [data, services]
+
+  keycloak-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    volumes: [keycloak_data:/var/lib/postgresql/data]
+    networks: [identity]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    restart: unless-stopped
+    command: start-dev --health-enabled=true
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_PROXY_HEADERS: xforwarded
+    depends_on: [keycloak-db]
+    networks: [identity, edge]
+
+  geoserver:
+    image: docker.osgeo.org/geoserver:2.26.2
+    restart: unless-stopped
+    environment:
+      INSTALL_EXTENSIONS: "true"
+      STABLE_EXTENSIONS: "vectortiles,ogcapi-features,css"
+      SKIP_DEMO_DATA: "true"
+    volumes:
+      - geoserver_data:/opt/geoserver_data
+      - ./services/geoserver:/opt/config:ro
+    depends_on:
+      postgis: { condition: service_healthy }
+    networks: [data, services, edge]
+
+  pygeoapi:
+    image: geopython/pygeoapi:0.19.0
+    restart: unless-stopped
+    environment:
+      PYGEOAPI_CONFIG: /pygeoapi/local.config.yml
+      PYGEOAPI_OPENAPI: /pygeoapi/local.openapi.yml
+    volumes:
+      - ./services/pygeoapi/local.config.yml:/pygeoapi/local.config.yml:ro
+    depends_on:
+      postgis: { condition: service_healthy }
+    networks: [data, services, edge]
+
+  mapproxy:
+    image: mapproxy/mapproxy:3.1.0
+    restart: unless-stopped
+    volumes:
+      - ./services/mapproxy:/mapproxy:ro
+      - mapproxy_cache:/cache
+    networks: [services, edge]
+
+  minio:
+    image: minio/minio:RELEASE.2025-02-07T23-21-09Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes: [minio_data:/data]
+    networks: [services, edge]
+
+  catalog-api:
+    build: ./services/catalog-api
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgis:5432/${POSTGRES_DB}
+      OBJECT_STORAGE_ENDPOINT: http://minio:9000
+    volumes:
+      - ../public/data:/seed-data:ro
+    depends_on:
+      postgis: { condition: service_healthy }
+    networks: [data, services, edge]
+
+  pgadmin:
+    image: dpage/pgadmin4:9
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    volumes: [pgadmin_data:/var/lib/pgadmin]
+    networks: [data, edge]
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    restart: unless-stopped
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks: [services, edge]
+
+  grafana:
+    image: grafana/grafana-oss:11.5.2
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes: [grafana_data:/var/lib/grafana]
+    networks: [services, edge]
+
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on: [catalog-api, geoserver, pygeoapi, mapproxy, keycloak, minio, pgadmin, grafana, prometheus]
+    networks: [edge]
+
+networks:
+  edge:
+  services:
+  data:
+    internal: true
+  identity:
+    internal: true
+
+volumes:
+  postgis_data:
+  keycloak_data:
+  geoserver_data:
+  mapproxy_cache:
+  minio_data:
+  pgadmin_data:
+  prometheus_data:
+  grafana_data:

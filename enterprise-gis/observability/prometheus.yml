@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 30s
+scrape_configs:
+  - job_name: catalog-api
+    metrics_path: /health
+    static_configs: [{ targets: ["catalog-api:8080"] }]
+  - job_name: geoserver
+    metrics_path: /geoserver/web/
+    static_configs: [{ targets: ["geoserver:8080"] }]
+  - job_name: prometheus
+    static_configs: [{ targets: ["prometheus:9090"] }]

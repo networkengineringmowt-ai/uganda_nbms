@@ -1,0 +1,48 @@
+import { useState, useEffect } from 'react';
+import { FileText, Map, TrendingUp } from 'lucide-react';
+
+export default function InvestmentDashboard() {
+  const [data, setData] = useState(null);
+  const [criticalCount, setCriticalCount] = useState(0);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/uganda_bms/data/investment.json').then(r => r.json()),
+      fetch('/uganda_bms/data/critical_structures.json').then(r => r.json()).catch(() => [])
+    ])
+      .then(([investment, critical]) => {
+        setData(investment);
+        setCriticalCount(Array.isArray(critical) ? critical.length : 0);
+      })
+      .catch(console.error);
+  }, []);
+
+  if (!data) return (
+    <div className="loader-container">
+      <div className="spinner"></div>
+      <p>Loading Critical Structures...</p>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="dashboard-grid">
+        <div className="glass-card">
+          <h3 className="card-title"><TrendingUp size={14} style={{display:'inline', marginRight:6}}/> SQLBot Engine Status</h3>
+          <div className="kpi-value">{data.sqlbot_kpis?.bridge_prediction_count || 0}</div>
+          <div className="kpi-label">Active Bridge Predictions via SQLBot Matrix</div>
+        </div>
+        <div className="glass-card">
+          <h3 className="card-title"><Map size={14} style={{display:'inline', marginRight:6}}/> Critical Structures</h3>
+          <div className="kpi-value">{criticalCount}</div>
+          <div className="kpi-label">Prioritized structures requiring intervention</div>
+        </div>
+        <div className="glass-card">
+          <h3 className="card-title"><FileText size={14} style={{display:'inline', marginRight:6}}/> Investment Plan</h3>
+          <div className="kpi-value">2026</div>
+          <div className="kpi-label">Bridge & Major Culvert Division</div>
+        </div>
+      </div>
+    </div>
+  );
+}

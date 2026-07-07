@@ -25,14 +25,12 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --no-audit --no-fund --legacy-peer-deps
-      # Build directly with Vite (skip local-only export-data/tsc), same as uganda_nrms CI.
+      # Build with Vite. Skip the twins:manifest/gallery-prune steps (local-only,
+      # read source assets that aren't needed for the Pages bundle).
       - name: Build
         run: npx vite build
         env:
           NODE_ENV: production
-          VITE_SUPABASE_URL: https://vbidhkvzjigatfygnyc.supabase.co
-          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiaWRoa3Z6amlnYXRmeWdueWNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3Mzg0NDQsImV4cCI6MjA5NzMxNDQ0NH0.4M5lsUvcoh2giNpbF5X7nMPepNVp1U9Em6Ro4aZwgY4
-      # Publish dist to the gh-pages branch — the repo's Pages source.
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
