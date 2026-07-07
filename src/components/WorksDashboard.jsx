@@ -47,9 +47,15 @@ export default function WorksDashboard() {
           zoomControl={false} 
           style={{ height: '100%', width: '100%', background: '#dce6df' }}
         >
+          {/* Base map — Esri World Imagery + reference labels (always-on, non-removable) */}
           <TileLayer
-            url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-            attribution="&copy; Google Maps"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution="Esri, Maxar, Earthstar Geographics, CNES/Airbus DS, USDA, USGS"
+          />
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+            attribution="Esri"
+            opacity={0.7}
           />
           <ZoomControl position="bottomleft" />
           

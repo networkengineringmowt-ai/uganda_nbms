@@ -294,9 +294,15 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
       )}
 
       <MapContainer center={[1.3733, 32.2903]} zoom={7} zoomControl={false} preferCanvas style={{ height: '100%', width: '100%', background: '#dce6df' }}>
+        {/* Base map — Esri World Imagery + reference labels (always-on, non-removable) */}
         <TileLayer
-          url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-          attribution="&copy; Google Maps"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          attribution="Esri, Maxar, Earthstar Geographics, CNES/Airbus DS, USDA, USGS"
+        />
+        <TileLayer
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+          attribution="Esri"
+          opacity={0.7}
         />
         {waterData && <GeoJSON data={waterData} style={{ color: '#0055ff', weight: 1.5, opacity: 0.7, fillColor: '#002288', fillOpacity: 0.3 }} />}
         {networkData && (
