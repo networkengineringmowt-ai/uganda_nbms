@@ -12,7 +12,7 @@ export default function UserManagement() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '24px' }}>
       
       {/* Top Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+      <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
         <div className="glass-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}><Shield size={24} /></div>
           <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Users</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>124</div></div>
@@ -27,7 +27,7 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', flex: 1 }}>
+      <div className="admin-two-col-row" style={{ display: 'flex', gap: '24px', flex: 1 }}>
         {/* User Table */}
         <div className="glass-card" style={{ flex: 2, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'rgba(3, 9, 24, 0.52)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -37,12 +37,13 @@ export default function UserManagement() {
             </button>
           </div>
           <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ position: 'relative', width: '300px' }}>
+            <div style={{ position: 'relative', width: '300px', maxWidth: '100%' }}>
               <Search size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />
               <input type="text" placeholder="Search by name or ID..." style={{ padding: '8px 12px 8px 36px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', width: '100%', background: '#071126', color: 'var(--text-primary)' }} />
             </div>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+          <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead style={{ background: 'rgba(3, 9, 24, 0.72)', color: '#7dd3fc' }}>
               <tr>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Emp ID</th>
@@ -72,6 +73,7 @@ export default function UserManagement() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Audit Log Placeholder */}

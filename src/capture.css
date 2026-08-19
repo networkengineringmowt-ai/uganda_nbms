@@ -322,3 +322,84 @@
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — Data Capture / Inspection forms
+   Stack the 3-pane workspace (record list / form / summary)
+   into a single scrollable column on phones & small tablets.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .ent-workspace {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .ent-sidebar {
+    width: 100%;
+    max-height: 260px;
+    border-right: none;
+    border-bottom: 1px solid var(--ent-border);
+    box-shadow: none;
+  }
+
+  .ent-sidebar-header {
+    padding: 16px 16px 10px;
+  }
+
+  .ent-nav-item {
+    min-height: 44px;
+  }
+
+  .ent-main {
+    padding: 20px 16px;
+  }
+
+  .ent-page-title {
+    font-size: 20px;
+  }
+
+  .ent-page-subtitle {
+    margin-bottom: 20px;
+  }
+
+  .ent-card {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .ent-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .ent-summary {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--ent-border);
+    padding: 20px 16px;
+    box-shadow: none;
+  }
+
+  .ent-input,
+  .ent-select,
+  .ent-btn-primary,
+  .ent-list-item {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ent-main,
+  .ent-summary {
+    padding: 16px 12px;
+  }
+
+  .ent-card {
+    padding: 14px;
+  }
+
+  .ent-page-title {
+    font-size: 18px;
+  }
+}

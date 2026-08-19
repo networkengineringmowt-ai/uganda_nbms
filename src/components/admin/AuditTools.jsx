@@ -14,10 +14,10 @@ export default function AuditTools() {
 
   return (
     <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Database size={20} color="#38bdf8" /> 
+            <Database size={20} color="#38bdf8" />
             Database Audit & Integrity Tools
           </h2>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -25,14 +25,14 @@ export default function AuditTools() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
             <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
-            <input 
-              type="text" 
-              placeholder="Search audit logs..." 
+            <input
+              type="text"
+              placeholder="Search audit logs..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              style={{ padding: '8px 12px 8px 32px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '12px', width: '220px' }}
+              style={{ padding: '8px 12px 8px 32px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '12px', width: '220px', maxWidth: '100%' }}
             />
           </div>
           <button className="modern-btn-secondary" style={{ fontSize: '12px', padding: '6px 12px' }}>
@@ -41,7 +41,7 @@ export default function AuditTools() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         <div className="glass-card" style={{ padding: '16px', borderLeft: '3px solid #10b981' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>Active Connections</div>
           <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>14</div>
@@ -65,8 +65,8 @@ export default function AuditTools() {
           <History size={16} color="#94a3b8" />
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Recent Transaction Logs (audit.change_log)</span>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+        <div style={{ overflowY: 'auto', overflowX: 'auto', flex: 1 }}>
+          <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
               <tr style={{ background: 'rgba(0,0,0,0.2)' }}>
                 <th style={{ padding: '10px 16px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>ID</th>

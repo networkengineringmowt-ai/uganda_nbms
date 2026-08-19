@@ -148,8 +148,8 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
             </div>
           </div>
           
-          <div className="modern-scroll" style={{ flex: 1, overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <div className="modern-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'auto' }}>
+            <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ background: 'rgba(0,0,0,0.02)', position: 'sticky', top: 0, zIndex: 10 }}>
                 <tr>
                   <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Bridge #</th>
