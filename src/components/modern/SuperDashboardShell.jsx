@@ -11,6 +11,7 @@ import InvestmentDashboard from '../InvestmentDashboard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
 import BmsReports from '../BmsReports';
 import PhotoLibrary from '../PhotoLibrary';
+import CriticalStructures from './CriticalStructures';
 
 export default function SuperDashboardShell({ bridges, culverts }) {
   const [modernTab, setModernTab] = useState('overview');
@@ -48,6 +49,7 @@ export default function SuperDashboardShell({ bridges, culverts }) {
                 <MapDashboard 
                   selectedBridge={selectedBridge} 
                   onSelectBridge={setSelectedBridge} 
+                  dynamicCulverts={culverts}
                 />
               </div>
               
@@ -86,6 +88,16 @@ export default function SuperDashboardShell({ bridges, culverts }) {
           {modernTab === 'analytics' && <AnalyticsDashboard />}
           {modernTab === 'reports' && <BmsReports bridges={bridges} culverts={culverts} />}
           {modernTab === 'photos' && <PhotoLibrary bridges={bridges} culverts={culverts} />}
+          {modernTab === 'critical_structures' && (
+            <CriticalStructures
+              bridges={bridges}
+              culverts={culverts}
+              onSelectBridge={(asset) => {
+                setSelectedBridge(asset);
+                setModernTab('map');
+              }}
+            />
+          )}
         </div>
       </main>
     </div>

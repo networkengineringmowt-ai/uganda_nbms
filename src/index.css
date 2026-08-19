@@ -1697,3 +1697,495 @@ body::before {
   color: var(--accent-blue);
   stroke-width: 2.5px;
 }
+
+/* Report preview and PDF export */
+.bms-print-document {
+  width: min(100%, 1120px);
+  margin: 0 auto 32px;
+}
+
+.bms-print-twin-snapshot {
+  margin-bottom: 24px;
+}
+
+.bms-twin-photo-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.bms-twin-photo-comparison .bms-print-twin-snapshot,
+.bms-twin-photo-comparison .bms-report-photo-register {
+  margin: 0;
+}
+
+.bms-twin-photo-comparison .bms-print-twin-snapshot {
+  height: 420px !important;
+}
+
+.bms-report-photo-register {
+  margin-top: 20px;
+}
+
+.bms-hard-page-break {
+  display: none;
+}
+
+.bms-report-photo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #274b83;
+}
+
+.bms-report-photo-heading h4 {
+  margin: 0;
+  color: #e8f2ff;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.bms-report-photo-heading span {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.bms-report-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bms-report-photo-register.is-compact .bms-report-photo-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bms-report-photo-register.is-compact .bms-report-photo-card img {
+  height: 120px;
+}
+
+.bms-report-photo-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 184, 255, 0.22);
+  border-radius: 6px;
+  background: #0b1730;
+}
+
+.bms-report-photo-card img {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: #020617;
+}
+
+.bms-report-photo-card figcaption {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px 10px;
+}
+
+.bms-report-photo-card strong {
+  color: #e8f2ff;
+  font-size: 11px;
+}
+
+.bms-report-photo-card span,
+.bms-report-photo-card small {
+  min-width: 0;
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bms-report-photo-empty {
+  display: grid;
+  min-height: 90px;
+  place-items: center;
+  border: 1px dashed rgba(148, 184, 255, 0.3);
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .bms-twin-photo-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 11mm 14mm;
+  background: #fff;
+}
+
+@page bms-cost-report {
+  size: A4 landscape;
+  margin: 10mm;
+  background: #fff;
+}
+
+@media print {
+  html,
+  body,
+  #root,
+  .bms-shell,
+  .modern-theme-root,
+  .shell-main-horiz,
+  .page-content,
+  .bms-reports-page,
+  .bms-report-scroll {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body {
+    margin: 0 !important;
+    color: #111827 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+
+  body::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .bms-print-document,
+  .bms-print-document * {
+    visibility: visible !important;
+  }
+
+  .bms-report-screen-only {
+    display: none !important;
+  }
+
+  .horiz-nav-wrapper,
+  .bms-mobile-header,
+  .bms-mobile-nav {
+    display: none !important;
+  }
+
+  .bms-reports-page,
+  .page-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .bms-print-document {
+    position: relative !important;
+    inset: auto !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #111827 !important;
+    font-size: 9pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    isolation: isolate;
+  }
+
+  .bms-print-document::before {
+    content: '' !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    background: #fff !important;
+  }
+
+  .bms-print-document > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .bms-culvert-print-report {
+    background: #fff !important;
+  }
+
+  .bms-print-document--cost {
+    page: bms-cost-report;
+  }
+
+  .bms-print-letterhead {
+    align-items: center !important;
+    gap: 8mm !important;
+    margin-bottom: 5mm !important;
+    padding-bottom: 3mm !important;
+    border-bottom-color: #111827 !important;
+    break-inside: avoid-page;
+  }
+
+  .bms-print-letterhead img {
+    width: auto !important;
+    height: 14mm !important;
+  }
+
+  .bms-print-letterhead h1 {
+    color: #111827 !important;
+    font-size: 13pt !important;
+  }
+
+  .bms-print-letterhead span,
+  .bms-print-letterhead div {
+    color: #374151 !important;
+  }
+
+  .bms-print-report-title {
+    margin: 0 0 5mm !important;
+    color: #111827 !important;
+    font-size: 12pt !important;
+    line-height: 1.25 !important;
+    break-after: avoid-page;
+  }
+
+  .bms-print-document h3 {
+    margin: 5mm 0 2mm !important;
+    padding: 0 0 1.5mm !important;
+    color: #111827 !important;
+    border-bottom: 1.5pt solid #315b91 !important;
+    font-size: 10pt !important;
+    break-after: avoid-page;
+  }
+
+  .bms-print-document .bms-page-break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .bms-print-document table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    margin: 0 0 3mm !important;
+    border-collapse: collapse !important;
+    font-size: 8.2pt !important;
+  }
+
+  .bms-print-document table:not(.bms-cost-table) {
+    break-inside: avoid-page;
+  }
+
+  .bms-print-document thead {
+    display: table-header-group;
+  }
+
+  .bms-print-document tfoot {
+    display: table-footer-group;
+  }
+
+  .bms-print-document tr,
+  .bms-print-document img,
+  .bms-print-document canvas {
+    break-inside: avoid-page;
+  }
+
+  .bms-print-document td,
+  .bms-print-document th {
+    box-sizing: border-box !important;
+    padding: 1.5mm 2mm !important;
+    border: 0.6pt solid #aeb8c5 !important;
+    background: #fff !important;
+    color: #111827 !important;
+    overflow-wrap: anywhere;
+  }
+
+  .bms-print-document td[style*="width: 180px"],
+  .bms-report-field-table td:nth-child(odd),
+  .bms-print-document th {
+    background: #e8eef6 !important;
+    color: #111827 !important;
+    font-weight: 700 !important;
+  }
+
+  .bms-print-document td[style*="width: 180px"] {
+    width: 24% !important;
+  }
+
+  .bms-print-document strong {
+    color: inherit !important;
+  }
+
+  .bms-cost-table {
+    table-layout: auto !important;
+    font-size: 7.4pt !important;
+  }
+
+  .bms-cost-table th,
+  .bms-cost-table td {
+    padding: 1.2mm 1.5mm !important;
+  }
+
+  .bms-cost-table th:first-child,
+  .bms-cost-table td:first-child {
+    white-space: nowrap;
+  }
+
+  .bms-print-twin-snapshot {
+    width: 100% !important;
+    height: 68mm !important;
+    margin: 0 0 4mm !important;
+    break-inside: avoid-page;
+  }
+
+  .bms-print-twin-snapshot > .digital-twin-canvas {
+    height: 68mm !important;
+    border-radius: 0 !important;
+  }
+
+  .bms-print-twin-snapshot canvas {
+    display: none !important;
+  }
+
+  .bms-print-twin-snapshot .digital-twin-print-image {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  .bms-twin-photo-comparison {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+    align-items: start !important;
+    break-inside: avoid-page !important;
+  }
+
+  .bms-twin-photo-comparison .bms-print-twin-snapshot {
+    height: 135mm !important;
+    margin: 0 !important;
+  }
+
+  .bms-twin-photo-comparison .bms-print-twin-snapshot > .digital-twin-canvas {
+    height: 135mm !important;
+  }
+
+  .bms-report-photo-register.is-compact.has-photos {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .bms-report-photo-register.is-compact .bms-report-photo-heading {
+    margin-bottom: 2mm !important;
+  }
+
+  .bms-report-photo-register.is-compact .bms-report-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 2mm !important;
+  }
+
+  .bms-report-photo-register.is-compact .bms-report-photo-card {
+    grid-template-rows: 30mm auto;
+  }
+
+  .bms-report-photo-register.is-compact .bms-report-photo-card img {
+    height: 30mm !important;
+  }
+
+  .bms-report-photo-register.has-photos {
+    min-height: 245mm !important;
+    margin-top: 0 !important;
+    padding-top: 5mm !important;
+    background: #fff !important;
+  }
+
+  .bms-hard-page-break {
+    display: block !important;
+    width: 100%;
+    height: 0;
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  .bms-report-photo-heading {
+    margin: 0 0 3mm !important;
+    padding: 0 0 1.5mm !important;
+    border-bottom: 1.5pt solid #315b91 !important;
+    break-after: avoid-page;
+  }
+
+  .bms-report-photo-heading h4 {
+    color: #111827 !important;
+    font-size: 10pt !important;
+  }
+
+  .bms-report-photo-heading span {
+    color: #4b5563 !important;
+    font-size: 8pt !important;
+  }
+
+  .bms-report-photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+  }
+
+  .bms-report-photo-card {
+    display: grid;
+    grid-template-rows: 43mm auto;
+    break-inside: avoid-page;
+    border: 0.6pt solid #aeb8c5 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+  }
+
+  .bms-report-photo-card img {
+    width: 100% !important;
+    height: 43mm !important;
+    object-fit: cover !important;
+  }
+
+  .bms-report-photo-card figcaption {
+    gap: 0.7mm !important;
+    padding: 2mm !important;
+    background: #f3f6fa !important;
+  }
+
+  .bms-report-photo-card strong,
+  .bms-report-photo-card span,
+  .bms-report-photo-card small {
+    color: #111827 !important;
+  }
+
+  .bms-report-photo-card strong {
+    font-size: 7.6pt !important;
+  }
+
+  .bms-report-photo-card span,
+  .bms-report-photo-card small {
+    font-size: 6.5pt !important;
+  }
+
+  .bms-report-photo-empty {
+    min-height: 30mm !important;
+    color: #4b5563 !important;
+    border-color: #aeb8c5 !important;
+  }
+}

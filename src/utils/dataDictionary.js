@@ -262,5 +262,17 @@ export const TYPE_CULVERT = {
   '04': "Corrugated metal pipe culvert",
   '05': "Corrugated metal arch (Armco) culvert",
   '06': "Concrete arch culvert",
+  '24': "Box culvert (in situ concrete)",
+  '25': "Box culvert (precast units)",
+  '26': "Concrete pipe culvert",
+  '27': "Corrugated metal pipe culvert",
+  '28': "Corrugated metal arch (Armco) culvert",
+  '29': "Concrete arch culvert",
   '98': "Unknown"
+};
+
+export const getCulvertTypeLabel = (value) => {
+  if (value === null || value === undefined || value === '' || value === '?') return 'Unknown';
+  const label = getDictionaryLabel(TYPE_CULVERT, value);
+  return label === '?' ? 'Unknown' : label;
 };

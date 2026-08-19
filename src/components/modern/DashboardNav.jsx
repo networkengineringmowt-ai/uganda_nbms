@@ -51,17 +51,16 @@ const sectionDefinitions = [
         ],
       },
       {
-        label: 'Analytics & Reports',
+        label: 'Analytics',
         tabs: [
           { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-          { id: 'reports', label: 'Reports', icon: FileText },
         ],
       },
     ],
   },
   {
     id: 'evidence',
-    label: 'Evidence',
+    label: 'Photos',
     icon: Camera,
     defaultTab: 'photos',
     groups: [
@@ -89,6 +88,13 @@ const sectionDefinitions = [
         ],
       },
     ],
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: FileText,
+    defaultTab: 'reports',
+    groups: [],
   },
   {
     id: 'capture',

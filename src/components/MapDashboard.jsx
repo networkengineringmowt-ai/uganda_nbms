@@ -2,30 +2,27 @@ import { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, useMap, ScaleControl, Polyline, useMapEvents } from 'react-leaflet';
 import { Ruler, Trash2, Plus, Minus, Home } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
-import { fetchBridgeByNumber, fetchCulvertByNumber } from '../services/bmsDataService';
+import { fetchBridgeByNumber, fetchCulvertByNumber, fetchCulverts } from '../services/bmsDataService';
+import { ROAD_SURFACE_STYLE, getRoadSurface } from '../utils/roadSymbology';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
-
-const ROAD_CLASS_STYLE = {
-  A: { color: '#c84339', weight: 2.4, opacity: 0.82 },
-  B: { color: '#d89a18', weight: 2.0, opacity: 0.78 },
-  C: { color: '#26865c', weight: 1.25, opacity: 0.7 },
-  M: { color: '#735b3c', weight: 2.6, opacity: 0.82 },
-};
-
-const getRoadClass = (props = {}) => String(
-  props.Road_Cla_1 ||
-  props.Road_Class ||
-  props.road_class ||
-  props.ROAD_CLASS ||
-  'C'
-).trim().toUpperCase().slice(0, 1);
 
 const getPoint = (record) => {
   const lat = Number(record.Lat ?? record.LegacyData?.location_corrected_lat ?? record.LegacyData?.map_y);
   const lon = Number(record.Lon ?? record.LegacyData?.location_corrected_lon ?? record.LegacyData?.map_x);
   return Number.isFinite(lat) && Number.isFinite(lon) ? [lat, lon] : null;
+};
+
+const cleanHoverDescription = (...values) => {
+  const value = values.find((candidate) => {
+    const text = String(candidate ?? '').trim();
+    return text
+      && text !== '?'
+      && text.toLowerCase() !== 'unknown'
+      && !/^[BC]\d+$/i.test(text);
+  });
+  return value ? String(value).trim() : '';
 };
 
 /* ── FlyTo controller ─────────────────────────────────── */
@@ -207,18 +204,12 @@ function ArcGISControls() {
   );
 }
 
-export default function MapDashboard({ selectedBridge, onSelectBridge }) {
+export default function MapDashboard({ selectedBridge, onSelectBridge, dynamicCulverts }) {
   const [networkData, setNetworkData] = useState(null);
-  const [waterData, setWaterData] = useState(null);
   const [bridges, setBridges] = useState([]);
   const [culverts, setCulverts] = useState([]);
 
   useEffect(() => {
-    fetch(dataUrl('data/spatial/water.geojson'))
-      .then(res => res.json())
-      .then(setWaterData)
-      .catch(console.error);
-
     fetch(dataUrl('data/spatial/network2026_light.geojson'))
       .then(res => res.json())
       .then(setNetworkData)
@@ -242,20 +233,16 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
       })
       .catch(console.error);
 
-    fetch(dataUrl('data/spatial/major_culverts.geojson'))
-      .then(res => res.json())
-      .then((geojson) => {
-        const rows = (geojson.features || []).map((feature, index) => ({
-          CulvertNumber: feature.properties?.Culvert__N || feature.properties?.CulvertNumber || `C${String(index + 1).padStart(3, '0')}`,
-          River: feature.properties?.River || feature.properties?.Link__Name || feature.properties?.District || 'Major culvert',
-          Road: feature.properties?.Road || feature.properties?.Link__Name || '',
-          Lat: feature.geometry?.coordinates?.[1],
-          Lon: feature.geometry?.coordinates?.[0],
-        }));
-        setCulverts(rows);
-      })
-      .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (dynamicCulverts?.length) return;
+    fetchCulverts()
+      .then(setCulverts)
+      .catch(console.error);
+  }, [dynamicCulverts]);
+
+  const displayedCulverts = dynamicCulverts?.length ? dynamicCulverts : culverts;
 
   const handleBridgeClick = useCallback(async (b) => {
     if (!onSelectBridge) return;
@@ -281,14 +268,16 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
           </div>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
             <div style={{width: 12, height: 12, borderRadius: '50%', background: '#d89a18'}}></div>
-            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Major Culverts ({culverts.length})</span>
+            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Major Culverts ({displayedCulverts.length})</span>
           </div>
-          {Object.entries(ROAD_CLASS_STYLE).map(([roadClass, style]) => (
-            <div key={roadClass} style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px'}}>
-              <div style={{width: 24, height: 3, borderRadius: 2, background: style.color}}></div>
-              <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Class {roadClass}</span>
-            </div>
-          ))}
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px'}}>
+            <div style={{width: 26, height: 5, borderRadius: 3, background: 'linear-gradient(180deg, #555 0%, #050505 48%, #000 100%)', boxShadow: '0 0 3px rgba(255,255,255,0.45)'}} />
+            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Paved</span>
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px'}}>
+            <div style={{width: 26, height: 3, background: 'repeating-linear-gradient(90deg, #f2b544 0 3px, transparent 3px 8px)'}} />
+            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>Unpaved</span>
+          </div>
 
         </div>
       )}
@@ -304,11 +293,10 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
           attribution="Esri"
           opacity={0.7}
         />
-        {waterData && <GeoJSON data={waterData} style={{ color: '#0055ff', weight: 1.5, opacity: 0.7, fillColor: '#002288', fillOpacity: 0.3 }} />}
         {networkData && (
           <GeoJSON
             data={networkData}
-            style={(feature) => ROAD_CLASS_STYLE[getRoadClass(feature?.properties)] || ROAD_CLASS_STYLE.C}
+            style={(feature) => ROAD_SURFACE_STYLE[getRoadSurface(feature?.properties)]}
             interactive={false}
           />
         )}
@@ -318,6 +306,7 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
         {bridges.map((b, i) => {
           const point = getPoint(b);
           if (!point) return null;
+          const description = cleanHoverDescription(b.BridgeName, b.RoadDescrPrincipal);
           return (
             <CircleMarker
               key={`b-${i}`}
@@ -326,31 +315,24 @@ export default function MapDashboard({ selectedBridge, onSelectBridge }) {
               pathOptions={{ fillColor: '#1e40af', color: '#fff', weight: 1.5, fillOpacity: 0.9 }}
               eventHandlers={{ click: () => handleBridgeClick(b) }}
             >
-              <Tooltip>
-                <strong>{b.BridgeName || b.BridgeNumber}</strong><br/>
-                Bridge No: {b.BridgeNumber}<br/>
-                Road: {b.RoadDescrPrincipal}<br/>
-                Link: {b.LinkID || 'Unknown'}
-              </Tooltip>
+              {description && <Tooltip><strong>{description}</strong></Tooltip>}
             </CircleMarker>
           );
         })}
 
-        {culverts.map((c, i) => {
-          if (!c.Lat || !c.Lon) return null;
+        {displayedCulverts.map((c, i) => {
+          const point = getPoint(c);
+          if (!point) return null;
+          const description = cleanHoverDescription(c.CulvertName, c.River, c.LinkName, c.Link_Name, c.Road);
           return (
             <CircleMarker
               key={`c-${i}`}
-              center={[c.Lat, c.Lon]}
+              center={point}
               radius={4}
               pathOptions={{ fillColor: '#d89a18', color: '#fff', weight: 1, fillOpacity: 0.85 }}
               eventHandlers={{ click: () => handleCulvertClick(c) }}
             >
-              <Tooltip>
-                <strong>Culvert {c.CulvertNumber}</strong><br/>
-                River: {c.River || 'Unknown'}<br/>
-                Road: {c.Road || 'Unknown'}
-              </Tooltip>
+              {description && <Tooltip><strong>{description}</strong></Tooltip>}
             </CircleMarker>
           );
         })}

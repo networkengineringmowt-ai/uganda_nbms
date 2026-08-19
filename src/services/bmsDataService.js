@@ -1,3 +1,5 @@
+import { getCulvertTypeLabel } from '../utils/dataDictionary';
+
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const LOCAL_API_URL = (import.meta.env.VITE_LOCAL_BMS_API || 'http://localhost:3001/api').replace(/\/+$/, '');
 
@@ -62,14 +64,29 @@ const normalizeBridge = (record) => {
 const normalizeCulvert = (record) => {
   const { LegacyData: existingLegacy = {}, ...flatRecord } = record;
   const overallRating = record.OverallConditionRating ?? existingLegacy.overall_rating ?? record['Overall Rating'];
+  const rawCulvertType = record.TypeCulvert ?? record.CulvertTypeCode ?? record.type_culvert
+    ?? existingLegacy.type_culvert ?? record.Type;
 
   return {
     ...record,
     CulvertNumber: record.CulvertNumber || record.culvert_no || record['Culvert Number'],
     River: record.River || record.river || record.Stream,
     Road: record.Road || record.road || record.Link_Name || record.link_name,
-    Link_Name: record.Link_Name || record.Link__Name || record.link_name || record.Link_ID,
+    TypeCulvert: rawCulvertType,
+    CulvertType: getCulvertTypeLabel(rawCulvertType),
+    Road_No: record.Road_No || record.RoadNumber || record.road_no,
+    Road_Class: record.Road_Class || record.RoadClass || record.road_class,
+    Link_ID: record.Link_ID || record.LinkID || record.SectionOrLinkNo || record.Link__No || record.link_no,
+    LinkID: record.LinkID || record.Link_ID || record.SectionOrLinkNo || record.Link__No || record.link_no,
+    Link_Name: record.Link_Name || record.Link__Name || record.link_name || record.Road,
+    LinkName: record.LinkName || record.Link_Name || record.Link__Name || record.link_name || record.Road,
+    Chainage_From: record.Chainage_From ?? record.chainage_from,
+    Chainage_To: record.Chainage_To ?? record.chainage_to,
+    LinkLengthKm: record.LinkLengthKm ?? record['Length(km)'] ?? record.length_km,
+    Surface_Type: record.Surface_Type || record.Surface__T || record.surface_type,
     Maintenance_Station: record.Maintenance_Station || record.maintenance_station || record.station || record.maintenanc,
+    Station: record.Station || record.Maintenance_Station || record.maintenance_station || record.station || record.maintenanc,
+    Maintenance_Region: record.Maintenance_Region || record.Region || record.region,
     Region: record.Region || record.Maintenance_Region || record.region,
     Lat: record.Lat ?? record.Latitude ?? record.location_corrected_lat ?? record.CoOrdinateS,
     Lon: record.Lon ?? record.Longitude ?? record.location_corrected_lon ?? record.CoOrdinateE,

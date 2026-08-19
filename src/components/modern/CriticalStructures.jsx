@@ -89,7 +89,7 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
         {criticalCulverts.map(c => {
           const photoUrl = photoMap.get(c.CulvertNumber);
           return (
-            <div key={c.CulvertNumber} onClick={() => onSelectBridge && onSelectBridge(c)} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
+            <div key={c.CulvertNumber} onClick={() => onSelectBridge && onSelectBridge({ ...c, _structureType: 'culvert' })} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
               <div style={{ height: '180px', background: '#111827', position: 'relative' }}>
                 {photoUrl ? (
                   <img src={photoUrl} alt="evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

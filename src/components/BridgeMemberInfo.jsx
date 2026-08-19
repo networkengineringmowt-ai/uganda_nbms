@@ -8,9 +8,7 @@ const getName = (asset) => asset?.BridgeName || asset?.River || asset?.Road || g
 const value = (legacy, ...keys) => keys.map((key) => legacy[key]).find((item) => item !== undefined && item !== null && item !== '') ?? '-';
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const modes = [
-  { id: 'hybrid', label: 'Hybrid', icon: Layers },
   { id: 'constructed', label: 'Constructed', icon: Box },
-  { id: 'reconstructed', label: 'Reconstructed', icon: Layers },
   { id: 'photorealism', label: 'Photorealism', icon: Camera },
 ];
 
@@ -20,7 +18,7 @@ export default function BridgeMemberInfo({ bridges = [], culverts = [] }) {
   const [selectedId, setSelectedId] = useState(null);
   const [gallery, setGallery] = useState([]);
   const [manifest, setManifest] = useState([]);
-  const [mode, setMode] = useState('hybrid');
+  const [mode, setMode] = useState('constructed');
   const [measurement, setMeasurement] = useState(null);
   useEffect(() => {
     Promise.all([
@@ -81,9 +79,7 @@ export default function BridgeMemberInfo({ bridges = [], culverts = [] }) {
             const Icon = item.icon;
             return <button key={item.id} className={mode === item.id ? 'active' : ''} onClick={() => setMode(item.id)}><Icon size={14} />{item.label}</button>;
           })}
-          <span className={`twin-quality ${reconstruction?.point_cloud_url ? 'registered' : ''}`}>
-            {reconstruction?.point_cloud_url ? 'Registered cloud' : `${selectedPhotos.length} views ready`}
-          </span>
+          <span className="twin-quality">{selectedPhotos.length} photo views</span>
         </div>
         <div className="twin-measure-toolbar" aria-label="Digital twin measurement tools">
           <span><Ruler size={14} /> Measure layer</span>
@@ -94,10 +90,10 @@ export default function BridgeMemberInfo({ bridges = [], culverts = [] }) {
           ))}
           {measurement && <button className="clear" onClick={() => setMeasurement(null)} title="Clear measurement"><X size={13} /></button>}
         </div>
-        <DigitalTwin asset={selected} isCulvert={isCulvert} large photos={selectedPhotos} reconstruction={reconstruction} mode={mode} measurement={measurement} />
+        <DigitalTwin asset={selected} isCulvert={isCulvert} large photos={selectedPhotos} mode={mode} measurement={measurement} />
         <div className="twin-accuracy-note">
           <ShieldAlert size={16} />
-          <span><strong>Accuracy control:</strong> dimensions shown by the model are authoritative BMS inventory values. A reconstructed cloud becomes survey-certified only after registering measured control points.</span>
+          <span><strong>Accuracy control:</strong> dimensions shown by the parametric model are authoritative BMS inventory values and should be checked against registered survey control before engineering use.</span>
         </div>
         <div className="twin-data-band">
           <div className="twin-attributes">

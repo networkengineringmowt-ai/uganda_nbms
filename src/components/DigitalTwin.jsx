@@ -1,11 +1,9 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { ContactShadows, Line, OrbitControls, Text } from '@react-three/drei';
-import { BufferAttribute, BufferGeometry, Color, DoubleSide, TextureLoader, Vector3 } from 'three';
-import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js';
+import { DoubleSide, TextureLoader } from 'three';
 import { getPhotoUrl } from '../utils/photoUrlResolver';
 
-const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const numeric = (...values) => {
   const value = values.find((candidate) => Number.isFinite(Number(candidate)));
   return Number(value);
@@ -27,6 +25,50 @@ const getMetrics = (asset, isCulvert) => {
   const spans = Math.min(12, Math.max(1, Math.round(numeric(legacy.no_of_spans, legacy.no_of_span, legacy.no_of_pipes, asset?.Spans, asset?.NoOfPipesOrCells) || 1)));
   const scale = Math.min(1, 28 / Math.max(length, width));
   return { legacy, length, width, spans, scale, height: isCulvert ? 3.2 : 5.2 };
+};
+
+const firstPresent = (asset, legacy, keys) => keys
+  .map((key) => asset?.[key] ?? legacy?.[key])
+  .find((value) => value !== undefined && value !== null && value !== '');
+
+const formatDimension = (value, unit) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return String(value);
+  const formatted = Number.isInteger(parsed) ? String(parsed) : parsed.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  return unit ? `${formatted} ${unit}` : formatted;
+};
+
+const getSourceDimensions = (asset, legacy, isCulvert) => {
+  const definitions = isCulvert ? [
+    ['Overall length', 'm', ['Overall Length', 'CulvertLength', 'culvert_len', 'length']],
+    ['Overall width', 'm', ['Overall Width', 'overall_width', 'width']],
+    ['Span / diameter', 'm', ['SpanOrDiameter', 'span_diameter', 'Diameter']],
+    ['Structure height', 'm', ['Height', 'height']],
+    ['Minimum clear width', 'm', ['Min Clear Width', 'min_clear_width']],
+    ['Overall cell length', 'm', ['Overall Cell Length', 'overall_cell_length']],
+    ['Minimum road width', 'm', ['Min Road Width', 'min_road_width']],
+    ['Approach width', 'm', ['Approach Width', 'approach_width']],
+    ['Vertical clearance', 'm', ['Min Vertical Clearance', 'min_vertical_clearance']],
+    ['Maximum cell width', 'm', ['Max Cell Size Width', 'max_cell_size_width']],
+    ['Maximum cell height', 'm', ['Max Cell Size Height', 'max_cell_size_height']],
+    ['Fill height', 'm', ['FillHeight', 'fill_height']],
+    ['Skew angle', 'deg', ['SkewAngle', 'skew_angle']],
+    ['Pipes / cells', '', ['NoOfPipesOrCells', 'no_of_pipes', 'Spans']],
+    ['Gradient', '', ['CulvertGradiant', 'Gradient', 'gradient']],
+  ] : [
+    ['Total length', 'm', ['TotalLength', 'total_length', 'length', 'bridge_len']],
+    ['Overall width', 'm', ['OverallWidth', 'overall_width', 'width', 'bridge_wid']],
+    ['Rail-to-rail width', 'm', ['width_between_para_rail']],
+    ['Minimum roadway width', 'm', ['min_bridge_roadway_width', 'carriageway_width']],
+    ['Approach roadway width', 'm', ['approach_roadway_width']],
+    ['Spans', '', ['no_of_spans', 'no_of_span', 'Spans']],
+    ['Traffic lanes', '', ['no_of_lane', 'lanes']],
+  ];
+
+  return definitions.flatMap(([label, unit, keys]) => {
+    const value = firstPresent(asset, legacy, keys);
+    return value === undefined ? [] : [{ label, value: formatDimension(value, unit) }];
+  });
 };
 
 const Rail = ({ z, length }) => (
@@ -154,57 +196,6 @@ function CulvertModel({ asset, metrics, opacity = 1 }) {
   );
 }
 
-const seedFrom = (value) => String(value || '').split('').reduce((seed, char) => (seed * 31 + char.charCodeAt(0)) >>> 0, 2166136261);
-const randomFactory = (seedValue) => {
-  let seed = seedValue;
-  return () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-};
-
-function EvidencePointCloud({ asset, metrics, isCulvert }) {
-  const geometry = useMemo(() => {
-    const positions = [];
-    const colors = [];
-    const rand = randomFactory(seedFrom(asset.BridgeNumber || asset.CulvertNumber));
-    const addCloud = (count, bounds, color) => {
-      const shade = new Color(color);
-      for (let index = 0; index < count; index += 1) {
-        positions.push(bounds.x + (rand() - 0.5) * bounds.w, bounds.y + (rand() - 0.5) * bounds.h, bounds.z + (rand() - 0.5) * bounds.d);
-        const variation = 0.78 + rand() * 0.35;
-        colors.push(Math.min(1, shade.r * variation), Math.min(1, shade.g * variation), Math.min(1, shade.b * variation));
-      }
-    };
-    addCloud(7000, { x: 0, y: 2.45, z: 0, w: metrics.length, h: 0.55, d: metrics.width }, '#a9b9c9');
-    addCloud(1800, { x: -metrics.length / 2, y: 1.15, z: 0, w: 0.9, h: 2.4, d: metrics.width + 0.8 }, '#8c9daf');
-    addCloud(1800, { x: metrics.length / 2, y: 1.15, z: 0, w: 0.9, h: 2.4, d: metrics.width + 0.8 }, '#8c9daf');
-    if (!isCulvert && metrics.spans > 1) {
-      for (let index = 1; index < metrics.spans; index += 1) addCloud(500, { x: -metrics.length / 2 + (index * metrics.length) / metrics.spans, y: 1.1, z: 0, w: 0.9, h: 2.2, d: metrics.width - 0.5 }, '#8497aa');
-    }
-    addCloud(1800, { x: 0, y: 0.05, z: 0, w: metrics.length * 1.25, h: 0.15, d: metrics.width * 2.5 }, '#3e704f');
-    const result = new BufferGeometry();
-    result.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
-    result.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
-    return result;
-  }, [asset, isCulvert, metrics]);
-  return <points geometry={geometry}><pointsMaterial size={0.07} sizeAttenuation vertexColors transparent opacity={0.9} /></points>;
-}
-
-function ActualPointCloud({ url }) {
-  const loaded = useLoader(PLYLoader, url);
-  const geometry = useMemo(() => {
-    const clone = loaded.clone();
-    clone.computeBoundingBox();
-    clone.center();
-    const size = clone.boundingBox?.getSize(new Vector3());
-    const maxDimension = Math.max(size?.x || 1, size?.y || 1, size?.z || 1);
-    clone.scale(26 / maxDimension, 26 / maxDimension, 26 / maxDimension);
-    return clone;
-  }, [loaded]);
-  return <points geometry={geometry}><pointsMaterial size={0.035} sizeAttenuation vertexColors={Boolean(geometry.getAttribute('color'))} color="#d8e7ff" /></points>;
-}
-
 function PhotoPanel({ photo, index, count, radius, opacity }) {
   const texture = useLoader(TextureLoader, getPhotoUrl(photo));
   const angle = (index / count) * Math.PI * 2;
@@ -221,23 +212,31 @@ function PhotoViewRing({ photos, radius, opacity, limit = 8 }) {
   return <group>{views.map((photo, index) => <PhotoPanel key={photo.filename} photo={photo} index={index} count={views.length} radius={radius} opacity={opacity} />)}</group>;
 }
 
-export default function DigitalTwin({ asset, isCulvert = false, large = false, photos = [], reconstruction = null, mode = 'hybrid', measurement = null }) {
+export default function DigitalTwin({ asset, isCulvert = false, large = false, photos = [], mode = 'constructed', measurement = null }) {
+  const [printImage, setPrintImage] = useState('');
   const metrics = useMemo(() => getMetrics(asset, isCulvert), [asset, isCulvert]);
+  const sourceDimensions = useMemo(() => getSourceDimensions(asset, metrics.legacy, isCulvert), [asset, isCulvert, metrics.legacy]);
   if (!asset) return null;
-  const actualCloudUrl = reconstruction?.point_cloud_url ? `${BASE_URL}${reconstruction.point_cloud_url}` : null;
-  const showStructure = mode === 'constructed' || mode === 'hybrid' || mode === 'photorealism';
-  const showCloud = mode === 'reconstructed' || mode === 'hybrid';
   const showPhotos = mode === 'photorealism';
   const measurementValue = measurement === 'length' ? metrics.length : measurement === 'width' ? metrics.width : metrics.height;
 
   return (
     <div className={`digital-twin-canvas ${large ? 'large' : ''}`} data-testid="digital-twin-canvas">
-      <Canvas shadows dpr={[1, 1.6]} camera={{ position: [20, 12, 20], fov: 40 }}>
+      <Canvas
+        shadows
+        dpr={[1, 1.6]}
+        camera={{ position: [20, 12, 20], fov: 40 }}
+        gl={{ preserveDrawingBuffer: true }}
+        onCreated={({ gl }) => {
+          window.setTimeout(() => {
+            setPrintImage(gl.domElement.toDataURL('image/jpeg', 0.9));
+          }, 800);
+        }}
+      >
         <color attach="background" args={['#071126']} /><fog attach="fog" args={['#071126', 38, 78]} />
         <ambientLight intensity={1.2} color="#8fb5ff" /><directionalLight castShadow position={[12, 18, 9]} intensity={3.2} color="#fff2d6" shadow-mapSize={[1024, 1024]} /><pointLight position={[-14, 7, -10]} intensity={30} color="#2b72ff" />
         <group scale={metrics.scale}>
-          {showStructure && (isCulvert ? <CulvertModel asset={asset} metrics={metrics} opacity={mode === 'hybrid' ? 0.34 : 1} /> : <BridgeModel asset={asset} metrics={metrics} opacity={mode === 'hybrid' ? 0.34 : 1} />)}
-          {showCloud && (actualCloudUrl ? <Suspense fallback={<EvidencePointCloud asset={asset} metrics={metrics} isCulvert={isCulvert} />}><ActualPointCloud url={actualCloudUrl} /></Suspense> : <EvidencePointCloud asset={asset} metrics={metrics} isCulvert={isCulvert} />)}
+          {isCulvert ? <CulvertModel asset={asset} metrics={metrics} /> : <BridgeModel asset={asset} metrics={metrics} />}
           <DimensionTicks metrics={metrics} />
           <ActiveMeasurement metrics={metrics} axis={measurement} />
         </group>
@@ -247,12 +246,21 @@ export default function DigitalTwin({ asset, isCulvert = false, large = false, p
         <ContactShadows position={[0, 0.02, 0]} opacity={0.55} scale={50} blur={2.5} far={14} color="#000611" />
         <OrbitControls makeDefault autoRotate autoRotateSpeed={0.28} enableDamping maxPolarAngle={Math.PI / 2 - 0.03} minDistance={11} maxDistance={60} />
       </Canvas>
+      {printImage && <img className="digital-twin-print-image" src={printImage} alt="Digital twin print view" />}
       <div className="digital-twin-legend">
         <span><i className="good" /> Good</span><span><i className="fair" /> Fair</span><span><i className="poor" /> Poor</span>
       </div>
+      <div className="twin-source-dimensions">
+        <strong>Source dimensions</strong>
+        <div>
+          {sourceDimensions.map((dimension) => (
+            <span key={dimension.label}><small>{dimension.label}</small><b>{dimension.value}</b></span>
+          ))}
+        </div>
+      </div>
       <div className="twin-reconstruction-badge">
-        <strong>{actualCloudUrl ? 'Registered reconstruction' : 'Evidence-derived cloud preview'}</strong>
-        <span>{mode === 'photorealism' ? `${photos.length} canonical photo views` : 'Structural dimensions from BMS inventory'}</span>
+        <strong>{mode === 'photorealism' ? 'Photographic evidence views' : 'Parametric structure model'}</strong>
+        <span>{mode === 'photorealism' ? `${photos.length} indexed photo views` : 'Structural dimensions from BMS inventory'}</span>
       </div>
       {measurement && (
         <div className="twin-measure-result">

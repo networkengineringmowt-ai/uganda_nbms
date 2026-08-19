@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import { getConditionColor, getConditionLabel } from '../utils/dataDictionary';
+import { getConditionColor, getConditionLabel, getCulvertTypeLabel } from '../utils/dataDictionary';
 import DataTable from './DataTable';
 import { fetchCulverts } from '../services/bmsDataService';
 
@@ -24,6 +24,14 @@ export default function CulvertsDashboard({ initialCulverts = [] }) {
       culvert.Road,
       culvert.Region,
       culvert.SectionOrLinkNo,
+      culvert.Link_ID,
+      culvert.Link_Name,
+      culvert.Road_No,
+      culvert.Road_Class,
+      culvert.Surface_Type,
+      culvert.Maintenance_Station,
+      culvert.Maintenance_Region,
+      culvert.CulvertType,
     ].some((value) => String(value || '').toLowerCase().includes(term)));
   }, [culverts, search]);
 
@@ -40,12 +48,22 @@ export default function CulvertsDashboard({ initialCulverts = [] }) {
   const cols = [
     { header: 'Culvert No', accessor: 'CulvertNumber' },
     { header: 'River', cell: (row) => row.River || row.river || 'Unknown' },
-    { header: 'Road / Section', cell: (row) => `${row.Road || row.road_descr_principal || 'Unknown'} (${row.SectionOrLinkNo || row.link_no || 'Unknown'})` },
+    { header: 'Road', cell: (row) => row.Road || row.road_descr_principal || 'Unknown' },
+    { header: 'Culvert Type', cell: (row) => row.CulvertType || getCulvertTypeLabel(row.TypeCulvert ?? row.LegacyData?.type_culvert ?? row.type_culvert ?? row.Type) },
+    { header: 'Road No', cell: (row) => row.Road_No || row.RoadNumber || 'Unknown' },
+    { header: 'Road Class', cell: (row) => row.Road_Class || row.RoadClass || 'Unknown' },
+    { header: 'Link ID', cell: (row) => row.Link_ID || row.LinkID || row.SectionOrLinkNo || row.link_no || 'Unknown' },
+    { header: 'Link Name', cell: (row) => row.Link_Name || row.LinkName || row.Link__Name || 'Unknown' },
+    { header: 'Chainage From (km)', cell: (row) => row.Chainage_From ?? 'Unknown' },
+    { header: 'Chainage To (km)', cell: (row) => row.Chainage_To ?? 'Unknown' },
+    { header: 'Link Length (km)', cell: (row) => row.LinkLengthKm ?? row['Length(km)'] ?? 'Unknown' },
+    { header: 'Surface Type', cell: (row) => row.Surface_Type || row.Surface__T || 'Unknown' },
+    { header: 'Maintenance Station', cell: (row) => row.Maintenance_Station || row.Station || 'Unknown' },
+    { header: 'Maintenance Region', cell: (row) => row.Maintenance_Region || row.Region || 'Unknown' },
     { header: 'Km', cell: (row) => row.Km || row.km || 'Unknown' },
     { header: 'Region', cell: (row) => row.Region || row.Maintenance_Region || row.region || 'Unknown' },
     { header: 'Firm', cell: (row) => row.Firm || row.firm || 'Unknown' },
     { header: 'Checked By', cell: (row) => row.CheckedBy || row.inspector || 'Unknown' },
-    { header: 'Type', cell: (row) => row.Type || row.LegacyData?.type_culvert || row.type_culvert || 'Unknown' },
     { header: 'Cells / Pipes', cell: (row) => row.NoOfPipesOrCells || row.LegacyData?.no_of_pipes || row.no_of_pipes || 'Unknown' },
     { header: 'Span / Diameter', cell: (row) => row.SpanOrDiameter || row.LegacyData?.span_diameter || row.span_diameter || 'Unknown' },
     { header: 'Length (m)', cell: (row) => row['Overall Length'] || row.LegacyData?.culvert_len || row.culvert_len || 'Unknown' },

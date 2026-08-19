@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { FileText, Printer, AlertCircle } from 'lucide-react';
 import DigitalTwin from './DigitalTwin';
-import { getPhotoUrl } from '../utils/photoUrlResolver';
+import CulvertPrintReport from './CulvertPrintReport';
+import ReportPhotoGrid from './ReportPhotoGrid';
 import {
   TYPE_CROSSING, TYPE_BRIDGE, TYPE_DECK, TYPE_DECK_MATERIAL,
   TYPE_ABUTMENT, TYPE_PIERS, TYPE_PARAPET_RAILING, TYPE_EXPANSION_JOINTS,
@@ -61,9 +62,10 @@ const cellStyle = { padding: '6px 10px', border: '1px solid rgba(148, 184, 255, 
 const headerCell = { ...cellStyle, fontWeight: 700, background: '#101f39', width: '180px', color: '#7dd3fc' };
 const sectionTitle = { fontSize: '14px', fontWeight: 700, margin: '24px 0 10px 0', color: '#e8f2ff', borderBottom: '2px solid #274b83', paddingBottom: '4px' };
 
-export default function BmsReports({ bridges = [] }) {
+export default function BmsReports({ bridges = [], culverts = [] }) {
   const [activeReport, setActiveReport] = useState('validation');
-  const [selectedBridgeId, setSelectedBridgeId] = useState('');
+  const [selectedStructureType, setSelectedStructureType] = useState('bridge');
+  const [selectedStructureId, setSelectedStructureId] = useState('');
   const [printPreviewData, setPrintPreviewData] = useState(null);
   const [unitCost, setUnitCost] = useState(1500000);
   const [gallery, setGallery] = useState([]);
@@ -126,8 +128,8 @@ export default function BmsReports({ bridges = [] }) {
   }, [costSummary]);
 
   const handleGeneratePrintPreview = (type) => {
-    if (type === 'bridge' && selectedBridgeId) {
-      const b = bridges.find(x => x.BridgeNumber === selectedBridgeId);
+    if (type === 'structure' && selectedStructureType === 'bridge' && selectedStructureId) {
+      const b = bridges.find(x => x.BridgeNumber === selectedStructureId);
       if (b) {
         const photos = gallery.filter(g => !g.duplicate_of && (g.structure_id === b.BridgeNumber || g.filename?.includes(b.BridgeNumber)));
         const leg = b.LegacyData || {};
@@ -142,6 +144,29 @@ export default function BmsReports({ bridges = [] }) {
           type: 'bridge',
           title: `BRIDGE INVENTORY & RATING REPORT - ${b.BridgeNumber}`,
           bridge: b,
+          photos,
+          assetMetrics: { length, width, area, crc, cdrc, rating, unitCost },
+          date: new Date().toLocaleDateString()
+        });
+        setActiveReport('print');
+      }
+    } else if (type === 'structure' && selectedStructureType === 'culvert' && selectedStructureId) {
+      const c = culverts.find(x => x.CulvertNumber === selectedStructureId);
+      if (c) {
+        const photos = gallery.filter(g => !g.duplicate_of && (g.structure_id === c.CulvertNumber || g.filename?.includes(c.CulvertNumber)));
+        const leg = c.LegacyData || {};
+        const length = Number(c['Overall Length'] ?? c.CulvertLength ?? leg.culvert_len ?? 0);
+        const width = Number(c['Overall Width'] ?? leg.overall_width ?? 0);
+        const area = length * width;
+        const crc = area * unitCost;
+        const ratingValue = c.OverallConditionRating ?? c['Overall Rating'] ?? leg.overall_rating;
+        const rating = ratingValue != null && ratingValue !== '' ? Number(ratingValue) : null;
+        const cdrc = rating != null ? (crc * rating) / 9 : null;
+
+        setPrintPreviewData({
+          type: 'culvert',
+          title: `MAJOR CULVERT INVENTORY & RATING REPORT - ${c.CulvertNumber}`,
+          culvert: c,
           photos,
           assetMetrics: { length, width, area, crc, cdrc, rating, unitCost },
           date: new Date().toLocaleDateString()
@@ -173,8 +198,8 @@ export default function BmsReports({ bridges = [] }) {
   );
 
   return (
-    <div style={{ width: '100%', padding: '0 24px', margin: '0 auto', paddingTop: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+    <div className="bms-reports-page" style={{ width: '100%', padding: '0 24px', margin: '0 auto', paddingTop: '16px' }}>
+      <div className="bms-report-screen-only" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         <div style={{ width: '40px', height: '40px', background: 'var(--accent-primary-soft)', color: 'var(--accent-primary)', display: 'grid', placeItems: 'center', borderRadius: '10px' }}>
           <FileText size={20} />
         </div>
@@ -184,7 +209,7 @@ export default function BmsReports({ bridges = [] }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-light)', marginBottom: '16px', gap: '4px' }}>
+      <div className="bms-report-screen-only" style={{ display: 'flex', borderBottom: '1px solid var(--border-light)', marginBottom: '16px', gap: '4px' }}>
         {tabBtn('validation', 'Data Validation')}
         {tabBtn('costing', 'Asset Valuation (CRC)')}
         {tabBtn('single', 'Print Structure Reports')}
@@ -195,7 +220,7 @@ export default function BmsReports({ bridges = [] }) {
         )}
       </div>
 
-      <div className="modern-scroll" style={{ height: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+      <div className="modern-scroll bms-report-scroll" style={{ height: 'calc(100vh - 220px)', overflowY: 'auto' }}>
 
         {activeReport === 'validation' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -291,27 +316,49 @@ export default function BmsReports({ bridges = [] }) {
           <div className="panel" style={{ padding: '24px', maxWidth: '600px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '16px' }}>Generate Comprehensive Structure Report</h3>
             <div className="modern-filter-field" style={{ marginBottom: '16px' }}>
-              <label>Select Bridge Structure</label>
+              <label>Structure Type</label>
               <div className="modern-select-wrapper">
                 <select
-                  value={selectedBridgeId}
-                  onChange={(e) => setSelectedBridgeId(e.target.value)}
+                  value={selectedStructureType}
+                  onChange={(e) => {
+                    setSelectedStructureType(e.target.value);
+                    setSelectedStructureId('');
+                  }}
                   style={{ width: '100%', background: 'rgba(0,0,0,0.02)', color: 'var(--text-primary)', height: '44px' }}
                 >
-                  <option value="">-- Choose Bridge --</option>
-                  {bridges.map(b => (
-                    <option key={b.BridgeNumber} value={b.BridgeNumber}>
-                      {b.BridgeNumber} - {b.BridgeName}
-                    </option>
-                  ))}
+                  <option value="bridge">Bridge</option>
+                  <option value="culvert">Major Culvert</option>
+                </select>
+              </div>
+            </div>
+            <div className="modern-filter-field" style={{ marginBottom: '16px' }}>
+              <label>{selectedStructureType === 'bridge' ? 'Select Bridge Structure' : 'Select Major Culvert'}</label>
+              <div className="modern-select-wrapper">
+                <select
+                  value={selectedStructureId}
+                  onChange={(e) => setSelectedStructureId(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.02)', color: 'var(--text-primary)', height: '44px' }}
+                >
+                  <option value="">{selectedStructureType === 'bridge' ? '-- Choose Bridge --' : '-- Choose Major Culvert --'}</option>
+                  {selectedStructureType === 'bridge'
+                    ? bridges.map(b => (
+                      <option key={b.BridgeNumber} value={b.BridgeNumber}>
+                        {b.BridgeNumber} - {b.BridgeName}
+                      </option>
+                    ))
+                    : culverts.map(c => (
+                      <option key={c.CulvertNumber} value={c.CulvertNumber}>
+                        {c.CulvertNumber} - {c.River || c.LinkName || c.Link_Name || c.Road || 'Major culvert'}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
             <button
               className="modern-btn-primary"
-              onClick={() => handleGeneratePrintPreview('bridge')}
-              disabled={!selectedBridgeId}
-              style={{ width: '100%', gap: '8px', opacity: !selectedBridgeId ? 0.5 : 1 }}
+              onClick={() => handleGeneratePrintPreview('structure')}
+              disabled={!selectedStructureId}
+              style={{ width: '100%', gap: '8px', opacity: !selectedStructureId ? 0.5 : 1 }}
             >
               <Printer size={16} /> Generate Full Report
             </button>
@@ -320,14 +367,17 @@ export default function BmsReports({ bridges = [] }) {
 
         {activeReport === 'print' && printPreviewData && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '16px' }}>
+            {printPreviewData.type === 'cost' && (
+              <style media="print">{'@page { size: A4 landscape; margin: 10mm; background: #fff; }'}</style>
+            )}
+            <div className="bms-report-screen-only" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '16px' }}>
               <button className="modern-btn-secondary" onClick={() => setActiveReport('validation')} style={{ width: '130px' }}>Close Preview</button>
               <button className="modern-btn-primary" onClick={() => window.print()} style={{ width: '130px', gap: '8px' }}><Printer size={16} /> Print</button>
             </div>
 
-            <div className="panel" style={{ padding: '40px', background: '#071126', color: '#e8f2ff', borderRadius: '4px', border: '1px solid rgba(148, 184, 255, 0.18)', boxShadow: '0 10px 40px rgba(0,0,0,0.35)' }}>
+            <div className={`panel bms-print-document bms-print-document--${printPreviewData.type}`} style={{ padding: '40px', background: '#071126', color: '#e8f2ff', borderRadius: '4px', border: '1px solid rgba(148, 184, 255, 0.18)', boxShadow: '0 10px 40px rgba(0,0,0,0.35)' }}>
               {/* ── MoWT Letterhead ── */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px double #000', paddingBottom: '12px', marginBottom: '24px' }}>
+              <div className="bms-print-letterhead" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px double #000', paddingBottom: '12px', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <img src="mowt.jpg" alt="MoWT Logo" style={{ height: '50px', objectFit: 'contain' }} />
                   <div>
@@ -341,7 +391,7 @@ export default function BmsReports({ bridges = [] }) {
                 </div>
               </div>
 
-              <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '24px', textAlign: 'center', textTransform: 'uppercase' }}>{printPreviewData.title}</h2>
+              <h2 className="bms-print-report-title" style={{ fontSize: '16px', fontWeight: 700, marginBottom: '24px', textAlign: 'center', textTransform: 'uppercase' }}>{printPreviewData.title}</h2>
 
               {/* ══════════════════════════════════════════════════════
                    SINGLE BRIDGE REPORT
@@ -475,7 +525,7 @@ export default function BmsReports({ bridges = [] }) {
                     </table>
 
                     {/* SECTION 4: COMPONENT CONDITION RATINGS */}
-                    <h3 style={sectionTitle}>4. COMPONENT CONDITION RATINGS</h3>
+                    <h3 className="bms-page-break-before" style={sectionTitle}>4. COMPONENT CONDITION RATINGS</h3>
                     <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
                       <thead>
                         <tr style={{ background: '#101f39' }}>
@@ -562,26 +612,12 @@ export default function BmsReports({ bridges = [] }) {
                     </table>
 
                     {/* SECTION 7: DIGITAL TWIN & EVIDENCE */}
-                    <h3 style={sectionTitle}>7. DIGITAL TWIN & EVIDENCE SNAPSHOTS</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                      <div style={{ border: '1px solid #ccc', background: '#000', height: '300px', borderRadius: '4px', overflow: 'hidden', position: 'relative', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                    <h3 className="bms-page-break-before" style={sectionTitle}>7. DIGITAL TWIN & PHOTO EVIDENCE</h3>
+                    <div className="bms-twin-photo-comparison">
+                      <div className="bms-print-twin-snapshot" style={{ border: '1px solid #ccc', background: '#000', height: '300px', borderRadius: '4px', overflow: 'hidden', position: 'relative', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
                         <DigitalTwin asset={b} />
-                        <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '3px 6px', fontSize: '10px', borderRadius: '4px' }}>
-                          Digital Twin Reconstruction
-                        </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '4px', height: '300px' }}>
-                        {printPreviewData.photos.slice(0, 4).map((p, i) => (
-                          <div key={i} style={{ border: '1px solid #ccc', borderRadius: '4px', overflow: 'hidden', background: '#f8f9fa' }}>
-                            <img src={getPhotoUrl(p)} alt="Evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        ))}
-                        {printPreviewData.photos.length === 0 && (
-                          <div style={{ gridColumn: '1 / -1', gridRow: '1 / -1', background: '#f8f9fa', display: 'grid', placeItems: 'center', border: '1px solid #ccc', borderRadius: '4px', color: '#666', fontSize: '12px' }}>
-                            No indexed photos available
-                          </div>
-                        )}
-                      </div>
+                      <ReportPhotoGrid photos={printPreviewData.photos} structureId={b.BridgeNumber} compact />
                     </div>
                   </div>
                 );
@@ -590,6 +626,10 @@ export default function BmsReports({ bridges = [] }) {
               {/* ══════════════════════════════════════════════════════
                    COST SUMMARY REPORT
                  ══════════════════════════════════════════════════════ */}
+              {printPreviewData.type === 'culvert' && (
+                <CulvertPrintReport reportData={printPreviewData} />
+              )}
+
               {printPreviewData.type === 'cost' && (() => {
                 const pm = printPreviewData.portfolioMetrics;
                 return (
@@ -624,7 +664,7 @@ export default function BmsReports({ bridges = [] }) {
                     </table>
 
                     <h3 style={sectionTitle}>INDIVIDUAL STRUCTURE VALUATIONS</h3>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                    <table className="bms-cost-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                       <thead>
                         <tr style={{ background: '#101f39' }}>
                           <th style={{ ...cellStyle, fontWeight: 700, textAlign: 'left' }}>Bridge</th>

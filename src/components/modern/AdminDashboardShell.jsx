@@ -78,7 +78,7 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
           {modernTab === 'map' && (
             <div className="modern-fullscreen-map">
               <div className="map-surface-layer">
-                <MapDashboard selectedBridge={selectedBridge} onSelectBridge={setSelectedBridge} />
+                <MapDashboard selectedBridge={selectedBridge} onSelectBridge={setSelectedBridge} dynamicCulverts={culverts} />
               </div>
               <div className="map-list-pane">
                 <StructureListPanel selectedBridge={selectedBridge} onSelectBridge={setSelectedBridge} dynamicBridges={bridges} dynamicCulverts={culverts} />

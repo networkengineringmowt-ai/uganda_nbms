@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Construction, CheckCircle2, DollarSign, MapPin } from 'lucide-react';
-import { MapContainer, TileLayer, CircleMarker, Tooltip, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { ROAD_SURFACE_STYLE, getRoadSurface } from '../utils/roadSymbology';
+
+const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
+const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
 
 const WORKS_COORDS = {
   "Lot 1: Nyamugasani Bridge (Lower) on Rwentare-Katwe-Katojo Road": [0.057398, 29.835154],
@@ -14,9 +18,10 @@ const WORKS_COORDS = {
 export default function WorksDashboard() {
   const [works, setWorks] = useState([]);
   const [selectedWork, setSelectedWork] = useState(null);
+  const [networkData, setNetworkData] = useState(null);
 
   useEffect(() => {
-    fetch('/uganda_bms/data/bridge_works.json')
+    fetch(dataUrl('data/bridge_works.json'))
       .then(r => r.json())
       .then(data => {
         // Attach coords
@@ -27,6 +32,16 @@ export default function WorksDashboard() {
         setWorks(withCoords);
       })
       .catch(console.error);
+
+    fetch(dataUrl('data/spatial/network2026_light.geojson'))
+      .then(r => r.json())
+      .then(setNetworkData)
+      .catch(() => {
+        fetch(dataUrl('data/spatial/network2026.geojson'))
+          .then(r => r.json())
+          .then(setNetworkData)
+          .catch(console.error);
+      });
   }, []);
 
   if (!works.length) return (
@@ -57,6 +72,13 @@ export default function WorksDashboard() {
             attribution="Esri"
             opacity={0.7}
           />
+          {networkData && (
+            <GeoJSON
+              data={networkData}
+              style={(feature) => ROAD_SURFACE_STYLE[getRoadSurface(feature?.properties)]}
+              interactive={false}
+            />
+          )}
           <ZoomControl position="bottomleft" />
           
           {works.map((work, i) => (
@@ -95,6 +117,22 @@ export default function WorksDashboard() {
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
             Map shows {works.length} structures currently under maintenance, rehabilitation, or emergency construction.
           </p>
+        </div>
+
+        <div style={{
+          position: 'absolute', bottom: 16, right: 16, zIndex: 1000,
+          background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)',
+          padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)',
+          color: 'white', display: 'flex', flexDirection: 'column', gap: '7px', pointerEvents: 'none'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: 26, height: 5, borderRadius: 3, background: 'linear-gradient(180deg, #555 0%, #050505 48%, #000 100%)', boxShadow: '0 0 3px rgba(255,255,255,0.45)' }} />
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Paved road</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: 26, height: 3, background: 'repeating-linear-gradient(90deg, #f2b544 0 3px, transparent 3px 8px)' }} />
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Unpaved road</span>
+          </div>
         </div>
       </div>
 

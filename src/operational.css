@@ -2540,6 +2540,66 @@
 .digital-twin-legend .fair { background: #f5c451; }
 .digital-twin-legend .poor { background: #ff5964; }
 
+.twin-source-dimensions {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 4;
+  display: grid;
+  width: min(430px, calc(100% - 24px));
+  max-height: calc(100% - 86px);
+  gap: 6px;
+  padding: 8px 9px;
+  overflow-y: auto;
+  border: 1px solid rgba(125, 211, 252, 0.32);
+  border-radius: 4px;
+  background: rgba(3, 12, 29, 0.86);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.digital-twin-print-image {
+  display: none;
+}
+
+.twin-source-dimensions > strong {
+  color: #7dd3fc;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.twin-source-dimensions > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.twin-source-dimensions span {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 4px 5px;
+  border: 1px solid rgba(112, 153, 220, 0.14);
+  border-radius: 3px;
+  background: rgba(16, 31, 57, 0.72);
+}
+
+.twin-source-dimensions small {
+  overflow: hidden;
+  color: #91a9ce;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.twin-source-dimensions b {
+  flex: 0 0 auto;
+  color: #f8fafc;
+  font-size: 9px;
+}
+
 .twin-reconstruction-badge {
   position: absolute;
   left: 12px;

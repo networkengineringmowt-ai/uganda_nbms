@@ -17,7 +17,8 @@ const ratingColor = (r) => {
 import {
   TYPE_CROSSING, TYPE_BRIDGE, TYPE_DECK_MATERIAL, TYPE_DECK,
   TYPE_ABUTMENT, TYPE_PIERS, TYPE_PARAPET_RAILING,
-  TYPE_EXPANSION_JOINTS, TYPE_CULVERT, getConditionLabel, getDictionaryLabel
+  TYPE_EXPANSION_JOINTS, getConditionLabel, getDictionaryLabel,
+  getCulvertTypeLabel
 } from '../utils/dataDictionary';
 import { calculateBridgeDeficiencyIndex, calculateAssetValue } from '../utils/bmsAlgorithms';
 
@@ -112,7 +113,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
             </div>
             <div className="bdc-field">
               <span className="bdc-label">Link ID</span>
-              <span className="bdc-value">{bridge.LinkID || legacy.link_no || EMPTY}</span>
+              <span className="bdc-value">{bridge.LinkID || bridge.Link_ID || bridge.SectionOrLinkNo || legacy.link_no || EMPTY}</span>
             </div>
             <div className="bdc-field">
               <span className="bdc-label">Chainage</span>
@@ -124,7 +125,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
             </div>
             <div className="bdc-field">
               <span className="bdc-label">Station</span>
-              <span className="bdc-value">{legacy.station || legacy.maintenanc || bridge.Station || EMPTY}</span>
+              <span className="bdc-value">{bridge.Maintenance_Station || legacy.station || legacy.maintenanc || bridge.Station || EMPTY}</span>
             </div>
             <div className="bdc-field">
               <span className="bdc-label">District</span>
@@ -140,6 +141,18 @@ export default function BridgeDetailCard({ bridge, onClose }) {
                   <span className="bdc-label">River</span>
                   <span className="bdc-value">{legacy.river || legacy.reference_attributes?.river || EMPTY}</span>
                 </div>
+              </>
+            )}
+            {isCulvert && (
+              <>
+                <div className="bdc-field"><span className="bdc-label">Road Number</span><span className="bdc-value">{bridge.Road_No || legacy.road_no || EMPTY}</span></div>
+                <div className="bdc-field"><span className="bdc-label">Road Class</span><span className="bdc-value">{bridge.Road_Class || legacy.road_class || EMPTY}</span></div>
+                <div className="bdc-field"><span className="bdc-label">Link Name</span><span className="bdc-value">{bridge.LinkName || bridge.Link_Name || legacy.link_name || EMPTY}</span></div>
+                <div className="bdc-field"><span className="bdc-label">Chainage From</span><span className="bdc-value">{bridge.Chainage_From ?? legacy.chainage_from ?? EMPTY} km</span></div>
+                <div className="bdc-field"><span className="bdc-label">Chainage To</span><span className="bdc-value">{bridge.Chainage_To ?? legacy.chainage_to ?? EMPTY} km</span></div>
+                <div className="bdc-field"><span className="bdc-label">Link Length</span><span className="bdc-value">{bridge.LinkLengthKm ?? bridge['Length(km)'] ?? legacy.length_km ?? EMPTY} km</span></div>
+                <div className="bdc-field"><span className="bdc-label">Surface Type</span><span className="bdc-value">{bridge.Surface_Type || legacy.surface_type || EMPTY}</span></div>
+                <div className="bdc-field"><span className="bdc-label">Maintenance Region</span><span className="bdc-value">{bridge.Maintenance_Region || bridge.Region || EMPTY}</span></div>
               </>
             )}
           </div>
@@ -224,7 +237,7 @@ export default function BridgeDetailCard({ bridge, onClose }) {
             <div className="bdc-grid">
               <div className="bdc-field">
                 <span className="bdc-label">Type</span>
-                <span className="bdc-value">{bridge.Type || getDictionaryLabel(TYPE_CULVERT, legacy.type_culvert) || EMPTY}</span>
+                <span className="bdc-value">{bridge.CulvertType || getCulvertTypeLabel(bridge.TypeCulvert ?? legacy.type_culvert ?? bridge.Type) || EMPTY}</span>
               </div>
               <div className="bdc-field">
                 <span className="bdc-label">Pipes/Cells</span>
