@@ -223,7 +223,7 @@ export default function DashboardNav({ modernTab, setModernTab, setSelectedBridg
           {appLauncherOpen && (
             <div className="app-launcher-dropdown" style={{
               position: 'absolute', top: '100%', right: '160px', marginTop: '12px',
-              width: '320px', background: 'rgba(15, 23, 42, 0.95)',
+              width: '320px', maxWidth: 'calc(100vw - 24px)', background: 'rgba(15, 23, 42, 0.95)',
               backdropFilter: 'blur(20px)', border: '1px solid var(--border)',
               borderRadius: '12px', padding: '16px', zIndex: 100,
               boxShadow: '0 20px 40px rgba(0,0,0,0.5)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'

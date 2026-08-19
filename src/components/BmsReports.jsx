@@ -281,7 +281,8 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
               </div>
             </div>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead style={{ background: 'rgba(0,0,0,0.02)', position: 'sticky', top: 0 }}>
                 <tr>
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Bridge</th>
@@ -309,6 +310,7 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 
@@ -375,7 +377,7 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
               <button className="modern-btn-primary" onClick={() => window.print()} style={{ width: '130px', gap: '8px' }}><Printer size={16} /> Print</button>
             </div>
 
-            <div className={`panel bms-print-document bms-print-document--${printPreviewData.type}`} style={{ padding: '40px', background: '#071126', color: '#e8f2ff', borderRadius: '4px', border: '1px solid rgba(148, 184, 255, 0.18)', boxShadow: '0 10px 40px rgba(0,0,0,0.35)' }}>
+            <div className={`panel print-preview-panel bms-print-document bms-print-document--${printPreviewData.type}`} style={{ padding: '40px', background: '#071126', color: '#e8f2ff', borderRadius: '4px', border: '1px solid rgba(148, 184, 255, 0.18)', boxShadow: '0 10px 40px rgba(0,0,0,0.35)', overflowX: 'auto' }}>
               {/* ── MoWT Letterhead ── */}
               <div className="bms-print-letterhead" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '3px double #000', paddingBottom: '12px', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

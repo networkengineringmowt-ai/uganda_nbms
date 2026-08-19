@@ -2899,3 +2899,75 @@
     justify-content: start;
   }
 }
+
+/* ==========================================================================
+   RESPONSIVE — general dashboard shell (page padding, search, filter drawer,
+   KPI/photo grids, touch targets) for phones & small tablets.
+   ========================================================================== */
+@media (max-width: 768px) {
+  .modern-theme-root .page-content {
+    padding: 0 12px 16px;
+  }
+
+  /* Search inputs are fixed-width on desktop toolbars; let them fill the
+     available row width instead of overflowing/clipping on narrow screens. */
+  .modern-theme-root .toolbar-search,
+  .modern-theme-root .toolbar-search:focus-within {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Filter drawer is a fixed 400px panel on desktop; make it a near-full-width
+     sheet on mobile so it never exceeds the viewport. */
+  .modern-theme-root .modern-filters-drawer {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    bottom: 8px;
+    width: auto;
+  }
+
+  .modern-theme-root .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .modern-theme-root .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Admin pages (User Management, etc.) that build stat rows / two-column
+     layouts from inline grid-template-columns need to collapse on mobile.
+     !important is required because the columns are set via inline style. */
+  .admin-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-two-col-row {
+    flex-direction: column !important;
+  }
+
+  .admin-page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+
+  /* Print-style report preview (BmsReports) uses a fixed 40px padding to
+     mimic a printed letterhead — far too wide for a phone screen. */
+  .print-preview-panel {
+    padding: 18px 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-theme-root .page-content {
+    padding: 0 8px 12px;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}

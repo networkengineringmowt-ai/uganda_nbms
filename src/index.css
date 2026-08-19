@@ -1261,8 +1261,24 @@ body::before {
 
   .context-subnav-tab {
     height: 30px;
+    min-height: 44px;
     padding: 0 9px;
     font-size: 9px;
+  }
+
+  .horiz-logout {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* The app-launcher dropdown is positioned with a fixed 160px right offset
+     and 320px width on desktop, which pushes it off the left edge of narrow
+     viewports. Anchor it to the viewport instead. */
+  .app-launcher-dropdown {
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-width: none !important;
   }
 }
 
@@ -1615,6 +1631,49 @@ body::before {
 }
 .modern-map-legend span {
   color: #cbd5e1 !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — Fullscreen map floating panels
+   The list/detail panes are fixed-width (360px/420px) floats
+   on desktop; on phones & small tablets they must not exceed
+   the viewport or they clip/overflow horizontally.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .map-list-pane {
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    height: 42vh;
+    max-height: 42vh;
+    border-radius: 14px;
+  }
+
+  .map-detail-pane {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    height: auto;
+    z-index: 1001; /* sit above the list pane when a structure is selected */
+  }
+
+  .modern-map-legend {
+    left: 10px;
+    bottom: 10px;
+    padding: 10px 12px;
+    max-width: calc(100vw - 20px);
+  }
+}
+
+@media (max-width: 480px) {
+  .map-list-pane {
+    height: 38vh;
+    max-height: 38vh;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
