@@ -1,0 +1,32 @@
+{
+  "date": "2026-08-21",
+  "repo": "uganda_nbms",
+  "url": "https://networkengineringmowt-ai.github.io/uganda_nbms/",
+  "technical": {
+    "httpStatus": 200,
+    "loadFailed": false,
+    "pageRendered": true,
+    "bodyTextLength": 171,
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+    ],
+    "brokenImages": [],
+    "hashLinksFound": [],
+    "chartElementCount": 3
+  },
+  "uiCohesion": {
+    "amber": "fail",
+    "darkBackground": "fail",
+    "nav": "fail",
+    "mowtBranding": "pass"
+  },
+  "accuracy": {
+    "extractedFigures": [],
+    "discrepancies": []
+  },
+  "consistency": {
+    "districtList": null,
+    "notes": []
+  }
+}
