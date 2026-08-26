@@ -79,8 +79,19 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
   }, []);
 
   const validationData = useMemo(() => {
-    const unchecked = bridges.filter(b => !b.LegacyData?.data_checked);
-    const checked = bridges.filter(b => b.LegacyData?.data_checked);
+    // "data_checked" never appears anywhere in the source registry (it isn't
+    // a real field), so testing for it always evaluated true for every
+    // record — every bridge showed up as "unchecked" regardless of its
+    // actual state, which is not a meaningful signal. The registry does
+    // record whether a field inspection has actually been logged against a
+    // structure, so use that instead: a bridge with no inspection on file
+    // is a bridge nobody has checked yet.
+    const hasInspectionOnFile = (b) => {
+      const legacy = b.LegacyData || {};
+      return Boolean(String(legacy.inspector || legacy.firm || '').trim());
+    };
+    const unchecked = bridges.filter(b => !hasInspectionOnFile(b));
+    const checked = bridges.filter(b => hasInspectionOnFile(b));
 
     const outstandingRatings = bridges.filter(b => {
       const legacy = b.LegacyData || {};

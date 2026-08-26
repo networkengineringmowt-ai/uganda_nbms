@@ -160,10 +160,10 @@ const visibleSections = (isAdmin) => sectionDefinitions
   }));
 
 const APP_LAUNCHER_ITEMS = [
-  { id: 'bms', name: 'BMS Core', desc: 'National Roads Registry', icon: Database, color: '#3b82f6' },
-  { id: 'ai', name: 'AI Analytics', desc: 'Defect Detection Hub', icon: BrainCircuit, color: '#ec4899' },
-  { id: 'twin', name: 'Digital Twin', desc: 'Reality Meshes & LiDAR', icon: Box, color: '#10b981' },
-  { id: 'capture', name: 'Data Capture', desc: 'Field Collection API', icon: Smartphone, color: '#f59e0b' },
+  { id: 'bms', name: 'BMS Core', desc: 'National Roads Registry', icon: Database, color: '#3b82f6', targetTab: 'overview' },
+  { id: 'ai', name: 'AI Analytics', desc: 'Defect Detection Hub', icon: BrainCircuit, color: '#ec4899', targetTab: 'algorithms' },
+  { id: 'twin', name: 'Digital Twin', desc: 'Reality Meshes & LiDAR', icon: Box, color: '#10b981', targetTab: 'bms_3d' },
+  { id: 'capture', name: 'Data Capture', desc: 'Field Collection API', icon: Smartphone, color: '#f59e0b', targetTab: 'capture_bridge' },
 ];
 
 export default function DashboardNav({ modernTab, setModernTab, setSelectedBridge, role }) {
@@ -234,7 +234,15 @@ export default function DashboardNav({ modernTab, setModernTab, setSelectedBridg
               {APP_LAUNCHER_ITEMS.map(app => {
                 const AppIcon = app.icon;
                 return (
-                  <div key={app.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 8px', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }} className="app-launcher-item">
+                  <div
+                    key={app.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { openTab({ id: app.targetTab, clearSelection: app.targetTab === 'map' }); setAppLauncherOpen(false); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTab({ id: app.targetTab, clearSelection: app.targetTab === 'map' }); setAppLauncherOpen(false); } }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 8px', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }}
+                    className="app-launcher-item"
+                  >
                     <div style={{ background: `${app.color}20`, color: app.color, padding: '12px', borderRadius: '12px', marginBottom: '8px' }}>
                       <AppIcon size={24} />
                     </div>
