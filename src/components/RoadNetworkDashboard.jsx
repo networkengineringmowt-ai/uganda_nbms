@@ -67,7 +67,7 @@ export default function RoadNetworkDashboard() {
             </tr>
           </thead>
           <tbody>
-            {filtered.slice(0, 1000).map((row, i) => (
+            {filtered.map((row, i) => (
               <tr key={i}>
                 <td className="highlight-cell">{row.Road_No || '-'}</td>
                 <td>{row.Link_Name || '-'}</td>

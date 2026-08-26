@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import DashboardNav from './DashboardNav';
+import PageUtilityBar from './PageUtilityBar';
+import { useTabHistory } from '../../utils/useTabHistory';
 import BmsOverview from '../BmsOverview';
 import MapDashboard from '../MapDashboard';
 import StructureListPanel from '../StructureListPanel';
@@ -14,11 +16,20 @@ import PhotoLibrary from '../PhotoLibrary';
 import CriticalStructures from './CriticalStructures';
 
 export default function SuperDashboardShell({ bridges, culverts }) {
-  const [modernTab, setModernTab] = useState('overview');
+  const { tab: modernTab, setTab: setModernTab, goBack, canGoBack } = useTabHistory('overview');
   const [selectedBridge, setSelectedBridge] = useState(null);
+  const pageContentRef = useRef(null);
 
   // Note: We deliberately do NOT pass setBridges/setCulverts so it's strictly read-only
   // Note: We deliberately do NOT import any Capture forms
+
+  const handleBack = () => {
+    if (selectedBridge) {
+      setSelectedBridge(null);
+      return;
+    }
+    goBack();
+  };
 
   return (
     <div className="bms-shell modern-theme-root">
@@ -32,7 +43,7 @@ export default function SuperDashboardShell({ bridges, culverts }) {
       />
       
       <main className="shell-main-horiz" style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <div className="page-content modern-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: modernTab === 'map' ? '0' : '12px 16px 0' }}>
+        <div ref={pageContentRef} className="page-content modern-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: modernTab === 'map' ? '0' : '12px 16px 0' }}>
           
           {modernTab === 'overview' && (
             <BmsOverview 
@@ -99,6 +110,13 @@ export default function SuperDashboardShell({ bridges, culverts }) {
             />
           )}
         </div>
+        <PageUtilityBar
+          onBack={handleBack}
+          canGoBack={canGoBack || Boolean(selectedBridge)}
+          scrollTargetRef={pageContentRef}
+          bridges={bridges}
+          culverts={culverts}
+        />
       </main>
     </div>
   );

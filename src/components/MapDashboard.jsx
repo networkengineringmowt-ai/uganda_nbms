@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, useMap, ScaleControl, Polyline, useMapEvents } from 'react-leaflet';
 import { Ruler, Trash2, Plus, Minus, Home } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { fetchBridgeByNumber, fetchCulvertByNumber, fetchCulverts } from '../services/bmsDataService';
-import { ROAD_SURFACE_STYLE, getRoadSurface } from '../utils/roadSymbology';
+import { getRoadStyle, getRoadSurface } from '../utils/roadSymbology';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
@@ -204,6 +204,89 @@ function ArcGISControls() {
   );
 }
 
+/* ── Zoom-adaptive road network layer ────────────────── */
+function RoadNetwork({ data }) {
+  const map = useMap();
+  const geoJsonRef = useRef(null);
+  const [zoom, setZoom] = useState(map.getZoom());
+
+  useMapEvents({
+    zoomend: () => setZoom(map.getZoom()),
+  });
+
+  useEffect(() => {
+    geoJsonRef.current?.setStyle((feature) => getRoadStyle(getRoadSurface(feature?.properties), zoom));
+  }, [zoom]);
+
+  return (
+    <GeoJSON
+      ref={geoJsonRef}
+      data={data}
+      style={(feature) => getRoadStyle(getRoadSurface(feature?.properties), zoom)}
+      interactive={false}
+    />
+  );
+}
+
+/* ── Zoom-adaptive marker sizing ──────────────────────── */
+const markerRadius = (base, zoom) => {
+  const z = Math.max(6, Math.min(15, zoom));
+  const factor = 0.6 + (z - 6) * 0.09; // smaller at country view, larger zoomed in
+  return Math.max(2.2, base * factor);
+};
+
+/* ── Bridges + culverts, rendered on top of each other in a stable,
+     zoom-aware order (bridges last so they stay visible over culverts) ── */
+function StructureMarkers({ bridges, culverts, onBridgeClick, onCulvertClick }) {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+
+  useMapEvents({
+    zoomend: () => setZoom(map.getZoom()),
+  });
+
+  const culvertRadius = markerRadius(3.6, zoom);
+  const bridgeRadius = markerRadius(4.5, zoom);
+
+  return (
+    <>
+      {culverts.map((c, i) => {
+        const point = getPoint(c);
+        if (!point) return null;
+        const description = cleanHoverDescription(c.CulvertName, c.River, c.LinkName, c.Link_Name, c.Road);
+        return (
+          <CircleMarker
+            key={`c-${i}`}
+            center={point}
+            radius={culvertRadius}
+            pathOptions={{ fillColor: '#d89a18', color: '#fff', weight: 1, fillOpacity: 0.85 }}
+            eventHandlers={{ click: () => onCulvertClick(c) }}
+          >
+            {description && <Tooltip><strong>{description}</strong></Tooltip>}
+          </CircleMarker>
+        );
+      })}
+
+      {bridges.map((b, i) => {
+        const point = getPoint(b);
+        if (!point) return null;
+        const description = cleanHoverDescription(b.BridgeName, b.RoadDescrPrincipal);
+        return (
+          <CircleMarker
+            key={`b-${i}`}
+            center={point}
+            radius={bridgeRadius}
+            pathOptions={{ fillColor: '#1e40af', color: '#fff', weight: 1.5, fillOpacity: 0.92 }}
+            eventHandlers={{ click: () => onBridgeClick(b) }}
+          >
+            {description && <Tooltip><strong>{description}</strong></Tooltip>}
+          </CircleMarker>
+        );
+      })}
+    </>
+  );
+}
+
 export default function MapDashboard({ selectedBridge, onSelectBridge, dynamicCulverts }) {
   const [networkData, setNetworkData] = useState(null);
   const [bridges, setBridges] = useState([]);
@@ -293,49 +376,15 @@ export default function MapDashboard({ selectedBridge, onSelectBridge, dynamicCu
           attribution="Esri"
           opacity={0.7}
         />
-        {networkData && (
-          <GeoJSON
-            data={networkData}
-            style={(feature) => ROAD_SURFACE_STYLE[getRoadSurface(feature?.properties)]}
-            interactive={false}
-          />
-        )}
-        
+        {networkData && <RoadNetwork data={networkData} />}
 
         
-        {bridges.map((b, i) => {
-          const point = getPoint(b);
-          if (!point) return null;
-          const description = cleanHoverDescription(b.BridgeName, b.RoadDescrPrincipal);
-          return (
-            <CircleMarker
-              key={`b-${i}`}
-              center={point}
-              radius={4.5}
-              pathOptions={{ fillColor: '#1e40af', color: '#fff', weight: 1.5, fillOpacity: 0.9 }}
-              eventHandlers={{ click: () => handleBridgeClick(b) }}
-            >
-              {description && <Tooltip><strong>{description}</strong></Tooltip>}
-            </CircleMarker>
-          );
-        })}
-
-        {displayedCulverts.map((c, i) => {
-          const point = getPoint(c);
-          if (!point) return null;
-          const description = cleanHoverDescription(c.CulvertName, c.River, c.LinkName, c.Link_Name, c.Road);
-          return (
-            <CircleMarker
-              key={`c-${i}`}
-              center={point}
-              radius={4}
-              pathOptions={{ fillColor: '#d89a18', color: '#fff', weight: 1, fillOpacity: 0.85 }}
-              eventHandlers={{ click: () => handleCulvertClick(c) }}
-            >
-              {description && <Tooltip><strong>{description}</strong></Tooltip>}
-            </CircleMarker>
-          );
-        })}
+        <StructureMarkers
+          bridges={bridges}
+          culverts={displayedCulverts}
+          onBridgeClick={handleBridgeClick}
+          onCulvertClick={handleCulvertClick}
+        />
 
         {/* Selected marker overlay */}
         <FlyToSelected selectedBridge={selectedBridge} />

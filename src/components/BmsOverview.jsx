@@ -13,7 +13,96 @@ import {
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { fetchBridges, fetchCulverts } from '../services/bmsDataService';
-import { getConditionLabel } from '../utils/dataDictionary';
+import {
+  TYPE_ABUTMENT,
+  TYPE_BEARINGS,
+  TYPE_BRIDGE,
+  TYPE_CROSSING,
+  TYPE_DECK,
+  TYPE_DECK_MATERIAL,
+  TYPE_PARAPET_RAILING,
+  TYPE_PIERS,
+  getConditionLabel,
+  getDictionaryLabel,
+} from '../utils/dataDictionary';
+
+// ── Categorical engineering-field charts (moved here from Analytics: charts
+//    belong on the dashboard/Overview; Analytics is tables + formulas) ──────
+const chartTextStyle = { color: '#d9e7ff', fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 };
+const chartColors = ['#4f8cff', '#28c7a1', '#f5c451', '#ff7d59', '#af83ff', '#52c7e8', '#ff4f81', '#4fd1ff', '#8fff4f', '#ff9f4f'];
+
+// All categories are charted — no top-N truncation / "Other" bucket, per the
+// platform's no-selective-reporting rule.
+const bar2DOption = (rawData, xName) => {
+  const data = Object.entries(rawData || {}).filter(([, v]) => Number(v) > 0).sort((a, b) => b[1] - a[1]);
+  return {
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    color: chartColors,
+    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: data.map(([name]) => name),
+      name: xName,
+      nameLocation: 'middle',
+      nameGap: 30,
+      nameTextStyle: { ...chartTextStyle, fontSize: 12 },
+      axisLabel: { ...chartTextStyle, interval: 0, fontSize: 10, rotate: data.length > 5 ? 45 : 0, hideOverlap: true },
+      axisTick: { show: true, alignWithLabel: true, lineStyle: { color: '#6480ae' } },
+      axisLine: { lineStyle: { color: '#6480ae' } },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Count',
+      nameTextStyle: { ...chartTextStyle, padding: [0, 0, 0, 10] },
+      axisLabel: { ...chartTextStyle, fontSize: 10 },
+      axisTick: { show: true, lineStyle: { color: '#6480ae' } },
+      axisLine: { show: true, lineStyle: { color: '#6480ae' } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(100, 128, 174, 0.2)', type: 'dashed' } },
+    },
+    animation: true,
+    animationDuration: 1000,
+    animationEasing: 'cubicOut',
+    series: [{
+      type: 'bar',
+      data: data.map(([, value]) => value),
+      colorBy: 'data',
+      itemStyle: { borderRadius: [4, 4, 0, 0] },
+      label: { show: true, position: 'top', ...chartTextStyle, fontSize: 10 },
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
+    }],
+  };
+};
+
+const chartFieldValue = (row, key) => row[key] ?? row.LegacyData?.[key];
+const countChartField = (rows, key, dictionary) => rows.reduce((counts, row) => {
+  const raw = chartFieldValue(row, key);
+  const chartLabel = dictionary ? getDictionaryLabel(dictionary, raw) : (raw || 'Unknown');
+  counts[chartLabel] = (counts[chartLabel] || 0) + 1;
+  return counts;
+}, {});
+
+const categoricalChartFields = [
+  { id: 'type_bridge', label: 'Structural Type', dictionary: TYPE_BRIDGE },
+  { id: 'type_deck', label: 'Deck Form', dictionary: TYPE_DECK },
+  { id: 'type_deck_material', label: 'Deck Material', dictionary: TYPE_DECK_MATERIAL },
+  { id: 'type_crossing', label: 'Crossing Type', dictionary: TYPE_CROSSING },
+  { id: 'type_abutment_l', label: 'Abutment Type', dictionary: TYPE_ABUTMENT },
+  { id: 'type_piers', label: 'Pier Type', dictionary: TYPE_PIERS },
+  { id: 'type_para_rail', label: 'Parapet / Railing', dictionary: TYPE_PARAPET_RAILING },
+  { id: 'type_bearings', label: 'Bearing Type', dictionary: TYPE_BEARINGS },
+  { id: 'road_class', label: 'Road Class' },
+  { id: 'scour_risk', label: 'Scour Risk' },
+];
+
+function ChartPanel({ kicker, title, data, wide = false }) {
+  return (
+    <article className={`panel chart-panel glass-card ${wide ? 'wide' : ''}`}>
+      <div className="panel-header"><div><span className="panel-kicker">{kicker}</span><h2>{title}</h2></div></div>
+      <ReactECharts option={bar2DOption(data, title)} style={{ height: wide ? 430 : 370 }} opts={{ renderer: 'canvas' }} />
+    </article>
+  );
+}
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
@@ -71,6 +160,13 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
 
     return { rated, poor, averageAadt };
   }, [bridges, analytics]);
+
+  const trafficBins = analytics?.traffic_bins;
+
+  const categoryChartData = useMemo(() => Object.fromEntries(categoricalChartFields.map((field) => [
+    field.id,
+    countChartField(bridges, field.id, field.dictionary),
+  ])), [bridges]);
 
   const priorityRows = useMemo(() => critical.map((row) => ({
     ...row,
@@ -290,6 +386,21 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
           <button onClick={() => onNavigate('photos')}><Camera size={18} /><span><strong>Evidence photo library</strong><small>Browse all indexed structure photos</small></span><ArrowRight size={16} /></button>
           <div className="data-assurance"><CheckCircle2 size={18} /><span><strong>Data assurance active</strong><small>National-road coordinates and host links validated</small></span></div>
         </article>
+      </section>
+
+      <section className="category-explorer">
+        <div><span className="panel-kicker">Data dictionary explorer</span><h2>Categorical engineering fields</h2></div>
+      </section>
+      <section className="analytics-grid">
+        <ChartPanel kicker="Network demand" title="Traffic Demand Bands" data={trafficBins} />
+        {categoricalChartFields.map((field) => (
+          <ChartPanel
+            key={field.id}
+            kicker="Dictionary field"
+            title={field.label}
+            data={categoryChartData[field.id]}
+          />
+        ))}
       </section>
     </div>
   );

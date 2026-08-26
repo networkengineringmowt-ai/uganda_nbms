@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import DashboardNav from './DashboardNav';
+import PageUtilityBar from './PageUtilityBar';
+import { useTabHistory } from '../../utils/useTabHistory';
 import BmsOverview from '../BmsOverview';
 import MapDashboard from '../MapDashboard';
 import StructureListPanel from '../StructureListPanel';
@@ -32,10 +34,19 @@ import SourcesEvidenceAdmin from '../admin/SourcesEvidenceAdmin';
 import LoginTracking from '../admin/LoginTracking';
 
 export default function AdminDashboardShell({ bridges, culverts, setBridges, setCulverts }) {
-  const [modernTab, setModernTab] = useState('overview');
+  const { tab: modernTab, setTab: setModernTab, goBack, canGoBack } = useTabHistory('overview');
   const [selectedBridge, setSelectedBridge] = useState(null);
+  const pageContentRef = useRef(null);
 
   const isCaptureMode = modernTab.startsWith('capture_') || modernTab.startsWith('inspect_');
+
+  const handleBack = () => {
+    if (selectedBridge) {
+      setSelectedBridge(null);
+      return;
+    }
+    goBack();
+  };
 
   return (
     <div className="bms-shell modern-theme-root">
@@ -49,7 +60,7 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
       />
       
       <main className="shell-main-horiz" style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <div className="page-content modern-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: (isCaptureMode || modernTab === 'map') ? '0' : '12px 16px 0' }}>
+        <div ref={pageContentRef} className="page-content modern-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: (isCaptureMode || modernTab === 'map') ? '0' : '12px 16px 0' }}>
           
           {/* Capture Modes (Full height workspace) */}
           {modernTab === 'capture_bridge' && (
@@ -117,9 +128,16 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
           {modernTab === 'bms_3d' && <BridgeMemberInfo bridges={bridges} culverts={culverts} />}
           {modernTab === 'critical_structures' && <CriticalStructures bridges={bridges} culverts={culverts} onSelectBridge={(asset) => { setSelectedBridge(asset); setModernTab('map'); }} />}
           {modernTab === 'bms_plans' && <InspectionPlanManager bridges={bridges} />}
-          {modernTab === 'bms_users' && <UserManagement />}
+          {modernTab === 'bms_users' && <UserManagement onNavigate={(tab) => setModernTab(tab)} />}
           {modernTab === 'login_tracking' && <LoginTracking />}
         </div>
+        <PageUtilityBar
+          onBack={handleBack}
+          canGoBack={canGoBack || Boolean(selectedBridge)}
+          scrollTargetRef={pageContentRef}
+          bridges={bridges}
+          culverts={culverts}
+        />
       </main>
     </div>
   );

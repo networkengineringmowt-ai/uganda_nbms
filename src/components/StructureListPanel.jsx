@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, ChevronDown, ChevronRight, MapPin, Activity, Filter, Camera } from 'lucide-react';
 import { fetchBridgeByNumber, fetchCulvertByNumber } from '../services/bmsDataService';
+import { onPhotoError } from '../utils/photoUrlResolver';
 
 const CONDITION_COLORS = {
   9: '#00e676', 8: '#66ff66', 7: '#a0ff00',
@@ -304,7 +305,7 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
               <div className="slp-item-header">
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                   {photoMap.get(b.BridgeNumber) ? (
-                    <img src={photoMap.get(b.BridgeNumber)} alt="evidence" style={{width: 24, height: 24, borderRadius: 4, objectFit: 'cover'}} />
+                    <img src={photoMap.get(b.BridgeNumber)} alt="evidence" onError={onPhotoError} style={{width: 24, height: 24, borderRadius: 4, objectFit: 'cover'}} />
                   ) : (
                     <div style={{width: 24, height: 24, borderRadius: 4, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><Camera size={12} color="#64748b"/></div>
                   )}
@@ -356,7 +357,7 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
               <div className="slp-item-header">
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                   {photoMap.get(c.CulvertNumber) ? (
-                    <img src={photoMap.get(c.CulvertNumber)} alt="evidence" style={{width: 24, height: 24, borderRadius: 4, objectFit: 'cover'}} />
+                    <img src={photoMap.get(c.CulvertNumber)} alt="evidence" onError={onPhotoError} style={{width: 24, height: 24, borderRadius: 4, objectFit: 'cover'}} />
                   ) : (
                     <div style={{width: 24, height: 24, borderRadius: 4, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}><Camera size={12} color="#64748b"/></div>
                   )}

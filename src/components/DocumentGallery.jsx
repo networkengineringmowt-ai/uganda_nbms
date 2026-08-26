@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchDocuments, fetchDocumentPhotos } from '../services/bmsDataService';
+import { onPhotoError } from '../utils/photoUrlResolver';
 import { Search, Image as ImageIcon, FileText, Download, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 
 export default function DocumentGallery({ bridges = [] }) {
@@ -138,7 +139,7 @@ export default function DocumentGallery({ bridges = [] }) {
             <div key={photo.id} style={{ border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
               <div style={{ height: '150px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {photo.storage_url ? (
-                  <img src={photo.storage_url} alt="Evidence Image" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} loading="lazy" />
+                  <img src={photo.storage_url} alt="Evidence Image" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} loading="lazy" onError={onPhotoError} />
                 ) : (
                   <ImageIcon size={32} color="#ccc" />
                 )}

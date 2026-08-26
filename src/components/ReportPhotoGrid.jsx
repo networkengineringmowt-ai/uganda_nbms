@@ -1,4 +1,4 @@
-import { getPhotoUrl } from '../utils/photoUrlResolver';
+import { getPhotoUrl, onPhotoError } from '../utils/photoUrlResolver';
 
 const numericOrder = (value) => {
   const parsed = Number(value);
@@ -33,7 +33,7 @@ export default function ReportPhotoGrid({ photos = [], structureId, compact = fa
         <div className="bms-report-photo-grid">
           {orderedPhotos.map((photo, index) => (
             <figure className="bms-report-photo-card" key={`${photo.path || photo.filename}-${index}`}>
-              <img src={getPhotoUrl(photo)} alt={`${structureId} ${viewLabel(photo, index)}`} />
+              <img src={getPhotoUrl(photo)} alt={`${structureId} ${viewLabel(photo, index)}`} onError={onPhotoError} />
               <figcaption>
                 <strong>{structureId} - {viewLabel(photo, index)}</strong>
                 <span>

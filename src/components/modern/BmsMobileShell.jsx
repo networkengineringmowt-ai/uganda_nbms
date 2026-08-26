@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 import { FilePlus, Activity, LogOut } from 'lucide-react';
+import PageUtilityBar from './PageUtilityBar';
+import { useTabHistory } from '../../utils/useTabHistory';
 import BridgeInventoryForm from '../capture/BridgeInventoryForm';
 import BridgeInspectionForm from '../capture/BridgeInspectionForm';
 import CulvertInventoryForm from '../capture/CulvertInventoryForm';
 import CulvertInspectionForm from '../capture/CulvertInspectionForm';
 
 export default function BmsMobileShell({ bridges, culverts, setBridges, setCulverts }) {
-  const [activeTab, setActiveTab] = useState('capture_bridge');
+  const { tab: activeTab, setTab: setActiveTab, goBack, canGoBack } = useTabHistory('capture_bridge');
+  const pageContentRef = useRef(null);
 
   return (
     <div className="bms-mobile-shell">
@@ -28,7 +31,7 @@ export default function BmsMobileShell({ bridges, culverts, setBridges, setCulve
       </header>
 
       {/* Content Area */}
-      <main className="bms-mobile-content modern-scroll">
+      <main ref={pageContentRef} className="bms-mobile-content modern-scroll">
         {activeTab === 'capture_bridge' && (
           <BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} />
         )}
@@ -42,6 +45,15 @@ export default function BmsMobileShell({ bridges, culverts, setBridges, setCulve
           <CulvertInspectionForm culverts={culverts} onCulvertsUpdate={setCulverts} />
         )}
       </main>
+
+      <PageUtilityBar
+        onBack={goBack}
+        canGoBack={canGoBack}
+        scrollTargetRef={pageContentRef}
+        bridges={bridges}
+        culverts={culverts}
+        bottomOffset={86}
+      />
 
       {/* Bottom Navigation */}
       <nav className="bms-mobile-nav">

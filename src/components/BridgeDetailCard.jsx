@@ -349,7 +349,6 @@ export default function BridgeDetailCard({ bridge, onClose }) {
                 <div className="bdc-traffic-legend">
                   {Object.entries(traffic.class_shares || {})
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
                     .map(([k, v], i) => (
                       <span key={i} className="bdc-traffic-legend-item">
                         {k.replace(/Light |Medium |Large /g, '')}: {(v * 100).toFixed(1)}%

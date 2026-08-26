@@ -141,7 +141,7 @@ export default function InvestmentDashboard() {
               </tr>
             </thead>
             <tbody>
-              {ranked.slice(0, 120).map(b => (
+              {ranked.map(b => (
                 <tr key={b.bridge_no} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <td style={{ padding: '8px 12px', fontWeight: 800, color: 'var(--accent-primary)' }}>{b.priority_rank}</td>
                   <td style={{ padding: '8px 12px', fontWeight: 700 }}>{b.bridge_no}</td>
@@ -158,7 +158,6 @@ export default function InvestmentDashboard() {
               ))}
             </tbody>
           </table>
-          {ranked.length > 120 && <div style={{ padding: 12, fontSize: 11, color: 'var(--text-muted)' }}>Showing top 120 of {ranked.length} ranked bridges.</div>}
         </div>
       </section>
     </div>

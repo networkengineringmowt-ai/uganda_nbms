@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { UserPlus, Search, Shield, History, Activity } from 'lucide-react';
 
-export default function UserManagement() {
+export default function UserManagement({ onNavigate } = {}) {
   const [users] = useState([
     { id: 'E101', name: 'John Doe', department: 'BMS', role: 'Operations Manager', status: 'Active' },
     { id: 'E102', name: 'Jane Smith', department: 'Inspection', role: 'Inspector', status: 'Active' },
@@ -32,7 +32,10 @@ export default function UserManagement() {
         <div className="glass-card" style={{ flex: 2, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'rgba(3, 9, 24, 0.52)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>User Permission Management</span>
-            <button style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+            <button
+              disabled
+              title="User provisioning is not yet connected to a live directory service"
+              style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'not-allowed', opacity: 0.5 }}>
               <UserPlus size={14} /> Add User
             </button>
           </div>
@@ -67,7 +70,10 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <button style={{ padding: '4px 8px', fontSize: '11px', color: '#93c5fd', background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
+                    <button
+                      disabled
+                      title="User editing is not yet connected to a live directory service"
+                      style={{ padding: '4px 8px', fontSize: '11px', color: '#93c5fd', background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', cursor: 'not-allowed', opacity: 0.5 }}>Edit</button>
                   </td>
                 </tr>
               ))}
@@ -99,7 +105,10 @@ export default function UserManagement() {
                 <span style={{ fontSize: '11px', color: '#94a3b8' }}>5 hours ago</span>
               </div>
             </div>
-            <button style={{ width: '100%', marginTop: '24px', padding: '8px', background: '#101f39', border: '1px solid var(--border)', borderRadius: '6px', color: '#93c5fd', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}>
+            <button
+              onClick={() => onNavigate?.('architecture')}
+              title="Open Database Audit & Integrity Tools"
+              style={{ width: '100%', marginTop: '24px', padding: '8px', background: '#101f39', border: '1px solid var(--border)', borderRadius: '6px', color: '#93c5fd', fontWeight: 600, fontSize: '12px', cursor: 'pointer' }}>
               View Full Audit Log
             </button>
           </div>

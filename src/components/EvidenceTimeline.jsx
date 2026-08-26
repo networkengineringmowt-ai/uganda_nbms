@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, CalendarDays, ExternalLink, FolderCheck, Image } from 'lucide-react';
-import { getPhotoUrl } from '../utils/photoUrlResolver';
+import { getPhotoUrl, onPhotoError } from '../utils/photoUrlResolver';
 import { groupEvidenceByYear } from '../utils/photoEvidence';
 
 export default function EvidenceTimeline({ photos = [], structureId, compact = false }) {
@@ -38,7 +38,7 @@ export default function EvidenceTimeline({ photos = [], structureId, compact = f
 
       <div className="evidence-stage" key={`${activeGroup?.year}-${safeIndex}`}>
         <div className="evidence-stage-image">
-          {activePhoto && <img src={getPhotoUrl(activePhoto)} alt={`${structureId} evidence ${activeIndex + 1}`} />}
+          {activePhoto && <img src={getPhotoUrl(activePhoto)} alt={`${structureId} evidence ${activeIndex + 1}`} onError={onPhotoError} />}
           <button className="evidence-step previous" onClick={() => move(-1)} title="Previous photo"><ArrowLeft size={18} /></button>
           <button className="evidence-step next" onClick={() => move(1)} title="Next photo"><ArrowRight size={18} /></button>
           <div className="evidence-counter">{safeIndex + 1} / {activeGroup?.photos.length}</div>
@@ -66,7 +66,7 @@ export default function EvidenceTimeline({ photos = [], structureId, compact = f
               onClick={() => setActiveIndex(index)}
               title={photo.filename}
             >
-              <img src={getPhotoUrl(photo)} alt="" loading="lazy" />
+              <img src={getPhotoUrl(photo)} alt="" loading="lazy" onError={onPhotoError} />
               <span>{photo.sequence || index + 1}</span>
             </button>
           ))}

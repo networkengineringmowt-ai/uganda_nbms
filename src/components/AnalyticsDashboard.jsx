@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import ReactECharts from 'echarts-for-react';
 import { BarChart3, Landmark, MapPin, TrendingUp } from 'lucide-react';
+import DataTable from './DataTable';
+import StatisticalAnalysis from './StatisticalAnalysis';
+import { fetchCulverts } from '../services/bmsDataService';
 import {
   TYPE_ABUTMENT,
   TYPE_BEARINGS,
@@ -14,62 +16,6 @@ import {
 } from '../utils/dataDictionary';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
-const colors = ['#4f8cff', '#28c7a1', '#f5c451', '#ff7d59', '#af83ff', '#52c7e8'];
-const textStyle = { color: '#d9e7ff', fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 };
-
-const topCategories = (data = {}, limit = 12) => {
-  const entries = Object.entries(data).filter(([, value]) => Number(value) > 0).sort((a, b) => b[1] - a[1]);
-  if (entries.length <= limit) return Object.fromEntries(entries);
-  const head = entries.slice(0, limit - 1);
-  const other = entries.slice(limit - 1).reduce((sum, [, value]) => sum + value, 0);
-  return Object.fromEntries([...head, ['Other', other]]);
-};
-
-const extendedColors = ['#4f8cff', '#28c7a1', '#f5c451', '#ff7d59', '#af83ff', '#52c7e8', '#ff4f81', '#4fd1ff', '#8fff4f', '#ff9f4f'];
-
-const bar2DOption = (rawData, xName) => {
-  const data = Object.entries(topCategories(rawData));
-  return {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' }
-    },
-    color: extendedColors,
-    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: data.map(([name]) => name),
-      name: xName,
-      nameLocation: 'middle',
-      nameGap: 30,
-      nameTextStyle: { ...textStyle, fontSize: 12 },
-      axisLabel: { ...textStyle, interval: 0, fontSize: 10, rotate: data.length > 5 ? 45 : 0, hideOverlap: true },
-      axisTick: { show: true, alignWithLabel: true, lineStyle: { color: '#6480ae' } },
-      axisLine: { lineStyle: { color: '#6480ae' } },
-    },
-    yAxis: {
-      type: 'value',
-      name: 'Count',
-      nameTextStyle: { ...textStyle, padding: [0, 0, 0, 10] },
-      axisLabel: { ...textStyle, fontSize: 10 },
-      axisTick: { show: true, lineStyle: { color: '#6480ae' } },
-      axisLine: { show: true, lineStyle: { color: '#6480ae' } },
-      splitLine: { show: true, lineStyle: { color: 'rgba(100, 128, 174, 0.2)', type: 'dashed' } }
-    },
-    animation: true,
-    animationDuration: 1000,
-    animationEasing: 'cubicOut',
-    series: [{
-      type: 'bar',
-      data: data.map(([, value]) => value),
-      colorBy: 'data',
-      itemStyle: { borderRadius: [4, 4, 0, 0] },
-      label: { show: true, position: 'top', ...textStyle, fontSize: 10 },
-      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
-    }]
-  };
-};
 
 const fieldValue = (row, key) => row[key] ?? row.LegacyData?.[key];
 const countField = (rows, key, dictionary) => rows.reduce((counts, row) => {
@@ -80,34 +26,82 @@ const countField = (rows, key, dictionary) => rows.reduce((counts, row) => {
 }, {});
 
 const categoricalFields = [
-  { id: 'type_bridge', label: 'Structural Type', short: 'Bridge type', dictionary: TYPE_BRIDGE, color: colors[0] },
-  { id: 'type_deck', label: 'Deck Form', short: 'Deck', dictionary: TYPE_DECK, color: colors[1] },
-  { id: 'type_deck_material', label: 'Deck Material', short: 'Material', dictionary: TYPE_DECK_MATERIAL, color: colors[2] },
-  { id: 'type_crossing', label: 'Crossing Type', short: 'Crossing', dictionary: TYPE_CROSSING, color: colors[3] },
-  { id: 'type_abutment_l', label: 'Abutment Type', short: 'Abutment', dictionary: TYPE_ABUTMENT, color: colors[4] },
-  { id: 'type_piers', label: 'Pier Type', short: 'Piers', dictionary: TYPE_PIERS, color: colors[5] },
-  { id: 'type_para_rail', label: 'Parapet / Railing', short: 'Railing', dictionary: TYPE_PARAPET_RAILING, color: colors[0] },
-  { id: 'type_bearings', label: 'Bearing Type', short: 'Bearings', dictionary: TYPE_BEARINGS, color: colors[1] },
-  { id: 'road_class', label: 'Road Class', short: 'Road class', color: colors[2] },
-  { id: 'scour_risk', label: 'Scour Risk', short: 'Scour risk', color: colors[3] },
+  { id: 'type_bridge', label: 'Structural Type', dictionary: TYPE_BRIDGE },
+  { id: 'type_deck', label: 'Deck Form', dictionary: TYPE_DECK },
+  { id: 'type_deck_material', label: 'Deck Material', dictionary: TYPE_DECK_MATERIAL },
+  { id: 'type_crossing', label: 'Crossing Type', dictionary: TYPE_CROSSING },
+  { id: 'type_abutment_l', label: 'Abutment Type', dictionary: TYPE_ABUTMENT },
+  { id: 'type_piers', label: 'Pier Type', dictionary: TYPE_PIERS },
+  { id: 'type_para_rail', label: 'Parapet / Railing', dictionary: TYPE_PARAPET_RAILING },
+  { id: 'type_bearings', label: 'Bearing Type', dictionary: TYPE_BEARINGS },
+  { id: 'road_class', label: 'Road Class' },
+  { id: 'scour_risk', label: 'Scour Risk' },
 ];
 
-function ChartPanel({ kicker, title, data, color, wide = false }) {
+// Every category is shown — no top-N truncation / "Other" bucket, per the
+// platform's no-selective-reporting rule.
+const breakdownColumns = (totalCount) => [
+  { header: 'Category', cell: (r) => r.category, sortValue: (r) => r.category },
+  { header: 'Count', cell: (r) => r.count.toLocaleString(), sortValue: (r) => r.count },
+  {
+    header: '% of total',
+    cell: (r) => (totalCount ? `${((r.count / totalCount) * 100).toFixed(1)}%` : '—'),
+    sortValue: (r) => (totalCount ? r.count / totalCount : 0),
+  },
+];
+
+function BreakdownTable({ kicker, title, formula, data }) {
+  const rows = useMemo(
+    () => Object.entries(data || {})
+      .filter(([, count]) => Number(count) > 0)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count),
+    [data]
+  );
+  const total = rows.reduce((sum, r) => sum + r.count, 0);
+  const columns = useMemo(() => breakdownColumns(total), [total]);
+
   return (
-    <article className={`panel chart-panel glass-card ${wide ? 'wide' : ''}`}>
-      <div className="panel-header"><div><span className="panel-kicker">{kicker}</span><h2>{title}</h2></div></div>
-      <ReactECharts option={bar2DOption(data, title, color)} style={{ height: wide ? 430 : 370 }} opts={{ renderer: 'canvas' }} />
+    <article className="panel glass-card">
+      <div className="panel-header">
+        <div>
+          <span className="panel-kicker">{kicker}</span>
+          <h2>{title}</h2>
+        </div>
+        <span className="stat-meta">{rows.length} categories · {total.toLocaleString()} records</span>
+      </div>
+      {formula && <p className="stat-formula-note">Formula: % of total = category count ÷ total records × 100. {formula}</p>}
+      <DataTable columns={columns} data={rows} />
     </article>
   );
 }
 
+const BRIDGE_GROUP_FIELDS = [
+  { key: 'region', label: 'Region' },
+  { key: 'road_class', label: 'Road class' },
+  { key: 'surface_ty', label: 'Surface type' },
+  { key: 'ConditionCategory', label: 'Condition category' },
+  { key: 'type_bridge', label: 'Structural type' },
+  { key: 'scour_risk', label: 'Scour risk' },
+];
+
+const CULVERT_GROUP_FIELDS = [
+  { key: 'Region', label: 'Region' },
+  { key: 'Road_Class', label: 'Road class' },
+  { key: 'Surface_Type', label: 'Surface type' },
+  { key: 'ConditionCategory', label: 'Condition category' },
+  { key: 'TypeCulvert', label: 'Culvert type' },
+];
+
 export default function AnalyticsDashboard() {
   const [data, setData] = useState(null);
   const [bridges, setBridges] = useState([]);
+  const [culverts, setCulverts] = useState([]);
 
   useEffect(() => {
     fetch(`${BASE_URL}data/analytics.json`).then((response) => response.json()).then(setData).catch(console.error);
     fetch(`${BASE_URL}data/bridges.json`).then((response) => response.json()).then(setBridges).catch(console.error);
+    fetchCulverts().then(setCulverts).catch(console.error);
   }, []);
 
   const metrics = useMemo(() => {
@@ -136,23 +130,25 @@ export default function AnalyticsDashboard() {
       </section>
 
       <section className="category-explorer">
-        <div><span className="panel-kicker">Data dictionary explorer</span><h2>Categorical engineering fields</h2></div>
+        <div><span className="panel-kicker">Data dictionary explorer</span><h2>Categorical engineering fields — summary tables</h2></div>
       </section>
 
-      <section className="analytics-grid">
-        <ChartPanel kicker="Regional coverage" title="Bridges by Region" data={data.bridges_by_region} color={colors[0]} />
-        <ChartPanel kicker="Network demand" title="Traffic Demand Bands" data={data.traffic_bins} color={colors[2]} />
-        <ChartPanel kicker="Condition distribution" title="Overall Bridge Condition" data={data.condition_overall} color={colors[3]} wide />
+      <section className="analytics-grid tables">
+        <BreakdownTable kicker="Regional coverage" title="Bridges by Region" data={data.bridges_by_region} />
+        <BreakdownTable kicker="Network demand" title="Traffic Demand Bands" data={data.traffic_bins} />
+        <BreakdownTable kicker="Condition distribution" title="Overall Bridge Condition" data={data.condition_overall} />
         {categoricalFields.map((field) => (
-          <ChartPanel 
+          <BreakdownTable
             key={field.id}
-            kicker="Dictionary field" 
-            title={field.label} 
-            data={categories[field.id]} 
-            color={field.color} 
+            kicker="Dictionary field"
+            title={field.label}
+            data={categories[field.id]}
           />
         ))}
       </section>
+
+      <StatisticalAnalysis rows={bridges} label="Bridges" groupFields={BRIDGE_GROUP_FIELDS} />
+      <StatisticalAnalysis rows={culverts} label="Culverts" groupFields={CULVERT_GROUP_FIELDS} />
     </div>
   );
 }

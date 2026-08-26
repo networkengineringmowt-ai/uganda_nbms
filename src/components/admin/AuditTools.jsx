@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Database, History, Clock, Search, ArrowLeftRight } from 'lucide-react';
+import { downloadCSV } from '../../utils/exportUtils';
 
 const MOCK_AUDIT_LOGS = [
   { id: 'AL-9921', time: '10 mins ago', user: 'system_sync', action: 'BULK_UPDATE', target: 'core.structure', status: 'SUCCESS', details: 'Synced 14 records from QField' },
@@ -11,6 +12,7 @@ const MOCK_AUDIT_LOGS = [
 
 export default function AuditTools() {
   const [searchTerm, setSearchTerm] = useState('');
+  const filteredLogs = MOCK_AUDIT_LOGS.filter(l => l.user.includes(searchTerm) || l.action.includes(searchTerm));
 
   return (
     <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -35,7 +37,11 @@ export default function AuditTools() {
               style={{ padding: '8px 12px 8px 32px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '12px', width: '220px', maxWidth: '100%' }}
             />
           </div>
-          <button className="modern-btn-secondary" style={{ fontSize: '12px', padding: '6px 12px' }}>
+          <button
+            className="modern-btn-secondary"
+            style={{ fontSize: '12px', padding: '6px 12px' }}
+            onClick={() => downloadCSV('audit_log.csv', filteredLogs)}
+          >
             <ArrowLeftRight size={14} /> Export CSV
           </button>
         </div>
@@ -79,7 +85,7 @@ export default function AuditTools() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_AUDIT_LOGS.filter(l => l.user.includes(searchTerm) || l.action.includes(searchTerm)).map((log) => (
+              {filteredLogs.map((log) => (
                 <tr key={log.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{log.id}</td>
                   <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>

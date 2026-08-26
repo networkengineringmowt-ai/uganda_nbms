@@ -26,7 +26,7 @@ export default function InspectionPlanManager() {
             <option>Principal</option>
           </select>
         </div>
-        <button className="modern-btn-primary">
+        <button className="modern-btn-primary" disabled title="Plan creation is not yet connected to a live scheduling service">
           + Add New Plan
         </button>
       </div>
@@ -71,13 +71,13 @@ export default function InspectionPlanManager() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button className="modern-btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+            <button className="modern-btn-secondary" disabled title="IC Client packaging is not yet connected to a live scheduling service" style={{ width: '100%', justifyContent: 'center' }}>
               <Download size={16} /> Download ZIP (IC Client)
             </button>
-            <button className="modern-btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+            <button className="modern-btn-secondary" disabled title="IC Client packaging is not yet connected to a live scheduling service" style={{ width: '100%', justifyContent: 'center' }}>
               <Calendar size={16} /> Upload IC Results
             </button>
-            <button className="modern-btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'var(--accent-green)', borderColor: 'var(--accent-green)', marginTop: '12px' }}>
+            <button className="modern-btn-primary" disabled title="Plan status is not yet connected to a live scheduling service" style={{ width: '100%', justifyContent: 'center', background: 'var(--accent-green)', borderColor: 'var(--accent-green)', marginTop: '12px' }}>
               <CheckCircle size={16} /> Mark as Complete
             </button>
           </div>

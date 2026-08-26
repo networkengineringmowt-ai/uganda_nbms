@@ -214,7 +214,10 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
         {tabBtn('costing', 'Asset Valuation (CRC)')}
         {tabBtn('single', 'Print Structure Reports')}
         {activeReport === 'print' && (
-          <button style={{ padding: '12px 24px', background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent-amber)', color: 'var(--accent-amber)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>
+          <button
+            onClick={() => window.print()}
+            title="Print the report currently in preview"
+            style={{ padding: '12px 24px', background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent-amber)', color: 'var(--accent-amber)', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>
             Print Preview
           </button>
         )}
@@ -230,7 +233,7 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                 <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Unchecked Records ({validationData.unchecked.length})</h3>
               </div>
               <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {validationData.unchecked.slice(0, 100).map(b => (
+                {validationData.unchecked.map(b => (
                   <div key={b.BridgeNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                     <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
                     <span style={{ color: 'var(--text-muted)' }}>{b.BridgeName}</span>
@@ -245,7 +248,7 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                 <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Missing Core Ratings ({validationData.outstandingRatings.length})</h3>
               </div>
               <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {validationData.outstandingRatings.slice(0, 100).map(b => (
+                {validationData.outstandingRatings.map(b => (
                   <div key={b.BridgeNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                     <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
                     <span style={{ color: 'var(--accent-amber)', fontSize: '11px', fontWeight: 700 }}>NEEDS INSPECTION</span>
