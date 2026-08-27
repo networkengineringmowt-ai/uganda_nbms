@@ -12,6 +12,7 @@ import MaintenanceWorkspace from '../MaintenanceWorkspace';
 import WorksDashboard from '../WorksDashboard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
 import VisualAnalytics from '../VisualAnalytics';
+import CrossAnalysis from '../CrossAnalysis';
 import BmsReports from '../BmsReports';
 import PhotoLibrary from '../PhotoLibrary';
 
@@ -88,6 +89,7 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
                 }}
               />
               <VisualAnalytics />
+              <CrossAnalysis />
             </div>
           )}
           {modernTab === 'map' && (

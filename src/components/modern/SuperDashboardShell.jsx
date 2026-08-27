@@ -12,6 +12,7 @@ import MaintenanceWorkspace from '../MaintenanceWorkspace';
 import InvestmentDashboard from '../InvestmentDashboard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
 import VisualAnalytics from '../VisualAnalytics';
+import CrossAnalysis from '../CrossAnalysis';
 import BmsReports from '../BmsReports';
 import PhotoLibrary from '../PhotoLibrary';
 import CriticalStructures from './CriticalStructures';
@@ -56,6 +57,7 @@ export default function SuperDashboardShell({ bridges, culverts }) {
                 }}
               />
               <VisualAnalytics />
+              <CrossAnalysis />
             </div>
           )}
           {modernTab === 'map' && (
