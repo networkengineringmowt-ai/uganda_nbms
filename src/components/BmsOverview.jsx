@@ -28,18 +28,94 @@ import {
 
 // ── Categorical engineering-field charts (moved here from Analytics: charts
 //    belong on the dashboard/Overview; Analytics is tables + formulas) ──────
-const chartTextStyle = { color: '#d9e7ff', fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 };
-const chartColors = ['#4f8cff', '#28c7a1', '#f5c451', '#ff7d59', '#af83ff', '#52c7e8', '#ff4f81', '#4fd1ff', '#8fff4f', '#ff9f4f'];
+// Neon palette: every bar/series gets a top-to-bottom gradient plus a
+// colour-matched glow (shadowBlur/shadowColor), brightening further on hover.
+const chartTextStyle = { color: '#e8fbff', fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 };
+const NEON_AXIS = '#28e0ff';
+const chartColors = [
+  '#00f5ff', // neon cyan
+  '#ff00e5', // neon magenta
+  '#39ff14', // neon green
+  '#ffea00', // neon yellow
+  '#ff5f1f', // neon orange
+  '#bc13fe', // neon purple
+  '#00ff9f', // neon mint
+  '#ff2079', // neon pink
+  '#0aefff', // neon blue
+  '#f8ff00', // neon lime
+  '#ff3860', // neon red-pink
+  '#7dff3d', // neon lime-green
+];
+
+const hexToRgba = (hex, alpha) => {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const neonItemStyle = (hex) => ({
+  color: {
+    type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+    colorStops: [
+      { offset: 0, color: hex },
+      { offset: 1, color: hexToRgba(hex, 0.28) },
+    ],
+  },
+  shadowBlur: 16,
+  shadowColor: hexToRgba(hex, 0.9),
+  borderRadius: [6, 6, 0, 0],
+});
+
+const neonEmphasisStyle = (hex) => ({
+  itemStyle: {
+    shadowBlur: 30,
+    shadowColor: hexToRgba(hex, 1),
+    color: hex,
+  },
+});
+
+const neonToolbox = {
+  right: 12,
+  top: 4,
+  iconStyle: { borderColor: NEON_AXIS },
+  emphasis: { iconStyle: { borderColor: '#fff' } },
+  feature: {
+    saveAsImage: { title: 'Save as image', backgroundColor: '#0b1224' },
+    dataView: { title: 'View data', readOnly: true, lang: ['Data view', 'Close', 'Refresh'] },
+    restore: { title: 'Reset zoom/view' },
+  },
+};
 
 // All categories are charted — no top-N truncation / "Other" bucket, per the
-// platform's no-selective-reporting rule.
+// platform's no-selective-reporting rule. Wide charts (many categories) get
+// an interactive zoom/pan slider so every bar stays reachable without
+// cramming the axis labels.
 const bar2DOption = (rawData, xName) => {
   const data = Object.entries(rawData || {}).filter(([, v]) => Number(v) > 0).sort((a, b) => b[1] - a[1]);
+  const total = data.reduce((sum, [, v]) => sum + v, 0);
+  const needsZoom = data.length > 7;
   return {
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    color: chartColors,
-    grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      backgroundColor: 'rgba(10, 18, 36, 0.95)',
+      borderColor: NEON_AXIS,
+      textStyle: { color: '#e8fbff' },
+      formatter: (params) => {
+        const p = params[0];
+        const pct = total ? ((p.value / total) * 100).toFixed(1) : '0.0';
+        return `<strong>${p.name}</strong><br/>Count: ${p.value.toLocaleString()} (${pct}%)`;
+      },
+    },
+    toolbox: neonToolbox,
+    grid: { left: '3%', right: '4%', bottom: needsZoom ? '22%' : '15%', containLabel: true },
+    dataZoom: needsZoom ? [
+      { type: 'inside', start: 0, end: Math.min(100, (7 / data.length) * 100) },
+      { type: 'slider', start: 0, end: Math.min(100, (7 / data.length) * 100), height: 16, bottom: 6, handleStyle: { color: NEON_AXIS }, fillerColor: hexToRgba(NEON_AXIS, 0.15), borderColor: NEON_AXIS, textStyle: { color: chartTextStyle.color } },
+    ] : undefined,
     xAxis: {
       type: 'category',
       data: data.map(([name]) => name),
@@ -48,28 +124,28 @@ const bar2DOption = (rawData, xName) => {
       nameGap: 30,
       nameTextStyle: { ...chartTextStyle, fontSize: 12 },
       axisLabel: { ...chartTextStyle, interval: 0, fontSize: 10, rotate: data.length > 5 ? 45 : 0, hideOverlap: true },
-      axisTick: { show: true, alignWithLabel: true, lineStyle: { color: '#6480ae' } },
-      axisLine: { lineStyle: { color: '#6480ae' } },
+      axisTick: { show: true, alignWithLabel: true, lineStyle: { color: NEON_AXIS } },
+      axisLine: { lineStyle: { color: NEON_AXIS } },
     },
     yAxis: {
       type: 'value',
       name: 'Count',
       nameTextStyle: { ...chartTextStyle, padding: [0, 0, 0, 10] },
       axisLabel: { ...chartTextStyle, fontSize: 10 },
-      axisTick: { show: true, lineStyle: { color: '#6480ae' } },
-      axisLine: { show: true, lineStyle: { color: '#6480ae' } },
-      splitLine: { show: true, lineStyle: { color: 'rgba(100, 128, 174, 0.2)', type: 'dashed' } },
+      axisTick: { show: true, lineStyle: { color: NEON_AXIS } },
+      axisLine: { show: true, lineStyle: { color: NEON_AXIS } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(40, 224, 255, 0.15)', type: 'dashed' } },
     },
     animation: true,
     animationDuration: 1000,
     animationEasing: 'cubicOut',
     series: [{
       type: 'bar',
-      data: data.map(([, value]) => value),
-      colorBy: 'data',
-      itemStyle: { borderRadius: [4, 4, 0, 0] },
+      data: data.map(([, value], i) => {
+        const hex = chartColors[i % chartColors.length];
+        return { value, itemStyle: neonItemStyle(hex), emphasis: neonEmphasisStyle(hex) };
+      }),
       label: { show: true, position: 'top', ...chartTextStyle, fontSize: 10 },
-      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
     }],
   };
 };
@@ -121,21 +197,30 @@ const groupedBarOption = (rows, rowField, colField, xName) => {
   const norm = (v) => v || 'Unknown';
   const colKeys = [...new Set(rows.map((r) => norm(chartFieldValue(r, colField))))].sort();
   const rowKeys = [...new Set(rows.map((r) => norm(chartFieldValue(r, rowField))))].sort();
-  const series = rowKeys.map((rk) => ({
-    name: rk,
-    type: 'bar',
-    stack: 'total',
-    data: colKeys.map((ck) => rows.filter((r) => norm(chartFieldValue(r, rowField)) === rk && norm(chartFieldValue(r, colField)) === ck).length),
-    itemStyle: { borderRadius: [4, 4, 0, 0] },
-    label: { show: true, ...chartTextStyle, fontSize: 10 },
-    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
-  }));
+  const series = rowKeys.map((rk, i) => {
+    const hex = chartColors[i % chartColors.length];
+    return {
+      name: rk,
+      type: 'bar',
+      stack: 'total',
+      data: colKeys.map((ck) => rows.filter((r) => norm(chartFieldValue(r, rowField)) === rk && norm(chartFieldValue(r, colField)) === ck).length),
+      itemStyle: neonItemStyle(hex),
+      emphasis: neonEmphasisStyle(hex),
+      label: { show: true, ...chartTextStyle, fontSize: 10 },
+    };
+  });
 
   return {
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { top: 0, textStyle: { ...chartTextStyle, fontSize: 11 } },
-    color: chartColors,
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      backgroundColor: 'rgba(10, 18, 36, 0.95)',
+      borderColor: NEON_AXIS,
+      textStyle: { color: '#e8fbff' },
+    },
+    toolbox: neonToolbox,
+    legend: { top: 0, textStyle: { ...chartTextStyle, fontSize: 11 }, selectedMode: true },
     grid: { left: '3%', right: '4%', bottom: '10%', top: '18%', containLabel: true },
     xAxis: {
       type: 'category',
@@ -145,17 +230,17 @@ const groupedBarOption = (rows, rowField, colField, xName) => {
       nameGap: 30,
       nameTextStyle: { ...chartTextStyle, fontSize: 12 },
       axisLabel: { ...chartTextStyle, fontSize: 10 },
-      axisTick: { show: true, alignWithLabel: true, lineStyle: { color: '#6480ae' } },
-      axisLine: { lineStyle: { color: '#6480ae' } },
+      axisTick: { show: true, alignWithLabel: true, lineStyle: { color: NEON_AXIS } },
+      axisLine: { lineStyle: { color: NEON_AXIS } },
     },
     yAxis: {
       type: 'value',
       name: 'Count',
       nameTextStyle: { ...chartTextStyle, padding: [0, 0, 0, 10] },
       axisLabel: { ...chartTextStyle, fontSize: 10 },
-      axisTick: { show: true, lineStyle: { color: '#6480ae' } },
-      axisLine: { show: true, lineStyle: { color: '#6480ae' } },
-      splitLine: { show: true, lineStyle: { color: 'rgba(100, 128, 174, 0.2)', type: 'dashed' } },
+      axisTick: { show: true, lineStyle: { color: NEON_AXIS } },
+      axisLine: { show: true, lineStyle: { color: NEON_AXIS } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(40, 224, 255, 0.15)', type: 'dashed' } },
     },
     animation: true,
     animationDuration: 1000,
@@ -348,38 +433,54 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
 
   const conditionChartOptions = useMemo(() => {
     if (!bridges.length) return {};
-    const data = CONDITION_ORDER.map(label => ({
-      name: label,
-      value: conditionOverall[label] || 0,
-      itemStyle: {
-        color: label === 'Beyond Repair' || label === 'Critical' || label === 'Very Poor' ? '#ef4444' :
-               label === 'Poor' ? '#f97316' :
-               label === 'Marginal' || label === 'Fair' ? '#eab308' :
-               label === 'Satisfactory' ? '#84cc16' : '#22c55e'
-      }
-    })).filter(d => d.value > 0);
+    const neonFor = (label) => (
+      label === 'Beyond Repair' || label === 'Critical' || label === 'Very Poor' ? '#ff073a' :
+      label === 'Poor' ? '#ff5f1f' :
+      label === 'Marginal' || label === 'Fair' ? '#ffea00' :
+      label === 'Satisfactory' ? '#c6ff00' : '#39ff14'
+    );
+    const rawData = CONDITION_ORDER.map((label) => ({ name: label, value: conditionOverall[label] || 0 })).filter((d) => d.value > 0);
+    const total = rawData.reduce((sum, d) => sum + d.value, 0);
+    const data = rawData.map((d) => {
+      const hex = neonFor(d.name);
+      return { name: d.name, value: d.value, itemStyle: neonItemStyle(hex), emphasis: neonEmphasisStyle(hex) };
+    });
 
     return {
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
-      xAxis: { 
-        type: 'category', 
-        data: data.map(d => d.name),
-        axisLabel: { color: '#ffffff', fontWeight: 600, interval: 0, rotate: 25 },
-        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: 'rgba(10, 18, 36, 0.95)',
+        borderColor: NEON_AXIS,
+        textStyle: { color: '#e8fbff' },
+        formatter: (params) => {
+          const p = params[0];
+          const pct = total ? ((p.value / total) * 100).toFixed(1) : '0.0';
+          return `<strong>${p.name}</strong><br/>Count: ${p.value.toLocaleString()} (${pct}%)`;
+        },
       },
-      yAxis: { 
+      toolbox: neonToolbox,
+      grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: data.map(d => d.name),
+        axisLabel: { color: chartTextStyle.color, fontWeight: 700, interval: 0, rotate: 25 },
+        axisLine: { lineStyle: { color: NEON_AXIS } },
+        axisTick: { lineStyle: { color: NEON_AXIS } },
+      },
+      yAxis: {
         type: 'value',
-        axisLabel: { color: '#ffffff' },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+        axisLabel: { color: chartTextStyle.color },
+        axisLine: { lineStyle: { color: NEON_AXIS } },
+        splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.12)' } }
       },
       series: [
         {
           name: 'Condition',
           type: 'bar',
           data: data,
-          itemStyle: { borderRadius: [6, 6, 0, 0] },
-          label: { show: true, position: 'top', color: '#ffffff', fontWeight: 800 }
+          label: { show: true, position: 'top', color: chartTextStyle.color, fontWeight: 800 }
         }
       ]
     };
