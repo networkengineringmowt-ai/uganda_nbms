@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import BmsOverview from './BmsOverview';
 import VisualAnalytics from './VisualAnalytics';
 import CrossAnalysis from './CrossAnalysis';
+import DeteriorationAnalysis from './DeteriorationAnalysis';
 import DashboardFilterBar from './DashboardFilterBar';
 import { DEFAULT_DASHBOARD_FILTERS, applyDashboardFilters } from '../utils/dashboardFilters';
 
@@ -40,6 +41,7 @@ export default function FilteredDashboard({ bridges = [], culverts = [], onNavig
       />
       <VisualAnalytics bridges={filteredBridges} culverts={filteredCulverts} />
       <CrossAnalysis bridges={filteredBridges} culverts={filteredCulverts} />
+      <DeteriorationAnalysis bridges={filteredBridges} culverts={filteredCulverts} />
     </div>
   );
 }
