@@ -192,14 +192,6 @@ export default function AnalyticsDashboard() {
     countField(bridges, field.id, field.dictionary),
   ])), [bridges]);
 
-  // Bridges and culverts use different raw field names for the same two
-  // dimensions (surface_ty/road_class vs Surface_Type/Road_Class) — normalize
-  // to a common shape so the combined cross-tab covers every structure.
-  const combinedStructures = useMemo(() => ([
-    ...bridges.map((row) => ({ surface: fieldValue(row, 'surface_ty'), roadClass: fieldValue(row, 'road_class') })),
-    ...culverts.map((row) => ({ surface: fieldValue(row, 'Surface_Type'), roadClass: fieldValue(row, 'Road_Class') })),
-  ]), [bridges, culverts]);
-
   if (!data || !bridges.length) return <div className="page-loader"><div className="spinner" /><span>Preparing analytics...</span></div>;
 
   return (
@@ -235,7 +227,6 @@ export default function AnalyticsDashboard() {
       <section className="analytics-grid tables">
         <CrossTabTable kicker="Bridges" title="Bridges — Surface Type × Functional Class" rows={bridges} rowField="surface_ty" colField="road_class" unitLabel="bridges" />
         <CrossTabTable kicker="Culverts" title="Culverts — Surface Type × Functional Class" rows={culverts} rowField="Surface_Type" colField="Road_Class" unitLabel="culverts" />
-        <CrossTabTable kicker="Bridges + Culverts" title="All Structures — Surface Type × Functional Class" rows={combinedStructures} rowField="surface" colField="roadClass" unitLabel="structures" />
       </section>
 
       <StatisticalAnalysis rows={bridges} label="Bridges" groupFields={BRIDGE_GROUP_FIELDS} />
