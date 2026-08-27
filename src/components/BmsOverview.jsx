@@ -95,11 +95,97 @@ const categoricalChartFields = [
   { id: 'scour_risk', label: 'Scour Risk' },
 ];
 
+// Culverts use their own normalized field names (set by normalizeCulvert) --
+// no dictionary lookup needed since CulvertType/Surface_Type/Road_Class/
+// Region are already resolved to human-readable values.
+const categoricalCulvertChartFields = [
+  { id: 'CulvertType', label: 'Culvert Type' },
+  { id: 'Surface_Type', label: 'Surface Type' },
+  { id: 'Road_Class', label: 'Road Class' },
+  { id: 'Region', label: 'Region' },
+];
+
 function ChartPanel({ kicker, title, data, wide = false }) {
   return (
     <article className={`panel chart-panel glass-card ${wide ? 'wide' : ''}`}>
       <div className="panel-header"><div><span className="panel-kicker">{kicker}</span><h2>{title}</h2></div></div>
       <ReactECharts option={bar2DOption(data, title)} style={{ height: wide ? 430 : 370 }} opts={{ renderer: 'canvas' }} />
+    </article>
+  );
+}
+
+// Stacked bar: one series per row-field value (e.g. surface type), one x-axis
+// category per col-field value (e.g. functional class) — every combination
+// shown, no top-N cut.
+const groupedBarOption = (rows, rowField, colField, xName) => {
+  const norm = (v) => v || 'Unknown';
+  const colKeys = [...new Set(rows.map((r) => norm(chartFieldValue(r, colField))))].sort();
+  const rowKeys = [...new Set(rows.map((r) => norm(chartFieldValue(r, rowField))))].sort();
+  const series = rowKeys.map((rk) => ({
+    name: rk,
+    type: 'bar',
+    stack: 'total',
+    data: colKeys.map((ck) => rows.filter((r) => norm(chartFieldValue(r, rowField)) === rk && norm(chartFieldValue(r, colField)) === ck).length),
+    itemStyle: { borderRadius: [4, 4, 0, 0] },
+    label: { show: true, ...chartTextStyle, fontSize: 10 },
+    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
+  }));
+
+  return {
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { top: 0, textStyle: { ...chartTextStyle, fontSize: 11 } },
+    color: chartColors,
+    grid: { left: '3%', right: '4%', bottom: '10%', top: '18%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: colKeys,
+      name: xName,
+      nameLocation: 'middle',
+      nameGap: 30,
+      nameTextStyle: { ...chartTextStyle, fontSize: 12 },
+      axisLabel: { ...chartTextStyle, fontSize: 10 },
+      axisTick: { show: true, alignWithLabel: true, lineStyle: { color: '#6480ae' } },
+      axisLine: { lineStyle: { color: '#6480ae' } },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Count',
+      nameTextStyle: { ...chartTextStyle, padding: [0, 0, 0, 10] },
+      axisLabel: { ...chartTextStyle, fontSize: 10 },
+      axisTick: { show: true, lineStyle: { color: '#6480ae' } },
+      axisLine: { show: true, lineStyle: { color: '#6480ae' } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(100, 128, 174, 0.2)', type: 'dashed' } },
+    },
+    animation: true,
+    animationDuration: 1000,
+    animationEasing: 'cubicOut',
+    series,
+  };
+};
+
+function GroupedChartPanel({ kicker, title, rows, rowField, colField, xName }) {
+  return (
+    <article className="panel chart-panel glass-card">
+      <div className="panel-header"><div><span className="panel-kicker">{kicker}</span><h2>{title}</h2></div></div>
+      <ReactECharts option={groupedBarOption(rows, rowField, colField, xName)} style={{ height: 370 }} opts={{ renderer: 'canvas' }} />
+    </article>
+  );
+}
+
+function SummaryPanel({ kicker, title, stats }) {
+  return (
+    <article className="panel glass-card">
+      <div className="panel-header"><div><span className="panel-kicker">{kicker}</span><h2>{title}</h2></div></div>
+      <div className="kpi-grid compact" style={{ marginTop: 0 }}>
+        {stats.map((s) => (
+          <article className="kpi-card" key={s.label}>
+            <span className="kpi-eyebrow">{s.label}</span>
+            <strong>{s.value}</strong>
+            {s.note && <p>{s.note}</p>}
+          </article>
+        ))}
+      </div>
     </article>
   );
 }
@@ -147,7 +233,7 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
   const conditionOverall = useMemo(() => countChartField(bridges, 'OverallCondition'), [bridges]);
 
   const metrics = useMemo(() => {
-    if (!bridges.length) return { rated: 0, poor: 0, averageAadt: 0 };
+    if (!bridges.length) return { rated: 0, poor: 0, averageAadt: 0, averageLength: 0, lengthSampleSize: 0 };
 
     const rated = Object.entries(conditionOverall)
       .filter(([k]) => k !== 'Unknown')
@@ -162,8 +248,36 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
       ? Math.round(traffic.reduce((sum, row) => sum + Number(row.Traffic?.aadt_2026 ?? row.aadt_rebuilt_2026 ?? row.current_predicted_aadt), 0) / traffic.length)
       : 0;
 
-    return { rated, poor, averageAadt };
+    // Average bridge deck length -- a plain arithmetic mean over every record
+    // with a recorded, positive length on file (no outlier trimming, so this
+    // is disclosed as a sample size alongside the mean rather than presented
+    // as covering the full register).
+    const lengths = bridges.map((row) => Number(row.length)).filter((v) => Number.isFinite(v) && v > 0);
+    const averageLength = lengths.length ? Math.round((lengths.reduce((sum, v) => sum + v, 0) / lengths.length) * 10) / 10 : 0;
+
+    return { rated, poor, averageAadt, averageLength, lengthSampleSize: lengths.length };
   }, [bridges, conditionOverall]);
+
+  // Culverts get the same treatment as bridges -- computed separately, never
+  // folded into the bridge figures (bridges and major culverts are always
+  // reported as distinct structure classes on this platform).
+  const conditionOverallCulverts = useMemo(() => countChartField(culverts, 'OverallCondition'), [culverts]);
+
+  const culvertMetrics = useMemo(() => {
+    if (!culverts.length) return { rated: 0, poor: 0, averageLength: 0, lengthSampleSize: 0 };
+
+    const rated = Object.entries(conditionOverallCulverts)
+      .filter(([k]) => k !== 'Unknown')
+      .reduce((sum, entry) => sum + entry[1], 0);
+
+    const poor = ['Beyond Repair', 'Critical', 'Very Poor', 'Poor']
+      .reduce((sum, k) => sum + (conditionOverallCulverts[k] || 0), 0);
+
+    const lengths = culverts.map((row) => Number(row.CulvertLength)).filter((v) => Number.isFinite(v) && v > 0);
+    const averageLength = lengths.length ? Math.round((lengths.reduce((sum, v) => sum + v, 0) / lengths.length) * 10) / 10 : 0;
+
+    return { rated, poor, averageLength, lengthSampleSize: lengths.length };
+  }, [culverts, conditionOverallCulverts]);
 
   const trafficBins = analytics?.traffic_bins;
 
@@ -171,6 +285,11 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
     field.id,
     countChartField(bridges, field.id, field.dictionary),
   ])), [bridges]);
+
+  const categoryChartDataCulverts = useMemo(() => Object.fromEntries(categoricalCulvertChartFields.map((field) => [
+    field.id,
+    countChartField(culverts, field.id),
+  ])), [culverts]);
 
   const priorityRows = useMemo(() => critical.map((row) => ({
     ...row,
@@ -393,17 +512,57 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
         </article>
       </section>
 
+      <section className="overview-grid" style={{ gap: '16px', marginTop: '16px' }}>
+        <SummaryPanel
+          kicker="Bridges"
+          title="Bridges Summary"
+          stats={[
+            { label: 'Total bridges', value: bridges.length.toLocaleString() },
+            { label: 'Condition rated', value: bridges.length ? `${Math.round((metrics.rated / bridges.length) * 100)}%` : '0%', note: `${metrics.rated.toLocaleString()} of ${bridges.length.toLocaleString()} records` },
+            { label: 'Poor or worse', value: metrics.poor.toLocaleString(), note: bridges.length ? `${Math.round((metrics.poor / bridges.length) * 100)}% of register` : undefined },
+            { label: 'Average AADT', value: metrics.averageAadt.toLocaleString(), note: 'Estimated vehicles/day' },
+            { label: 'Average deck length', value: metrics.averageLength ? `${metrics.averageLength} m` : '—', note: `n=${metrics.lengthSampleSize.toLocaleString()} with length on file` },
+          ]}
+        />
+        <SummaryPanel
+          kicker="Culverts"
+          title="Culverts Summary"
+          stats={[
+            { label: 'Total culverts', value: culverts.length.toLocaleString() },
+            { label: 'Condition rated', value: culverts.length ? `${Math.round((culvertMetrics.rated / culverts.length) * 100)}%` : '0%', note: `${culvertMetrics.rated.toLocaleString()} of ${culverts.length.toLocaleString()} records` },
+            { label: 'Poor or worse', value: culvertMetrics.poor.toLocaleString(), note: culverts.length ? `${Math.round((culvertMetrics.poor / culverts.length) * 100)}% of register` : undefined },
+            { label: 'Average length', value: culvertMetrics.averageLength ? `${culvertMetrics.averageLength} m` : '—', note: `n=${culvertMetrics.lengthSampleSize.toLocaleString()} with length on file` },
+          ]}
+        />
+      </section>
+
       <section className="category-explorer">
-        <div><span className="panel-kicker">Data dictionary explorer</span><h2>Categorical engineering fields</h2></div>
+        <div><span className="panel-kicker">Bridges — data dictionary explorer</span><h2>Categorical engineering fields</h2></div>
       </section>
       <section className="analytics-grid">
         <ChartPanel kicker="Network demand" title="Traffic Demand Bands" data={trafficBins} />
+        <GroupedChartPanel kicker="Cross-tabulation" title="Bridges — Surface Type by Functional Class" rows={bridges} rowField="surface_ty" colField="road_class" xName="Functional Class" />
         {categoricalChartFields.map((field) => (
           <ChartPanel
             key={field.id}
             kicker="Dictionary field"
             title={field.label}
             data={categoryChartData[field.id]}
+          />
+        ))}
+      </section>
+
+      <section className="category-explorer">
+        <div><span className="panel-kicker">Culverts — data dictionary explorer</span><h2>Categorical engineering fields</h2></div>
+      </section>
+      <section className="analytics-grid">
+        <GroupedChartPanel kicker="Cross-tabulation" title="Culverts — Surface Type by Functional Class" rows={culverts} rowField="Surface_Type" colField="Road_Class" xName="Functional Class" />
+        {categoricalCulvertChartFields.map((field) => (
+          <ChartPanel
+            key={field.id}
+            kicker="Dictionary field"
+            title={field.label}
+            data={categoryChartDataCulverts[field.id]}
           />
         ))}
       </section>
