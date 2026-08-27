@@ -306,16 +306,23 @@ function calendarOption(counts, years) {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export default function CrossAnalysis() {
-  const [bridges, setBridges] = useState([]);
-  const [culverts, setCulverts] = useState([]);
+export default function CrossAnalysis({ bridges: bridgesProp, culverts: culvertsProp }) {
+  // When a parent (e.g. the Dashboard filter bar) supplies bridges/culverts,
+  // those are used as-is -- including a legitimately empty, filtered-down
+  // array -- instead of self-fetching the full unfiltered registry.
+  const usingExternalData = bridgesProp !== undefined && culvertsProp !== undefined;
+  const [fetchedBridges, setFetchedBridges] = useState([]);
+  const [fetchedCulverts, setFetchedCulverts] = useState([]);
+  const bridges = usingExternalData ? bridgesProp : fetchedBridges;
+  const culverts = usingExternalData ? culvertsProp : fetchedCulverts;
 
   useEffect(() => {
+    if (usingExternalData) return;
     Promise.all([fetchBridges(), fetchCulverts()]).then(([b, c]) => {
-      setBridges(b);
-      setCulverts(c);
+      setFetchedBridges(b);
+      setFetchedCulverts(c);
     }).catch(console.error);
-  }, []);
+  }, [usingExternalData]);
 
   const regionStatsFor = (rows, lengthField) => {
     const regions = sortedNonUnknownKeys(countBy(rows, 'Region'));
@@ -497,7 +504,7 @@ export default function CrossAnalysis() {
   const cPareto = useMemo(() => Object.entries(countBy(culverts, 'CulvertType')).filter(([k]) => k !== 'Unknown').sort((a, b) => b[1] - a[1]), [culverts]);
   const cPictorial = useMemo(() => countBy(culverts, 'Region'), [culverts]);
 
-  if (!bridges.length || !culverts.length) {
+  if (!usingExternalData && (!bridges.length || !culverts.length)) {
     return <div className="page-loader"><div className="spinner" /><span>Rendering cross analysis…</span></div>;
   }
 

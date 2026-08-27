@@ -834,15 +834,218 @@
   gap: 24px;
 }
 
-/* Wraps merged multi-section tab content (e.g. Dashboard = Overview + Visual
-   Analytics) so `.page-content > *` only ever sees a single direct child --
-   otherwise each section would be flex-shrunk to share the viewport height
-   and their content would overflow on top of each other. */
+/* Wraps merged multi-section tab content (Dashboard = filter bar + Overview +
+   Visual Analytics + Cross Analysis) so `.page-content > *` only ever sees a
+   single direct child -- see the flex-shrink note on that rule below. */
 .modern-theme-root .dashboard-merged {
   display: flex;
   flex-direction: column;
   gap: 32px;
   width: 100%;
+}
+
+/* Sticky filter bar spanning the merged Dashboard tab: it narrows the same
+   bridges/culverts arrays feeding Overview, Visual Analytics and Cross
+   Analysis, so it stays pinned to the top of the scroll area (inside
+   .page-content) the whole way down through all three sections. */
+.modern-theme-root .dashboard-filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(17, 34, 70, 0.94), rgba(6, 14, 32, 0.97));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.modern-theme-root .dashboard-filter-bar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 36px;
+  color: var(--accent-cyan, #28e0ff);
+  flex-shrink: 0;
+}
+
+.modern-theme-root .dashboard-filter-field {
+  position: relative;
+  flex: 1 1 160px;
+  min-width: 150px;
+}
+
+.modern-theme-root .dashboard-filter-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: var(--transition-smooth);
+}
+
+.modern-theme-root .dashboard-filter-field.is-set .dashboard-filter-input-wrap {
+  border-color: rgba(40, 224, 255, 0.45);
+  background: rgba(40, 224, 255, 0.07);
+}
+
+.modern-theme-root .dashboard-filter-input-wrap.is-open {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-soft);
+}
+
+.modern-theme-root .dashboard-filter-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.modern-theme-root .dashboard-filter-input-wrap input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  padding: 0 30px 0 28px;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.modern-theme-root .dashboard-filter-input-wrap input:focus {
+  cursor: text;
+  outline: none;
+}
+
+.modern-theme-root .dashboard-filter-input-wrap input::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.modern-theme-root .dashboard-filter-chevron {
+  position: absolute;
+  right: 10px;
+  color: var(--accent-cyan, #28e0ff);
+  pointer-events: none;
+}
+
+.modern-theme-root .dashboard-filter-clear {
+  position: absolute;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.modern-theme-root .dashboard-filter-clear:hover {
+  background: rgba(255, 7, 58, 0.25);
+  color: #ff6b81;
+}
+
+.modern-theme-root .dashboard-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #0c1830;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  padding: 4px;
+}
+
+.modern-theme-root .dashboard-filter-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modern-theme-root .dashboard-filter-option-all {
+  color: var(--text-secondary);
+  font-style: italic;
+  border-bottom: 1px solid var(--border-light);
+  border-radius: 6px 6px 0 0;
+  margin-bottom: 2px;
+}
+
+.modern-theme-root .dashboard-filter-option.is-highlighted,
+.modern-theme-root .dashboard-filter-option:hover {
+  background: rgba(40, 224, 255, 0.14);
+  color: #fff;
+}
+
+.modern-theme-root .dashboard-filter-option.is-selected {
+  color: var(--accent-cyan, #28e0ff);
+  font-weight: 700;
+}
+
+.modern-theme-root .dashboard-filter-empty {
+  padding: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.modern-theme-root .dashboard-filter-bar-result {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.modern-theme-root .dashboard-filter-reset {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  background: rgba(255, 7, 58, 0.12);
+  border: 1px solid rgba(255, 7, 58, 0.4);
+  border-radius: var(--radius-md);
+  color: #ff6b81;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  white-space: nowrap;
+}
+
+.modern-theme-root .dashboard-filter-reset:hover {
+  background: rgba(255, 7, 58, 0.22);
 }
 
 .modern-theme-root .overview-grid {
@@ -1377,6 +1580,16 @@
 .modern-theme-root .page-content > * {
   width: 100%;
   min-height: 100%;
+  /* Without this, a tall tab's single direct child gets flex-shrunk down to
+     the viewport height instead of its natural content height (min-height:
+     100% only sets a floor -- it does not stop flex-shrink from collapsing
+     the box when the flex algorithm looks for space to reclaim). That
+     collapsed box is still painted correctly (overflow: visible), so it was
+     invisible until something depended on the box's real size -- e.g. a
+     position: sticky descendant, which unsticks the moment its containing
+     block's reported height scrolls out of view. flex-shrink: 0 makes the
+     used height equal max(content height, 100%) with no collapse. */
+  flex-shrink: 0;
 }
 
 .modern-theme-root .panel,

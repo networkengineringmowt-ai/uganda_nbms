@@ -364,16 +364,23 @@ function lineAreaOption(yearCounts, xName) {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export default function VisualAnalytics() {
-  const [bridges, setBridges] = useState([]);
-  const [culverts, setCulverts] = useState([]);
+export default function VisualAnalytics({ bridges: bridgesProp, culverts: culvertsProp }) {
+  // When a parent (e.g. the Dashboard filter bar) supplies bridges/culverts,
+  // those are used as-is -- including a legitimately empty, filtered-down
+  // array -- instead of self-fetching the full unfiltered registry.
+  const usingExternalData = bridgesProp !== undefined && culvertsProp !== undefined;
+  const [fetchedBridges, setFetchedBridges] = useState([]);
+  const [fetchedCulverts, setFetchedCulverts] = useState([]);
+  const bridges = usingExternalData ? bridgesProp : fetchedBridges;
+  const culverts = usingExternalData ? culvertsProp : fetchedCulverts;
 
   useEffect(() => {
+    if (usingExternalData) return;
     Promise.all([fetchBridges(), fetchCulverts()]).then(([b, c]) => {
-      setBridges(b);
-      setCulverts(c);
+      setFetchedBridges(b);
+      setFetchedCulverts(c);
     }).catch(console.error);
-  }, []);
+  }, [usingExternalData]);
 
   const regionStatsFor = (rows) => {
     const regions = sortedNonUnknownKeys(countBy(rows, 'Region'));
@@ -491,7 +498,7 @@ export default function VisualAnalytics() {
   const cBoxplot = useMemo(() => boxplotDataFor(culverts, 'CulvertLength'), [culverts]);
   const cTypeCounts = useMemo(() => countBy(culverts, 'CulvertType'), [culverts]);
 
-  if (!bridges.length || !culverts.length) {
+  if (!usingExternalData && (!bridges.length || !culverts.length)) {
     return <div className="page-loader"><div className="spinner" /><span>Rendering visual analytics…</span></div>;
   }
 

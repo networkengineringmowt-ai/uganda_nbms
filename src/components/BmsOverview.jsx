@@ -242,25 +242,40 @@ const CONDITION_CLASS = {
   Excellent: 'condition-good',
 };
 
-export default function BmsOverview({ onNavigate, onSelectAsset }) {
-  const [bridges, setBridges] = useState([]);
-  const [culverts, setCulverts] = useState([]);
+export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridgesProp, culverts: culvertsProp }) {
+  // When a parent (e.g. the Dashboard filter bar) supplies bridges/culverts,
+  // those are used as-is -- including a legitimately empty, filtered-down
+  // array -- instead of self-fetching the full unfiltered registry.
+  const usingExternalData = bridgesProp !== undefined && culvertsProp !== undefined;
+  const [fetchedBridges, setFetchedBridges] = useState([]);
+  const [fetchedCulverts, setFetchedCulverts] = useState([]);
+  const bridges = usingExternalData ? bridgesProp : fetchedBridges;
+  const culverts = usingExternalData ? culvertsProp : fetchedCulverts;
   const [analytics, setAnalytics] = useState(null);
   const [critical, setCritical] = useState([]);
 
   useEffect(() => {
-    Promise.all([
-      fetchBridges(),
-      fetchCulverts(),
+    const requests = [
       fetch(dataUrl('data/analytics.json')).then((response) => response.json()),
       fetch(dataUrl('data/critical_structures.json')).then((response) => response.json()),
-    ]).then(([bridgeRows, culvertRows, analyticsData, criticalRows]) => {
-      setBridges(bridgeRows);
-      setCulverts(culvertRows);
-      setAnalytics(analyticsData);
-      setCritical(criticalRows);
+    ];
+    if (!usingExternalData) {
+      requests.unshift(fetchBridges(), fetchCulverts());
+    }
+    Promise.all(requests).then((results) => {
+      if (usingExternalData) {
+        const [analyticsData, criticalRows] = results;
+        setAnalytics(analyticsData);
+        setCritical(criticalRows);
+      } else {
+        const [bridgeRows, culvertRows, analyticsData, criticalRows] = results;
+        setFetchedBridges(bridgeRows);
+        setFetchedCulverts(culvertRows);
+        setAnalytics(analyticsData);
+        setCritical(criticalRows);
+      }
     }).catch(console.error);
-  }, []);
+  }, [usingExternalData]);
 
   // Computed live from the fetched bridge register (bridges_by_region /
   // condition_overall in analytics.json can drift out of sync with the live
@@ -436,7 +451,7 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
     };
   }, [bridges, conditionOverall]);
 
-  if (!analytics || !bridges.length) {
+  if (!analytics) {
     return <div className="page-loader"><div className="spinner" /><span>Loading network status...</span></div>;
   }
 

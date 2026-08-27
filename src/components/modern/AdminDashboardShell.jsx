@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import DashboardNav from './DashboardNav';
 import PageUtilityBar from './PageUtilityBar';
 import { useTabHistory } from '../../utils/useTabHistory';
-import BmsOverview from '../BmsOverview';
+import FilteredDashboard from '../FilteredDashboard';
 import MapDashboard from '../MapDashboard';
 import StructureListPanel from '../StructureListPanel';
 import BridgeDetailCard from '../BridgeDetailCard';
@@ -11,8 +11,6 @@ import InspectionWorkspace from '../InspectionWorkspace';
 import MaintenanceWorkspace from '../MaintenanceWorkspace';
 import WorksDashboard from '../WorksDashboard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
-import VisualAnalytics from '../VisualAnalytics';
-import CrossAnalysis from '../CrossAnalysis';
 import BmsReports from '../BmsReports';
 import PhotoLibrary from '../PhotoLibrary';
 
@@ -80,17 +78,15 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
 
           {/* Dashboards */}
           {modernTab === 'overview' && (
-            <div className="dashboard-merged">
-              <BmsOverview
-                onNavigate={(tab) => setModernTab(tab)}
-                onSelectAsset={(asset) => {
-                  setSelectedBridge(asset);
-                  setModernTab('map');
-                }}
-              />
-              <VisualAnalytics />
-              <CrossAnalysis />
-            </div>
+            <FilteredDashboard
+              bridges={bridges}
+              culverts={culverts}
+              onNavigate={(tab) => setModernTab(tab)}
+              onSelectAsset={(asset) => {
+                setSelectedBridge(asset);
+                setModernTab('map');
+              }}
+            />
           )}
           {modernTab === 'map' && (
             <div className="modern-fullscreen-map">
