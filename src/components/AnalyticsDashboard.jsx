@@ -104,21 +104,28 @@ export default function AnalyticsDashboard() {
     fetchCulverts().then(setCulverts).catch(console.error);
   }, []);
 
+  // Regional coverage and condition distribution are computed live from the
+  // fetched bridge/culvert registers rather than the pre-baked analytics.json
+  // snapshot, which can drift out of sync as records are reclassified (traffic
+  // demand bands are confirmed to still match the live registry, so that one
+  // table keeps reading straight from the snapshot).
+  const bridgesByRegion = useMemo(() => countField(bridges, 'region'), [bridges]);
+  const conditionOverall = useMemo(() => countField(bridges, 'OverallCondition'), [bridges]);
+
   const metrics = useMemo(() => {
-    if (!data) return {};
-    const totalBridges = Object.values(data.bridges_by_region || {}).reduce((sum, value) => sum + value, 0);
-    const totalCulverts = Object.values(data.culverts_by_region || {}).reduce((sum, value) => sum + value, 0);
-    const poor = ['Beyond Repair', 'Critical', 'Very Poor', 'Poor'].reduce((sum, key) => sum + (data.condition_overall?.[key] || 0), 0);
-    const highTraffic = (data.traffic_bins?.['10,000 - 24,999'] || 0) + (data.traffic_bins?.['25,000+'] || 0);
+    const totalBridges = bridges.length;
+    const totalCulverts = culverts.length;
+    const poor = ['Beyond Repair', 'Critical', 'Very Poor', 'Poor'].reduce((sum, key) => sum + (conditionOverall[key] || 0), 0);
+    const highTraffic = (data?.traffic_bins?.['10,000 - 24,999'] || 0) + (data?.traffic_bins?.['25,000+'] || 0);
     return { totalBridges, totalCulverts, poor, highTraffic };
-  }, [data]);
+  }, [bridges, culverts, conditionOverall, data]);
 
   const categories = useMemo(() => Object.fromEntries(categoricalFields.map((field) => [
     field.id,
     countField(bridges, field.id, field.dictionary),
   ])), [bridges]);
 
-  if (!data) return <div className="page-loader"><div className="spinner" /><span>Preparing analytics...</span></div>;
+  if (!data || !bridges.length) return <div className="page-loader"><div className="spinner" /><span>Preparing analytics...</span></div>;
 
   return (
     <div className="analytics-layout">
@@ -134,9 +141,9 @@ export default function AnalyticsDashboard() {
       </section>
 
       <section className="analytics-grid tables">
-        <BreakdownTable kicker="Regional coverage" title="Bridges by Region" data={data.bridges_by_region} />
+        <BreakdownTable kicker="Regional coverage" title="Bridges by Region" data={bridgesByRegion} />
         <BreakdownTable kicker="Network demand" title="Traffic Demand Bands" data={data.traffic_bins} />
-        <BreakdownTable kicker="Condition distribution" title="Overall Bridge Condition" data={data.condition_overall} />
+        <BreakdownTable kicker="Condition distribution" title="Overall Bridge Condition" data={conditionOverall} />
         {categoricalFields.map((field) => (
           <BreakdownTable
             key={field.id}

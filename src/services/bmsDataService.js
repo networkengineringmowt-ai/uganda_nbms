@@ -18,6 +18,11 @@ const CONDITION_LABELS = [
 ];
 
 const conditionFromRating = (rating) => {
+  // Guard against null/undefined/empty-string coercing to 0 via Number(),
+  // which would silently mislabel unrated records (e.g. bridges still under
+  // construction, with no rating on file) as "Beyond Repair" -- the worst
+  // possible condition.
+  if (rating === null || rating === undefined || rating === '') return undefined;
   const numeric = Number(rating);
   return Number.isFinite(numeric) ? CONDITION_LABELS[Math.round(numeric)] : undefined;
 };

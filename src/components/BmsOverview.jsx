@@ -141,16 +141,20 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
     }).catch(console.error);
   }, []);
 
-  const metrics = useMemo(() => {
-    if (!analytics) return { rated: 0, poor: 0, averageAadt: 0 };
+  // Computed live from the fetched bridge register (bridges_by_region /
+  // condition_overall in analytics.json can drift out of sync with the live
+  // registry as records are reclassified — see analytics.json audit note).
+  const conditionOverall = useMemo(() => countChartField(bridges, 'OverallCondition'), [bridges]);
 
-    // Calculate rated and poor from analytics directly
-    const rated = Object.entries(analytics.condition_overall || {})
+  const metrics = useMemo(() => {
+    if (!bridges.length) return { rated: 0, poor: 0, averageAadt: 0 };
+
+    const rated = Object.entries(conditionOverall)
       .filter(([k]) => k !== 'Unknown')
       .reduce((sum, entry) => sum + entry[1], 0);
 
     const poor = ['Beyond Repair', 'Critical', 'Very Poor', 'Poor']
-      .reduce((sum, k) => sum + (analytics.condition_overall?.[k] || 0), 0);
+      .reduce((sum, k) => sum + (conditionOverall[k] || 0), 0);
 
     // Calculate traffic from top-level fields
     const traffic = bridges.filter((row) => Number(row.Traffic?.aadt_2026 ?? row.aadt_rebuilt_2026 ?? row.current_predicted_aadt) > 0);
@@ -159,7 +163,7 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
       : 0;
 
     return { rated, poor, averageAadt };
-  }, [bridges, analytics]);
+  }, [bridges, conditionOverall]);
 
   const trafficBins = analytics?.traffic_bins;
 
@@ -174,17 +178,18 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
   })), [bridges, critical]);
 
   const regionRows = useMemo(() => {
-    if (!analytics) return [];
-    const regions = new Set([...Object.keys(analytics.bridges_by_region || {}), ...Object.keys(analytics.culverts_by_region || {})]);
+    const bridgesByRegion = countChartField(bridges, 'Region');
+    const culvertsByRegion = countChartField(culverts, 'Region');
+    const regions = new Set([...Object.keys(bridgesByRegion), ...Object.keys(culvertsByRegion)]);
     return [...regions]
       .filter((region) => region !== 'Unknown')
       .map((region) => ({
         region,
-        bridges: analytics.bridges_by_region?.[region] || 0,
-        culverts: analytics.culverts_by_region?.[region] || 0,
+        bridges: bridgesByRegion[region] || 0,
+        culverts: culvertsByRegion[region] || 0,
       }))
       .sort((a, b) => (b.bridges + b.culverts) - (a.bridges + a.culverts));
-  }, [analytics]);
+  }, [bridges, culverts]);
 
   const stationRows = useMemo(() => {
     const stationMap = new Map();
@@ -223,10 +228,10 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
   }, [bridges, culverts]);
 
   const conditionChartOptions = useMemo(() => {
-    if (!analytics || !analytics.condition_overall) return {};
+    if (!bridges.length) return {};
     const data = CONDITION_ORDER.map(label => ({
       name: label,
-      value: analytics.condition_overall[label] || 0,
+      value: conditionOverall[label] || 0,
       itemStyle: {
         color: label === 'Beyond Repair' || label === 'Critical' || label === 'Very Poor' ? '#ef4444' :
                label === 'Poor' ? '#f97316' :
@@ -259,9 +264,9 @@ export default function BmsOverview({ onNavigate, onSelectAsset }) {
         }
       ]
     };
-  }, [analytics]);
+  }, [bridges, conditionOverall]);
 
-  if (!analytics) {
+  if (!analytics || !bridges.length) {
     return <div className="page-loader"><div className="spinner" /><span>Loading network status...</span></div>;
   }
 
