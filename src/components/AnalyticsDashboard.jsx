@@ -76,6 +76,73 @@ function BreakdownTable({ kicker, title, formula, data }) {
   );
 }
 
+// Two-dimensional surface type x functional road class cross-tab. Every row,
+// column, and cell is shown in full (no top-N cut, no "Other" bucket), with
+// row/column/grand totals so the numbers can be reconciled against the total
+// record count at a glance.
+function CrossTabTable({ kicker, title, rows, rowField, colField, unitLabel }) {
+  const { matrix, rowKeys, colKeys, rowTotals, colTotals, grandTotal } = useMemo(() => {
+    const matrix = {};
+    const rowTotals = {};
+    const colTotals = {};
+    let grandTotal = 0;
+    (rows || []).forEach((record) => {
+      const rowKey = fieldValue(record, rowField) || 'Unknown';
+      const colKey = fieldValue(record, colField) || 'Unknown';
+      matrix[rowKey] = matrix[rowKey] || {};
+      matrix[rowKey][colKey] = (matrix[rowKey][colKey] || 0) + 1;
+      rowTotals[rowKey] = (rowTotals[rowKey] || 0) + 1;
+      colTotals[colKey] = (colTotals[colKey] || 0) + 1;
+      grandTotal += 1;
+    });
+    return {
+      matrix,
+      rowKeys: Object.keys(rowTotals).sort(),
+      colKeys: Object.keys(colTotals).sort(),
+      rowTotals,
+      colTotals,
+      grandTotal,
+    };
+  }, [rows, rowField, colField]);
+
+  return (
+    <article className="panel glass-card">
+      <div className="panel-header">
+        <div>
+          <span className="panel-kicker">{kicker}</span>
+          <h2>{title}</h2>
+        </div>
+        <span className="stat-meta">{rowKeys.length} surface types × {colKeys.length} classes · {grandTotal.toLocaleString()} {unitLabel}</span>
+      </div>
+      <div className="crosstab-scroll">
+        <table className="crosstab-table">
+          <thead>
+            <tr>
+              <th>Surface type \ Functional class</th>
+              {colKeys.map((col) => <th key={col}>{col}</th>)}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rowKeys.map((row) => (
+              <tr key={row}>
+                <td className="crosstab-row-label">{row}</td>
+                {colKeys.map((col) => <td key={col}>{(matrix[row]?.[col] || 0).toLocaleString()}</td>)}
+                <td className="crosstab-total-cell">{rowTotals[row].toLocaleString()}</td>
+              </tr>
+            ))}
+            <tr className="crosstab-total-row">
+              <td className="crosstab-row-label">Total</td>
+              {colKeys.map((col) => <td key={col} className="crosstab-total-cell">{colTotals[col].toLocaleString()}</td>)}
+              <td className="crosstab-total-cell">{grandTotal.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  );
+}
+
 const BRIDGE_GROUP_FIELDS = [
   { key: 'region', label: 'Region' },
   { key: 'road_class', label: 'Road class' },
@@ -125,6 +192,14 @@ export default function AnalyticsDashboard() {
     countField(bridges, field.id, field.dictionary),
   ])), [bridges]);
 
+  // Bridges and culverts use different raw field names for the same two
+  // dimensions (surface_ty/road_class vs Surface_Type/Road_Class) — normalize
+  // to a common shape so the combined cross-tab covers every structure.
+  const combinedStructures = useMemo(() => ([
+    ...bridges.map((row) => ({ surface: fieldValue(row, 'surface_ty'), roadClass: fieldValue(row, 'road_class') })),
+    ...culverts.map((row) => ({ surface: fieldValue(row, 'Surface_Type'), roadClass: fieldValue(row, 'Road_Class') })),
+  ]), [bridges, culverts]);
+
   if (!data || !bridges.length) return <div className="page-loader"><div className="spinner" /><span>Preparing analytics...</span></div>;
 
   return (
@@ -152,6 +227,15 @@ export default function AnalyticsDashboard() {
             data={categories[field.id]}
           />
         ))}
+      </section>
+
+      <section className="category-explorer">
+        <div><span className="panel-kicker">Cross-tabulation</span><h2>Surface type × functional road class</h2></div>
+      </section>
+      <section className="analytics-grid tables">
+        <CrossTabTable kicker="Bridges" title="Bridges — Surface Type × Functional Class" rows={bridges} rowField="surface_ty" colField="road_class" unitLabel="bridges" />
+        <CrossTabTable kicker="Culverts" title="Culverts — Surface Type × Functional Class" rows={culverts} rowField="Surface_Type" colField="Road_Class" unitLabel="culverts" />
+        <CrossTabTable kicker="Bridges + Culverts" title="All Structures — Surface Type × Functional Class" rows={combinedStructures} rowField="surface" colField="roadClass" unitLabel="structures" />
       </section>
 
       <StatisticalAnalysis rows={bridges} label="Bridges" groupFields={BRIDGE_GROUP_FIELDS} />
