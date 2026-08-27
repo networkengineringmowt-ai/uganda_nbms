@@ -11,6 +11,7 @@ import InspectionWorkspace from '../InspectionWorkspace';
 import MaintenanceWorkspace from '../MaintenanceWorkspace';
 import InvestmentDashboard from '../InvestmentDashboard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
+import VisualAnalytics from '../VisualAnalytics';
 import BmsReports from '../BmsReports';
 import PhotoLibrary from '../PhotoLibrary';
 import CriticalStructures from './CriticalStructures';
@@ -46,13 +47,16 @@ export default function SuperDashboardShell({ bridges, culverts }) {
         <div ref={pageContentRef} className="page-content modern-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: modernTab === 'map' ? '0' : '12px 16px 0' }}>
           
           {modernTab === 'overview' && (
-            <BmsOverview 
-              onNavigate={(tab) => setModernTab(tab)} 
-              onSelectAsset={(asset) => {
-                setSelectedBridge(asset);
-                setModernTab('map');
-              }} 
-            />
+            <div className="dashboard-merged">
+              <BmsOverview
+                onNavigate={(tab) => setModernTab(tab)}
+                onSelectAsset={(asset) => {
+                  setSelectedBridge(asset);
+                  setModernTab('map');
+                }}
+              />
+              <VisualAnalytics />
+            </div>
           )}
           {modernTab === 'map' && (
             <div className="modern-fullscreen-map">

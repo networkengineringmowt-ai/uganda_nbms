@@ -11,6 +11,7 @@ import InspectionWorkspace from '../InspectionWorkspace';
 import MaintenanceWorkspace from '../MaintenanceWorkspace';
 import WorksDashboard from '../WorksDashboard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
+import VisualAnalytics from '../VisualAnalytics';
 import BmsReports from '../BmsReports';
 import PhotoLibrary from '../PhotoLibrary';
 
@@ -78,13 +79,16 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
 
           {/* Dashboards */}
           {modernTab === 'overview' && (
-            <BmsOverview 
-              onNavigate={(tab) => setModernTab(tab)} 
-              onSelectAsset={(asset) => {
-                setSelectedBridge(asset);
-                setModernTab('map');
-              }} 
-            />
+            <div className="dashboard-merged">
+              <BmsOverview
+                onNavigate={(tab) => setModernTab(tab)}
+                onSelectAsset={(asset) => {
+                  setSelectedBridge(asset);
+                  setModernTab('map');
+                }}
+              />
+              <VisualAnalytics />
+            </div>
           )}
           {modernTab === 'map' && (
             <div className="modern-fullscreen-map">

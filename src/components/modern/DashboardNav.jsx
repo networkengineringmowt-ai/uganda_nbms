@@ -30,7 +30,7 @@ import {
 const sectionDefinitions = [
   {
     id: 'overview',
-    label: 'Overview',
+    label: 'Dashboard',
     icon: Database,
     defaultTab: 'overview',
     groups: [],

@@ -25,68 +25,24 @@ import {
   getConditionLabel,
   getDictionaryLabel,
 } from '../utils/dataDictionary';
+import {
+  chartTextStyle,
+  NEON_AXIS,
+  chartColors,
+  hexToRgba,
+  neonItemStyle,
+  neonEmphasisStyle,
+  neonToolbox,
+  chartFieldValue,
+  countChartField as themeCountChartField,
+} from '../utils/chartTheme';
 
 // ── Categorical engineering-field charts (moved here from Analytics: charts
 //    belong on the dashboard/Overview; Analytics is tables + formulas) ──────
 // Neon palette: every bar/series gets a top-to-bottom gradient plus a
 // colour-matched glow (shadowBlur/shadowColor), brightening further on hover.
-const chartTextStyle = { color: '#e8fbff', fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 };
-const NEON_AXIS = '#28e0ff';
-const chartColors = [
-  '#00f5ff', // neon cyan
-  '#ff00e5', // neon magenta
-  '#39ff14', // neon green
-  '#ffea00', // neon yellow
-  '#ff5f1f', // neon orange
-  '#bc13fe', // neon purple
-  '#00ff9f', // neon mint
-  '#ff2079', // neon pink
-  '#0aefff', // neon blue
-  '#f8ff00', // neon lime
-  '#ff3860', // neon red-pink
-  '#7dff3d', // neon lime-green
-];
-
-const hexToRgba = (hex, alpha) => {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
-const neonItemStyle = (hex) => ({
-  color: {
-    type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-    colorStops: [
-      { offset: 0, color: hex },
-      { offset: 1, color: hexToRgba(hex, 0.28) },
-    ],
-  },
-  shadowBlur: 16,
-  shadowColor: hexToRgba(hex, 0.9),
-  borderRadius: [6, 6, 0, 0],
-});
-
-const neonEmphasisStyle = (hex) => ({
-  itemStyle: {
-    shadowBlur: 30,
-    shadowColor: hexToRgba(hex, 1),
-    color: hex,
-  },
-});
-
-const neonToolbox = {
-  right: 12,
-  top: 4,
-  iconStyle: { borderColor: NEON_AXIS },
-  emphasis: { iconStyle: { borderColor: '#fff' } },
-  feature: {
-    saveAsImage: { title: 'Save as image', backgroundColor: '#0b1224' },
-    dataView: { title: 'View data', readOnly: true, lang: ['Data view', 'Close', 'Refresh'] },
-    restore: { title: 'Reset zoom/view' },
-  },
-};
+// Shared with VisualAnalytics.jsx via src/utils/chartTheme.js so the look
+// stays cohesive as more chart types are added.
 
 // All categories are charted — no top-N truncation / "Other" bucket, per the
 // platform's no-selective-reporting rule. Wide charts (many categories) get
@@ -150,13 +106,7 @@ const bar2DOption = (rawData, xName) => {
   };
 };
 
-const chartFieldValue = (row, key) => row[key] ?? row.LegacyData?.[key];
-const countChartField = (rows, key, dictionary) => rows.reduce((counts, row) => {
-  const raw = chartFieldValue(row, key);
-  const chartLabel = dictionary ? getDictionaryLabel(dictionary, raw) : (raw || 'Unknown');
-  counts[chartLabel] = (counts[chartLabel] || 0) + 1;
-  return counts;
-}, {});
+const countChartField = (rows, key, dictionary) => themeCountChartField(rows, key, dictionary, getDictionaryLabel);
 
 const categoricalChartFields = [
   { id: 'type_bridge', label: 'Structural Type', dictionary: TYPE_BRIDGE },

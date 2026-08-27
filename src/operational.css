@@ -834,6 +834,17 @@
   gap: 24px;
 }
 
+/* Wraps merged multi-section tab content (e.g. Dashboard = Overview + Visual
+   Analytics) so `.page-content > *` only ever sees a single direct child --
+   otherwise each section would be flex-shrunk to share the viewport height
+   and their content would overflow on top of each other. */
+.modern-theme-root .dashboard-merged {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
 .modern-theme-root .overview-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
