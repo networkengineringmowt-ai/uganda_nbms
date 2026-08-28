@@ -35,6 +35,32 @@ function ChartCard({ kicker, title, note, height = 380, wide = false, option }) 
   );
 }
 
+function TableCard({ kicker, title, note, wide = false, columns, rows, emptyLabel = 'No records to show.' }) {
+  return (
+    <article className={`panel chart-panel glass-card${wide ? ' wide' : ''}`}>
+      <div className="panel-header">
+        <div><span className="panel-kicker">{kicker}</span><h2>{title}</h2></div>
+      </div>
+      {note && <p className="stat-formula-note">{note}</p>}
+      <div className="data-table-container" style={{ maxHeight: 320, overflowY: 'auto' }}>
+        <table className="data-table">
+          <thead>
+            <tr>{columns.map((c) => <th key={c}>{c}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={columns.length}>{emptyLabel}</td></tr>
+            )}
+            {rows.map((row, i) => (
+              <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  );
+}
+
 // ── Chart option builders ────────────────────────────────────────────────────
 
 function barOption(categories, values, { yName = 'Count', rotate = 0, colorFn } = {}) {
@@ -358,6 +384,28 @@ export default function HistoricalDeteriorationAnalysis({ bridges = [], culverts
     return avgRankByBucket(withYears, YEARS_SINCE_BUCKETS, (r) => yearsSinceBucket(r.yearsSince), effectiveRating);
   }, [bMerged]);
 
+  // A separate, independently-dated field re-inspection (2021-2025) of a subset
+  // of bridges flagged for closer attention. Kept entirely apart from
+  // prior_overall_rating (the 2015/2022 archive) rather than merged into it --
+  // the two sources sometimes disagree on the same bridge on overlapping
+  // dates, and blending them would silently pick a winner. Reported here as
+  // its own labeled source instead. The source's Inspector field is never
+  // read into this app.
+  const bCritical = useMemo(() => {
+    const flagged = bMerged
+      .map((r) => ({ bridgeNo: r.bridge_no || r.BridgeNumber, flag: r.hist?.critical_structures_flag }))
+      .filter((r) => r.flag);
+    const categoryCounts = {};
+    flagged.forEach(({ flag }) => {
+      const cat = flag.condition_category || 'Unknown';
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    });
+    const withRemarks = flagged
+      .filter(({ flag }) => flag.remarks)
+      .sort((a, b) => (b.flag.date || '').localeCompare(a.flag.date || ''));
+    return { total: flagged.length, categoryCounts, withRemarks };
+  }, [bMerged]);
+
   // ── Culverts: current-vs-2022 comparison ─────────────────────────────────
   const cMerged = useMemo(() => {
     if (!culvertHist) return [];
@@ -486,7 +534,9 @@ export default function HistoricalDeteriorationAnalysis({ bridges = [], culverts
           record; {bCoverage.withPriorRating.toLocaleString()} have both a prior and current condition rating (enabling a
           real before/after comparison), and {bCoverage.withAge.toLocaleString()} have a genuine recovered construction
           year. Where a bridge has no current condition rating on file, its most recent recorded rating — from the
-          historical archive — is reported as its current condition.
+          historical archive — is reported as its current condition. A further, independently-dated field
+          re-inspection (2021–2025) of {bCritical.total.toLocaleString()} flagged bridges is reported separately below,
+          rather than merged into the 2015/2022 archive figures above.
         </p>
       </section>
       <section className="analytics-grid">
@@ -555,6 +605,20 @@ export default function HistoricalDeteriorationAnalysis({ bridges = [], culverts
           kicker="Coverage"
           title="Bridges — Historical Record Match Coverage"
           option={donutOption({ 'Has recovered age': bCoverage.withAge, 'Has prior rating only': Math.max(0, bCoverage.withHist - bCoverage.withAge), 'No historical match': bCoverage.total - bCoverage.withHist }, `n=${bCoverage.total}`)}
+        />
+        <ChartCard
+          kicker="Field re-inspection"
+          title="Bridges — Critical-Structures Field Re-Inspection Condition Mix"
+          option={donutOption(bCritical.categoryCounts, `n=${bCritical.total}`)}
+          note="A separate, independently-dated 2021–2025 field re-inspection of a subset of bridges flagged for closer attention. Kept apart from the 2015/2022 archive ratings above rather than merged, since the two sources sometimes disagree for the same bridge on overlapping dates."
+        />
+        <TableCard
+          kicker="Field re-inspection"
+          title="Bridges — Flagged Remarks from Critical-Structures Re-Inspection"
+          note={`${bCritical.withRemarks.length.toLocaleString()} of the ${bCritical.total.toLocaleString()} re-inspected bridges carry a written field remark; the rest were re-inspected with a rating only.`}
+          columns={['Bridge No.', 'Date', 'Condition', 'Remark']}
+          rows={bCritical.withRemarks.map((r) => [r.bridgeNo, r.flag.date || 'n/a', r.flag.condition_category || 'Unknown', r.flag.remarks])}
+          wide
         />
       </section>
 
