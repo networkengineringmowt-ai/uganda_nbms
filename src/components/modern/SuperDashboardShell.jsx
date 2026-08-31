@@ -54,6 +54,9 @@ export default function SuperDashboardShell({ bridges, culverts }) {
                 setSelectedBridge(asset);
                 setModernTab('map');
               }}
+              onBack={handleBack}
+              canGoBack={canGoBack || Boolean(selectedBridge)}
+              scrollTargetRef={pageContentRef}
             />
           )}
           {modernTab === 'map' && (
@@ -112,13 +115,15 @@ export default function SuperDashboardShell({ bridges, culverts }) {
             />
           )}
         </div>
-        <PageUtilityBar
-          onBack={handleBack}
-          canGoBack={canGoBack || Boolean(selectedBridge)}
-          scrollTargetRef={pageContentRef}
-          bridges={bridges}
-          culverts={culverts}
-        />
+        {modernTab !== 'overview' && (
+          <PageUtilityBar
+            onBack={handleBack}
+            canGoBack={canGoBack || Boolean(selectedBridge)}
+            scrollTargetRef={pageContentRef}
+            bridges={bridges}
+            culverts={culverts}
+          />
+        )}
       </main>
     </div>
   );

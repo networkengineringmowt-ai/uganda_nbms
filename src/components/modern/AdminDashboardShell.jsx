@@ -86,6 +86,9 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
                 setSelectedBridge(asset);
                 setModernTab('map');
               }}
+              onBack={handleBack}
+              canGoBack={canGoBack || Boolean(selectedBridge)}
+              scrollTargetRef={pageContentRef}
             />
           )}
           {modernTab === 'map' && (
@@ -133,13 +136,15 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
           {modernTab === 'bms_users' && <UserManagement onNavigate={(tab) => setModernTab(tab)} />}
           {modernTab === 'login_tracking' && <LoginTracking />}
         </div>
-        <PageUtilityBar
-          onBack={handleBack}
-          canGoBack={canGoBack || Boolean(selectedBridge)}
-          scrollTargetRef={pageContentRef}
-          bridges={bridges}
-          culverts={culverts}
-        />
+        {modernTab !== 'overview' && (
+          <PageUtilityBar
+            onBack={handleBack}
+            canGoBack={canGoBack || Boolean(selectedBridge)}
+            scrollTargetRef={pageContentRef}
+            bridges={bridges}
+            culverts={culverts}
+          />
+        )}
       </main>
     </div>
   );
