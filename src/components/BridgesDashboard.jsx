@@ -86,7 +86,6 @@ export default function BridgesDashboard({ initialBridges = [] }) {
         const rating = row.OverallConditionRating ?? row.LegacyData?.overall_rating ?? row.overall_rating;
         return rating != null ? getConditionLabel(rating) : 'Unknown';
     }),
-    { header: 'Inspector', cell: (row) => row.LegacyData?.inspector || row.inspector || 'Unknown' },
     { header: 'Date Modified', cell: (row) => row.DateModified || row.LegacyData?.date_modified || row.date_modified || 'Unknown' },
     { header: 'Engineering Comment', cell: (row) => row.LegacyData?.comment || row.comment || 'None' },
   ];

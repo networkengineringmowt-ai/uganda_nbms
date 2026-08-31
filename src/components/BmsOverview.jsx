@@ -504,7 +504,6 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
                 <strong>{row.region}</strong>
                 <span>{row.bridges} bridges</span>
                 <span>{row.culverts} culverts</span>
-                <b>{row.bridges + row.culverts}</b>
               </div>
             ))}
           </div>
@@ -521,7 +520,6 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
                 <strong>{row.station}</strong>
                 <span>{row.bridges} bridges</span>
                 <span>{row.culverts} culverts</span>
-                <b>{row.bridges + row.culverts}</b>
               </div>
             ))}
           </div>
@@ -536,7 +534,6 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
                 <strong style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }} title={row.road}>{row.road}</strong>
                 <span>{row.bridges} bridges</span>
                 <span>{row.culverts} culverts</span>
-                <b>{row.bridges + row.culverts}</b>
               </div>
             ))}
           </div>

@@ -63,7 +63,6 @@ export default function CulvertsDashboard({ initialCulverts = [] }) {
     { header: 'Km', cell: (row) => row.Km || row.km || 'Unknown' },
     { header: 'Region', cell: (row) => row.Region || row.Maintenance_Region || row.region || 'Unknown' },
     { header: 'Firm', cell: (row) => row.Firm || row.firm || 'Unknown' },
-    { header: 'Checked By', cell: (row) => row.CheckedBy || row.inspector || 'Unknown' },
     { header: 'Cells / Pipes', cell: (row) => row.NoOfPipesOrCells || row.LegacyData?.no_of_pipes || row.no_of_pipes || 'Unknown' },
     { header: 'Span / Diameter', cell: (row) => row.SpanOrDiameter || row.LegacyData?.span_diameter || row.span_diameter || 'Unknown' },
     { header: 'Length (m)', cell: (row) => row['Overall Length'] || row.LegacyData?.culvert_len || row.culvert_len || 'Unknown' },
