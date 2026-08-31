@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { AlertTriangle, MapPin, Camera } from 'lucide-react';
 import { calculateBridgeDeficiencyIndex } from '../../utils/bmsAlgorithms';
+import { onPhotoError } from '../../utils/photoUrlResolver';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 
@@ -68,7 +69,7 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
             <div key={b.BridgeNumber} onClick={() => onSelectBridge && onSelectBridge(b)} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
               <div style={{ height: '180px', background: '#111827', position: 'relative' }}>
                 {photoUrl ? (
-                  <img src={photoUrl} alt="evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={photoUrl} alt="evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={onPhotoError} />
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#475569' }}><Camera size={32} /></div>
                 )}
@@ -92,7 +93,7 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
             <div key={c.CulvertNumber} onClick={() => onSelectBridge && onSelectBridge({ ...c, _structureType: 'culvert' })} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
               <div style={{ height: '180px', background: '#111827', position: 'relative' }}>
                 {photoUrl ? (
-                  <img src={photoUrl} alt="evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={photoUrl} alt="evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={onPhotoError} />
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#475569' }}><Camera size={32} /></div>
                 )}
