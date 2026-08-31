@@ -437,45 +437,6 @@ export default function CrossAnalysis({ bridges: bridgesProp, culverts: culverts
   ]), [bridges]);
   const bPareto = useMemo(() => Object.entries(countBy(bridges, 'road_class')).filter(([k]) => k !== 'Unknown').sort((a, b) => b[1] - a[1]), [bridges]);
   const bPictorial = useMemo(() => countBy(bridges, 'Region'), [bridges]);
-  const bThemeRiver = useMemo(() => {
-    const YEARS = ['2021', '2022', '2023'];
-    const regions = sortedNonUnknownKeys(countBy(bridges, 'Region'));
-    const data = [];
-    let excluded = 0;
-    bridges.forEach((r) => {
-      const raw = r.date_modified;
-      if (!raw) { excluded += 1; return; }
-      const d = String(raw).slice(0, 10);
-      const year = d.slice(0, 4);
-      const region = chartFieldValue(r, 'Region') || 'Unknown';
-      if (!YEARS.includes(year) || region === 'Unknown' || !/^\d{4}-\d{2}-\d{2}$/.test(d)) { excluded += 1; return; }
-      data.push([`${year}-01-01`, 1, region]);
-    });
-    // Aggregate per year-region into a single point per year (themeRiver needs discrete date points; using Jan 1 buckets per year keeps this a real per-year flow)
-    const agg = {};
-    data.forEach(([date, , name]) => {
-      const key = `${date}|${name}`;
-      agg[key] = (agg[key] || 0) + 1;
-    });
-    const points = Object.entries(agg).map(([key, value]) => {
-      const [date, name] = key.split('|');
-      return [date, value, name];
-    });
-    return { points, legendNames: regions, excluded };
-  }, [bridges]);
-  const bCalendar = useMemo(() => {
-    const counts = {};
-    let inRange = 0, outOfRange = 0, noDate = 0;
-    bridges.forEach((r) => {
-      if (!r.date_modified) { noDate += 1; return; }
-      const d = String(r.date_modified).slice(0, 10);
-      const year = Number(d.slice(0, 4));
-      if (year >= 2021 && year <= 2023 && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
-        counts[d] = (counts[d] || 0) + 1; inRange += 1;
-      } else outOfRange += 1;
-    });
-    return { counts, inRange, outOfRange, noDate };
-  }, [bridges]);
 
   // ── Culverts derived cross-analysis data ─────────────────────────────────
   const cSunburst = useMemo(() => sunburstDataFor(culverts, 'Road_Class'), [culverts]);
@@ -544,21 +505,6 @@ export default function CrossAnalysis({ bridges: bridgesProp, culverts: culverts
         />
         <ChartCard kicker="Ranked contribution" title="Bridges — Road Class Pareto" option={paretoOption(bPareto)} />
         <ChartCard kicker="Regional coverage" title="Bridges per Region (unit chart)" option={pictorialBarOption(bPictorial, 'Region')} />
-        <ChartCard
-          kicker="Time × region flow"
-          title="Bridges — Record Capture Flow by Year & Region"
-          note={`Records with a valid modification date in 2021–2023 only (${bThemeRiver.excluded.toLocaleString()} record(s) outside this range or missing a date excluded).`}
-          option={themeRiverOption(bThemeRiver.points, bThemeRiver.legendNames)}
-          wide
-        />
-        <ChartCard
-          kicker="Data capture calendar"
-          title="Bridges — Records Modified by Day (2021–2023)"
-          note={`${bCalendar.inRange.toLocaleString()} of ${bridges.length.toLocaleString()} records fall in 2021–2023 (${bCalendar.outOfRange.toLocaleString()} outside this range, ${bCalendar.noDate.toLocaleString()} with no date on file — both excluded from the calendar).`}
-          option={calendarOption(bCalendar.counts, ['2021', '2022', '2023'])}
-          wide
-          height={470}
-        />
       </section>
 
       <section className="category-explorer">

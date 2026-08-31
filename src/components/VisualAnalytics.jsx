@@ -463,18 +463,6 @@ export default function VisualAnalytics({ bridges: bridgesProp, culverts: culver
   const bHeatmap = useMemo(() => heatmapDataFor(bridges), [bridges]);
   const bBoxplot = useMemo(() => boxplotDataFor(bridges, 'length'), [bridges]);
   const bTrafficBands = useMemo(() => trafficBandsFor(bridges), [bridges]);
-  const bYearCounts = useMemo(() => {
-    const counts = {};
-    let excluded = 0;
-    bridges.forEach((r) => {
-      const raw = r.date_modified || r.LegacyData?.date_modified;
-      const year = raw ? String(raw).slice(0, 4) : null;
-      const num = Number(year);
-      if (year && num >= 2000 && num <= 2030) counts[year] = (counts[year] || 0) + 1;
-      else excluded += 1;
-    });
-    return { counts, excluded };
-  }, [bridges]);
 
   // ── Culvert derived data ──────────────────────────────────────────────────
   const cConditionCounts = useMemo(() => countBy(culverts, 'OverallCondition'), [culverts]);
@@ -528,12 +516,6 @@ export default function VisualAnalytics({ bridges: bridgesProp, culverts: culver
           option={boxplotOption(bBoxplot.regions, bBoxplot.boxData)}
         />
         <ChartCard kicker="Network demand" title="Bridges — Traffic Demand Bands" option={roseOption(bTrafficBands)} />
-        <ChartCard
-          kicker="Data quality trend"
-          title="Bridges — Records by Year Modified"
-          note={bYearCounts.excluded ? `${bYearCounts.excluded.toLocaleString()} record(s) excluded: no valid modification date on file.` : undefined}
-          option={lineAreaOption(bYearCounts.counts, 'Year')}
-        />
       </section>
 
       <section className="category-explorer">

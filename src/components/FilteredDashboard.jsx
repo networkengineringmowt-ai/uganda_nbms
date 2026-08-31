@@ -13,7 +13,7 @@ import { DEFAULT_DASHBOARD_FILTERS, applyDashboardFilters } from '../utils/dashb
 // three sections -- reads from that same filtered pair, so nothing ever
 // shows a stat computed from a different slice of the register than the
 // bar currently displays.
-export default function FilteredDashboard({ bridges = [], culverts = [], onNavigate, onSelectAsset }) {
+export default function FilteredDashboard({ bridges = [], culverts = [], onNavigate, onSelectAsset, onBack, canGoBack, scrollTargetRef }) {
   const [filters, setFilters] = useState(DEFAULT_DASHBOARD_FILTERS);
 
   const { filteredBridges, filteredCulverts } = useMemo(
@@ -33,6 +33,9 @@ export default function FilteredDashboard({ bridges = [], culverts = [], onNavig
         onChange={handleChange}
         onReset={handleReset}
         resultCount={{ bridges: filteredBridges.length, culverts: filteredCulverts.length }}
+        onBack={onBack}
+        canGoBack={canGoBack}
+        scrollTargetRef={scrollTargetRef}
       />
       <BmsOverview
         bridges={filteredBridges}
