@@ -2,6 +2,14 @@ import { getCulvertTypeLabel } from '../utils/dataDictionary';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const LOCAL_API_URL = (import.meta.env.VITE_LOCAL_BMS_API || 'http://localhost:3001/api').replace(/\/+$/, '');
+// The Local Drive server only ever runs on the same machine as the browser (an
+// office deployment). On the public GitHub Pages site there is nothing
+// listening on this visitor's own localhost, so attempting it there does
+// nothing but throw a connection-refused error into every visitor's console
+// on every page load. Only attempt it when the app is actually being loaded
+// from localhost -- everyone else goes straight to the bundled JSON.
+const LOCAL_API_AVAILABLE = typeof window !== 'undefined'
+  && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
 const CONDITION_LABELS = [
@@ -137,6 +145,9 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
 // Supabase is completely removed in favor of Local Drive backend
 
 async function upsertLocalRecord(kind, record) {
+  if (!LOCAL_API_AVAILABLE) {
+    throw new Error('The Local Drive server is only reachable from the office deployment, not from this public site.');
+  }
   return fetchWithTimeout(`${LOCAL_API_URL}/${kind}/upsert`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -145,25 +156,29 @@ async function upsertLocalRecord(kind, record) {
 }
 
 async function loadDataset(table, fallbackPath, normalize = (row) => row) {
-  try {
-    const rows = await fetchWithTimeout(`${LOCAL_API_URL}/${table}`);
-    if (rows && rows.length) return rows.map(normalize);
-  } catch (error) {
-    console.warn(`Using bundled ${fallbackPath} because local server ${table} failed:`, error.message);
+  if (LOCAL_API_AVAILABLE) {
+    try {
+      const rows = await fetchWithTimeout(`${LOCAL_API_URL}/${table}`);
+      if (rows && rows.length) return rows.map(normalize);
+    } catch (error) {
+      console.warn(`Using bundled ${fallbackPath} because local server ${table} failed:`, error.message);
+    }
   }
   const rows = await fetchJson(fallbackPath);
   return Array.isArray(rows) ? rows.map(normalize) : rows;
 }
 
 async function loadRecord(table, fallbackPath, idField, id, normalize = (row) => row) {
-  try {
-    const rows = await fetchWithTimeout(`${LOCAL_API_URL}/${table}`);
-    if (rows) {
-      const row = rows.find((r) => r[idField] === id);
-      if (row) return normalize(row);
+  if (LOCAL_API_AVAILABLE) {
+    try {
+      const rows = await fetchWithTimeout(`${LOCAL_API_URL}/${table}`);
+      if (rows) {
+        const row = rows.find((r) => r[idField] === id);
+        if (row) return normalize(row);
+      }
+    } catch (error) {
+      console.warn(`Using bundled ${fallbackPath} for ${id} because local server failed:`, error.message);
     }
-  } catch (error) {
-    console.warn(`Using bundled ${fallbackPath} for ${id} because local server failed:`, error.message);
   }
 
   const rows = (await fetchJson(fallbackPath)).map(normalize);
@@ -191,6 +206,7 @@ export function fetchCulvertByNumber(culvertNumber) {
 }
 
 export async function fetchDocuments(page = 0, limit = 50) {
+  if (!LOCAL_API_AVAILABLE) return [];
   try {
     return await fetchWithTimeout(`${LOCAL_API_URL}/documents/paginated?page=${page}&limit=${limit}`, {}, 5000) || [];
   } catch (err) {
@@ -200,6 +216,7 @@ export async function fetchDocuments(page = 0, limit = 50) {
 }
 
 export async function fetchDocumentPhotos(page = 0, limit = 50) {
+  if (!LOCAL_API_AVAILABLE) return [];
   try {
     return await fetchWithTimeout(`${LOCAL_API_URL}/document_photos/paginated?page=${page}&limit=${limit}`, {}, 5000) || [];
   } catch (err) {
