@@ -64,7 +64,7 @@ export default function EvidenceTimeline({ photos = [], structureId, compact = f
               key={`${photo.filename}-${index}`}
               className={index === safeIndex ? 'active' : ''}
               onClick={() => setActiveIndex(index)}
-              title={photo.filename}
+              title={`Photo ${photo.sequence || index + 1}`}
             >
               <img src={getPhotoUrl(photo)} alt="" loading="lazy" onError={onPhotoError} />
               <span>{photo.sequence || index + 1}</span>

@@ -363,14 +363,26 @@ export default function HistoricalDeteriorationAnalysis({ bridges = [], culverts
     return { cats, priorAvgs, curAvgs };
   }, [bMerged]);
 
+  // year_compl is charted separately (construction-era timeline above), and
+  // weight_load_restr has no maintained value dictionary on this platform --
+  // it is never surfaced anywhere, including here as a bare field name.
+  const RECOVERED_FIELDS_EXCLUDED = new Set(['year_compl', 'weight_load_restr']);
+  // Raw archive column names (e.g. "type_abutment_l") are never shown to a
+  // public viewer -- humanize to a plain-language label for display only;
+  // counting still keys off the original field name.
+  const humanizeFieldName = (key) => key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
   const bRecoveredFields = useMemo(() => {
     const counts = {};
     bMerged.forEach((r) => {
       const lb = r.hist?.legacy_backfill;
       if (!lb) return;
-      Object.keys(lb).forEach((k) => { if (k !== 'year_compl') counts[k] = (counts[k] || 0) + 1; });
+      Object.keys(lb).forEach((k) => { if (!RECOVERED_FIELDS_EXCLUDED.has(k)) counts[k] = (counts[k] || 0) + 1; });
     });
-    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12);
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12)
+      .map(([k, v]) => [humanizeFieldName(k), v]);
     return entries;
   }, [bMerged]);
 

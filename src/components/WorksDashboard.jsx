@@ -24,10 +24,14 @@ export default function WorksDashboard() {
     fetch(dataUrl('data/bridge_works.json'))
       .then(r => r.json())
       .then(data => {
-        // Attach coords
+        // Attach coords -- only when the site is actually known. Falling
+        // back to a fixed point (Uganda's geographic center) would stack
+        // every unmatched contract on top of each other at a location that
+        // has nothing to do with the real site, so those contracts are kept
+        // in the list pane (which needs no coordinate) but never plotted.
         const withCoords = data.map(w => ({
           ...w,
-          coords: WORKS_COORDS[w.bridge] || [1.3733, 32.2903] // Default to center of Uganda if unknown
+          coords: WORKS_COORDS[w.bridge] || null,
         }));
         setWorks(withCoords);
       })
@@ -43,6 +47,8 @@ export default function WorksDashboard() {
           .catch(console.error);
       });
   }, []);
+
+  const mappedWorks = works.filter((w) => w.coords);
 
   if (!works.length) return (
     <div className="loader-container">
@@ -81,7 +87,7 @@ export default function WorksDashboard() {
           )}
           <ZoomControl position="bottomleft" />
           
-          {works.map((work, i) => (
+          {mappedWorks.map((work, i) => (
             <CircleMarker
               key={i}
               center={work.coords}
@@ -115,7 +121,7 @@ export default function WorksDashboard() {
             Active Work Sites
           </h3>
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-            Map shows {works.length} structures currently under maintenance, rehabilitation, or emergency construction.
+            {mappedWorks.length} of {works.length} active contracts have a mapped site location. All {works.length} are listed alongside.
           </p>
         </div>
 

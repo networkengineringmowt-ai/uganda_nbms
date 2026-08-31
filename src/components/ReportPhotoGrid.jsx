@@ -40,7 +40,6 @@ export default function ReportPhotoGrid({ photos = [], structureId, compact = fa
                   {photo.capture_year ? `Inspection ${photo.capture_year}` : 'Inspection year not recorded'}
                   {' | '}Photo {index + 1} of {orderedPhotos.length}
                 </span>
-                <small title={photo.filename}>{photo.filename || 'Source filename unavailable'}</small>
               </figcaption>
             </figure>
           ))}

@@ -460,9 +460,15 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
       <section className="kpi-grid" aria-label="Network summary">
         <article className="kpi-card">
           <div className="kpi-icon blue"><Landmark size={21} /></div>
-          <span className="kpi-eyebrow">Structure register</span>
-          <strong>{(bridges.length + culverts.length).toLocaleString()}</strong>
-          <p>{bridges.length} bridges and {culverts.length} major culverts</p>
+          <span className="kpi-eyebrow">Bridge register</span>
+          <strong>{bridges.length.toLocaleString()}</strong>
+          <p>Bridges in the national inventory</p>
+        </article>
+        <article className="kpi-card">
+          <div className="kpi-icon blue"><Landmark size={21} /></div>
+          <span className="kpi-eyebrow">Culvert register</span>
+          <strong>{culverts.length.toLocaleString()}</strong>
+          <p>Major culverts in the national inventory</p>
         </article>
         <article className="kpi-card">
           <div className="kpi-icon red"><AlertTriangle size={21} /></div>

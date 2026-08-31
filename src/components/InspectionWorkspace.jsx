@@ -10,11 +10,13 @@ export default function InspectionWorkspace({ bridges, onBridgesUpdate }) {
       const rating = row.LegacyData?.overall_rating ?? row.OverallConditionRating;
       return rating != null && Number(rating) <= 3;
     });
-    const latest = [...bridges]
-      .filter((row) => row.DateModified)
-      .sort((a, b) => String(b.DateModified).localeCompare(String(a.DateModified)))
+    // Structure counts only -- this platform does not report on individual
+    // record activity/edit history, so this list is ranked by condition
+    // severity (worst first), never by when a record was last modified.
+    const needsAttention = [...critical]
+      .sort((a, b) => Number(a.LegacyData?.overall_rating ?? a.OverallConditionRating ?? 99) - Number(b.LegacyData?.overall_rating ?? b.OverallConditionRating ?? 99))
       .slice(0, 7);
-    return { rated, review, critical, latest };
+    return { rated, review, critical, needsAttention };
   }, [bridges]);
 
   return (
@@ -31,11 +33,11 @@ export default function InspectionWorkspace({ bridges, onBridgesUpdate }) {
           <BridgeInspectionForm bridges={bridges} onBridgesUpdate={onBridgesUpdate} />
         </div>
         <aside className="panel recent-inspections">
-          <div className="panel-header"><div><span className="panel-kicker">Register activity</span><h2>Recently updated</h2></div></div>
-          {metrics.latest.map((row) => (
+          <div className="panel-header"><div><span className="panel-kicker">Register activity</span><h2>Needs attention</h2></div></div>
+          {metrics.needsAttention.map((row) => (
             <div className="recent-row" key={row.BridgeNumber}>
               <CheckCircle2 size={16} />
-              <span><strong>{row.BridgeNumber} - {row.BridgeName || 'Unnamed bridge'}</strong><small>{row.DateModified} - {row.Station || 'Station unassigned'}</small></span>
+              <span><strong>{row.BridgeNumber} - {row.BridgeName || 'Unnamed bridge'}</strong><small>{row.Station || 'Station unassigned'}</small></span>
             </div>
           ))}
         </aside>

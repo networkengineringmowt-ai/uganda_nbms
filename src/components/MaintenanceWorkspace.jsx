@@ -11,19 +11,34 @@ const conditionClass = (value) => {
   return 'condition-watch';
 };
 
+// bridge_works.json's contractor_consultant field is free text that always
+// embeds named individuals ("Project Manager: <name>", "Project Engineer(s):
+// <name>") alongside the organisational lines ("Contractor", "Consultant",
+// "Supervisor"). This platform never surfaces individual/staff names, so
+// only the organisational blocks are kept for display.
+const PERSONNEL_LABEL_RE = /^project (manager|engineer)s?\s*:?\s*$/i;
+const stripPersonnelNames = (text) => {
+  if (!text) return text;
+  return text
+    .split(/\n\s*\n/)
+    .filter((block) => !PERSONNEL_LABEL_RE.test(block.split('\n')[0].trim()))
+    .join('\n\n')
+    .trim();
+};
+
 export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
   const [critical, setCritical] = useState([]);
-  const [work, setWork] = useState(null);
+  const [works, setWorks] = useState([]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All');
 
   useEffect(() => {
     Promise.all([
       fetch(dataUrl('data/critical_structures.json')).then((response) => response.json()),
-      fetch(dataUrl('data/bridge_works.json')).then((response) => response.json()).catch(() => null),
-    ]).then(([priorityRows, workRow]) => {
+      fetch(dataUrl('data/bridge_works.json')).then((response) => response.json()).catch(() => []),
+    ]).then(([priorityRows, workRows]) => {
       setCritical(priorityRows);
-      setWork(workRow);
+      setWorks(Array.isArray(workRows) ? workRows : []);
     }).catch(console.error);
   }, []);
 
@@ -67,16 +82,16 @@ export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
         </div>
       </section>
 
-      {work && (
-        <section className="panel active-work-panel">
+      {works.map((work, index) => (
+        <section className="panel active-work-panel" key={`${work.bridge}-${index}`}>
           <div className="panel-header"><div><span className="panel-kicker">Active contract</span><h2>{work.bridge}</h2></div><span className="programme-badge">{work.funder || 'GOU'}</span></div>
           <div className="active-work-grid">
-            <div><span>Contract team</span><p>{work.contractor_consultant}</p></div>
+            <div><span>Contract team</span><p>{stripPersonnelNames(work.contractor_consultant)}</p></div>
             <div><span>Financial status</span><p>{work.financial_status}</p></div>
             <div><span>Progress and constraints</span><p>{work.status}</p></div>
           </div>
         </section>
-      )}
+      ))}
     </div>
   );
 }
