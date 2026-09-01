@@ -1012,6 +1012,11 @@
   font-weight: bold;
 }
 
+.status-indicator.offline {
+  color: #64748b;
+  font-weight: bold;
+}
+
 /* --- Contextual Sections --- */
 .pane-section {
   display: flex;
