@@ -1,4 +1,5 @@
 import { getCulvertTypeLabel } from '../utils/dataDictionary';
+import { supabase } from './supabaseClient';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const LOCAL_API_URL = (import.meta.env.VITE_LOCAL_BMS_API || 'http://localhost:3001/api').replace(/\/+$/, '');
@@ -142,7 +143,38 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
   }
 }
 
-// Supabase is completely removed in favor of Local Drive backend
+// Live database read path. Table names below match supabase/nbms_schema.sql.
+// Each row stores the full original record in a `raw` jsonb column plus a
+// handful of indexed columns for fast filtering -- fetching `raw` and
+// running it through the same normalize() used for the bundled JSON means
+// the rest of the app doesn't need to know whether a record came from the
+// database or from public/data/*.json.
+const SUPABASE_TABLES = {
+  bridges: 'nbms_bridges',
+  culverts: 'nbms_culverts',
+  bridge_works: 'nbms_bridge_works',
+};
+
+async function fetchFromSupabase(table) {
+  if (!supabase) return null;
+  const supabaseTable = SUPABASE_TABLES[table];
+  if (!supabaseTable) return null;
+  const { data, error } = await supabase.from(supabaseTable).select('raw');
+  if (error) {
+    console.warn(`Supabase query for ${supabaseTable} failed, falling back:`, error.message);
+    return null;
+  }
+  if (!data || !data.length) return null;
+  return data.map((row) => row.raw);
+}
+
+// Reports which backend actually served the most recent dataset load, so UI
+// status indicators (sidebar "Database Status" etc.) show the truth instead
+// of a hardcoded claim. One of: 'local-drive', 'supabase', 'static-json'.
+let lastBackendUsed = 'static-json';
+export function getLastBackendUsed() {
+  return lastBackendUsed;
+}
 
 async function upsertLocalRecord(kind, record) {
   if (!LOCAL_API_AVAILABLE) {
@@ -159,12 +191,23 @@ async function loadDataset(table, fallbackPath, normalize = (row) => row) {
   if (LOCAL_API_AVAILABLE) {
     try {
       const rows = await fetchWithTimeout(`${LOCAL_API_URL}/${table}`);
-      if (rows && rows.length) return rows.map(normalize);
+      if (rows && rows.length) {
+        lastBackendUsed = 'local-drive';
+        return rows.map(normalize);
+      }
     } catch (error) {
-      console.warn(`Using bundled ${fallbackPath} because local server ${table} failed:`, error.message);
+      console.warn(`Local server ${table} failed, trying the live database next:`, error.message);
     }
   }
+
+  const supabaseRows = await fetchFromSupabase(table);
+  if (supabaseRows && supabaseRows.length) {
+    lastBackendUsed = 'supabase';
+    return supabaseRows.map(normalize);
+  }
+
   const rows = await fetchJson(fallbackPath);
+  lastBackendUsed = 'static-json';
   return Array.isArray(rows) ? rows.map(normalize) : rows;
 }
 
@@ -177,8 +220,14 @@ async function loadRecord(table, fallbackPath, idField, id, normalize = (row) =>
         if (row) return normalize(row);
       }
     } catch (error) {
-      console.warn(`Using bundled ${fallbackPath} for ${id} because local server failed:`, error.message);
+      console.warn(`Local server failed for ${id}, trying the live database next:`, error.message);
     }
+  }
+
+  const supabaseRows = await fetchFromSupabase(table);
+  if (supabaseRows) {
+    const row = supabaseRows.find((r) => r[idField] === id);
+    if (row) return normalize(row);
   }
 
   const rows = (await fetchJson(fallbackPath)).map(normalize);
