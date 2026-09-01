@@ -2,6 +2,25 @@ import { useState, useEffect } from 'react';
 import { Save, FilePlus, ArrowUpCircle } from 'lucide-react';
 import { fetchBridgeWorks } from '../services/bmsDataService';
 
+// financial_status is free text ("Contract Sum:\nUGX 29,544,160,265\n\nAmount
+// Certified: ..."), not a structured number -- taking just its first line
+// (the old approach) produces a bare label like "Contract Sum:" with no
+// figure at all for most records. Pull the contract-sum UGX amount out of
+// the text instead, expanding a "bn"/"million" suffix where present.
+function extractBudget(text) {
+  if (!text) return null;
+  const withUnit = (match) => {
+    if (!match) return null;
+    let value = Number(match[1].replace(/,/g, ''));
+    const unit = (match[2] || '').toLowerCase();
+    if (unit.startsWith('bn') || unit.startsWith('billion')) value *= 1e9;
+    else if (unit.startsWith('m') || unit.startsWith('million')) value *= 1e6;
+    return Number.isFinite(value) ? value : null;
+  };
+  const labeled = text.match(/(?:contract sum|works contract)\s*:?\s*\n?\s*UGX[.:]?\s*([\d,]+(?:\.\d+)?)\s*(bn|billion|m|million)?/i);
+  return withUnit(labeled) ?? withUnit(text.match(/UGX[.:]?\s*([\d,]+(?:\.\d+)?)\s*(bn|billion|m|million)?/i));
+}
+
 export default function UpgradeBridgesForm({ bridges = [] }) {
   const [selectedBridgeId, setSelectedBridgeId] = useState('');
   const [upgradesList, setUpgradesList] = useState([]);
@@ -9,14 +28,17 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
   useEffect(() => {
     fetchBridgeWorks().then(data => {
       // Data might have "bridge", "financial_status", "status"
-      const mapped = data.map(item => ({
-        bridgeNo: item.bridge,
-        date: 'Active',
-        desc: item.status?.slice(0, 100) + '...',
-        ref: item.funder,
-        budget: item.financial_status?.split('\n')[0] || item.financial_status || '0',
-        hasReport: 'Yes'
-      }));
+      const mapped = data.map(item => {
+        const budget = extractBudget(item.financial_status);
+        return {
+          bridgeNo: item.bridge,
+          date: 'Active',
+          desc: item.status?.slice(0, 100) + '...',
+          ref: item.funder,
+          budget,
+          hasReport: 'Yes',
+        };
+      });
       setUpgradesList(mapped);
     }).catch(err => console.error("Failed to fetch bridge works:", err));
   }, []);
@@ -174,7 +196,7 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
                     <td style={{ padding: '16px 24px' }}>{row.date}</td>
                     <td style={{ padding: '16px 24px', color: 'var(--text-muted)' }}>{row.ref || 'N/A'}</td>
                     <td style={{ padding: '16px 24px', maxWidth: '300px' }}>{row.desc}</td>
-                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 600 }}>{row.budget.toLocaleString()}</td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 600 }}>{Number.isFinite(row.budget) ? row.budget.toLocaleString() : 'Not on file'}</td>
                     <td style={{ padding: '16px 24px', textAlign: 'center' }}>
                       {row.hasReport === 'Yes' ? (
                         <span style={{ padding: '4px 8px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-primary)', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>YES</span>
