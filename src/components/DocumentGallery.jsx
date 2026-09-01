@@ -127,7 +127,7 @@ export default function DocumentGallery({ bridges = [] }) {
       {loading && (
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <Loader size={32} className="spinning" />
-          <p>Loading files from Supabase...</p>
+          <p>Loading files...</p>
         </div>
       )}
       {error && <div style={{ color: 'red', padding: '20px' }}>Error: {error}</div>}

@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { 
-  X, ExternalLink, Activity, Info, 
+import {
+  X, ExternalLink, Activity, Info,
   Folder, FileText, PieChart, BarChart2, Table, Layers, BookOpen, Calculator
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
+import useBackendStatus, { BACKEND_STATUS_LABEL } from '../hooks/useBackendStatus';
 
 export default function RightUtilityPane({ openWindows, activeWindow, onFocusWindow, onCloseWindow, bridges = [], culverts = [] }) {
   const [isWindowsExpanded, setIsWindowsExpanded] = useState(true);
+  const backendStatus = useBackendStatus();
 
   const windowTitles = {
     bridgeInventory: 'Bridge Inventory',
@@ -229,7 +231,9 @@ export default function RightUtilityPane({ openWindows, activeWindow, onFocusWin
       <div className="pane-footer">
         <div className="system-info-card">
           <strong style={{fontSize: '10px', textTransform: 'uppercase'}}>Database Status</strong>
-          <div className="status-indicator online">Online (Supabase)</div>
+          <div className={`status-indicator ${backendStatus === 'static-json' ? 'offline' : 'online'}`}>
+            {backendStatus === 'static-json' ? 'Static Data' : BACKEND_STATUS_LABEL[backendStatus]}
+          </div>
           <small>v2.0 (2026)</small>
         </div>
       </div>
