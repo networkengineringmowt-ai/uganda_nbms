@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { UserPlus, Search, Shield, History, Activity } from 'lucide-react';
 
 export default function UserManagement({ onNavigate } = {}) {
+  // Placeholder rows for a user-provisioning screen that is not yet wired to
+  // a real directory service (see the disabled Add/Edit buttons below). This
+  // platform never displays individual names, so rows are identified by
+  // employee ID and role only -- not a placeholder person's name.
   const [users] = useState([
-    { id: 'E101', name: 'John Doe', department: 'BMS', role: 'Operations Manager', status: 'Active' },
-    { id: 'E102', name: 'Jane Smith', department: 'Inspection', role: 'Inspector', status: 'Active' },
-    { id: 'E103', name: 'Mike Johnson', department: 'Maintenance', role: 'Bridge Manager', status: 'Pending Approval' }
+    { id: 'E101', department: 'BMS', role: 'Operations Manager', status: 'Active' },
+    { id: 'E102', department: 'Inspection', role: 'Inspector', status: 'Active' },
+    { id: 'E103', department: 'Maintenance', role: 'Bridge Manager', status: 'Pending Approval' }
   ]);
 
   return (
@@ -42,7 +46,7 @@ export default function UserManagement({ onNavigate } = {}) {
           <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
             <div style={{ position: 'relative', width: '300px', maxWidth: '100%' }}>
               <Search size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />
-              <input type="text" placeholder="Search by name or ID..." style={{ padding: '8px 12px 8px 36px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', width: '100%', background: '#071126', color: 'var(--text-primary)' }} />
+              <input type="text" placeholder="Search by employee ID, department, or role..." style={{ padding: '8px 12px 8px 36px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', width: '100%', background: '#071126', color: 'var(--text-primary)' }} />
             </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -50,7 +54,6 @@ export default function UserManagement({ onNavigate } = {}) {
             <thead style={{ background: 'rgba(3, 9, 24, 0.72)', color: '#7dd3fc' }}>
               <tr>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Emp ID</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Name</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Dept</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Role</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
@@ -61,7 +64,6 @@ export default function UserManagement({ onNavigate } = {}) {
               {users.map(u => (
                 <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>{u.id}</td>
-                  <td style={{ padding: '12px 16px', color: 'var(--text-primary)', fontWeight: 600 }}>{u.name}</td>
                   <td style={{ padding: '12px 16px', color: '#64748b' }}>{u.department}</td>
                   <td style={{ padding: '12px 16px', color: '#64748b' }}>{u.role}</td>
                   <td style={{ padding: '12px 16px' }}>
@@ -90,13 +92,13 @@ export default function UserManagement({ onNavigate } = {}) {
           <div style={{ padding: '20px', flex: 1 }}>
             <div style={{ fontSize: '13px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>John Doe (Operations Manager)</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>User E101 (Operations Manager)</span>
                 <span>Approved user 'E102'</span>
                 <span style={{ fontSize: '11px', color: '#94a3b8' }}>10 mins ago</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Jane Smith (Inspector)</span>
-                <span>Uploaded IC Client results for 'Nile Bridge'</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>User E102 (Inspector)</span>
+                <span>Uploaded inspection results for 'Nile Bridge'</span>
                 <span style={{ fontSize: '11px', color: '#94a3b8' }}>2 hours ago</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
