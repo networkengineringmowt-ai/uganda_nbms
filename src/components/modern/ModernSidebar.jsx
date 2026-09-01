@@ -11,9 +11,11 @@ import {
   FilePlus,
   Activity
 } from 'lucide-react';
+import useBackendStatus, { BACKEND_STATUS_LABEL } from '../../hooks/useBackendStatus';
 
 export default function ModernSidebar({ modernTab, setModernTab, setSelectedBridge, onSecretClick, isAuthenticated }) {
   const [clickCount, setClickCount] = useState(0);
+  const backendStatus = useBackendStatus();
 
   useEffect(() => {
     if (clickCount === 0) return undefined;
@@ -100,10 +102,10 @@ export default function ModernSidebar({ modernTab, setModernTab, setSelectedBrid
       </nav>
       <div className="sidebar-status">
         <div className="status-line">
-          <div className="status-dot"></div>
-          <span>Supabase Connected</span>
+          <div className={`status-dot ${backendStatus === 'static-json' ? 'offline' : ''}`}></div>
+          <span>{BACKEND_STATUS_LABEL[backendStatus]}</span>
         </div>
-        <span>API: v1 REST Active</span>
+        <span>{backendStatus === 'static-json' ? 'Bundled data, no live DB configured' : 'API: v1 REST Active'}</span>
       </div>
     </aside>
   );
