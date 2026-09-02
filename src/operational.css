@@ -369,6 +369,15 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 16px;
+  /* On tabs that render this as the first block of page content (Analytics,
+     Inspections), its rightmost card lands in the same top-right corner as
+     the floating Back/Top/Export bar (PageUtilityBar, position: fixed).
+     Reserve clearance so the bar doesn't sit on top of the card. The
+     Dashboard/overview tab never renders that fixed bar at all -- it uses
+     the bar's `inline` mode embedded in its own sticky filter bar instead
+     -- so this extra top space there is just a little harmless breathing
+     room under that filter bar, not a correction. */
+  margin-top: 40px;
 }
 
 .modern-theme-root .kpi-card {
@@ -1583,7 +1592,7 @@
   min-height: 0;
 }
 
-.modern-theme-root .page-content > * {
+.modern-theme-root .page-content > *:not(.putil-bar) {
   width: 100%;
   min-height: 100%;
   /* Without this, a tall tab's single direct child gets flex-shrunk down to
@@ -1594,7 +1603,13 @@
      invisible until something depended on the box's real size -- e.g. a
      position: sticky descendant, which unsticks the moment its containing
      block's reported height scrolls out of view. flex-shrink: 0 makes the
-     used height equal max(content height, 100%) with no collapse. */
+     used height equal max(content height, 100%) with no collapse.
+     :not(.putil-bar) excludes the floating Back/Top/Export cluster: it's
+     position: fixed with no ancestor establishing a containing block, so a
+     width/min-height of 100% resolves against the viewport itself (its
+     actual containing block) rather than this flex column -- stretching it
+     to fill the screen and flinging its computed `left` off to the far
+     edge. The bar needs none of this sizing since it's out of flow. */
   flex-shrink: 0;
 }
 
@@ -1767,6 +1782,11 @@
   min-width: 260px;
   gap: 12px;
   align-items: center;
+  /* This badge sits at the hero's top-right, the same corner the floating
+     Back/Top/Export bar (PageUtilityBar, position: fixed) occupies -- see
+     the matching note on .twin-heading above. Nudge it down clear of the
+     bar instead of leaving the two to overlap. */
+  margin-top: 34px;
   padding: 14px 16px;
   color: #67e8f9;
   background: rgba(4, 14, 34, 0.72);
@@ -2290,6 +2310,12 @@
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
+  /* Both panels put a right-aligned badge at their own top-right corner,
+     which is also where the floating Back/Top/Export bar (PageUtilityBar,
+     position: fixed) sits. The bar can't dodge this on its own -- it only
+     knows about the nav/subnav above the page, not per-page content below
+     that -- so each such heading reserves its own clearance instead. */
+  margin-top: 50px;
 }
 
 .evidence-asset-heading h2,

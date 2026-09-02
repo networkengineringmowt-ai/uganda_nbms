@@ -201,6 +201,11 @@
   margin-bottom: 24px;
   text-transform: uppercase;
   letter-spacing: 1px;
+  /* This panel's own top edge lands in the same top-right corner as the
+     floating Back/Top/Export bar (PageUtilityBar, position: fixed) on
+     every desktop shell that renders this form as a tab (Data Capture).
+     Reserve clearance rather than let the title sit under the bar. */
+  margin-top: 28px;
 }
 
 .ent-btn-primary {
