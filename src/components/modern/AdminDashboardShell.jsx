@@ -61,7 +61,17 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
       
       <main className="shell-main-horiz" style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div ref={pageContentRef} className="page-content modern-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: (isCaptureMode || modernTab === 'map') ? '0' : '12px 16px 0' }}>
-          
+          {modernTab !== 'overview' && (
+            <PageUtilityBar
+              onBack={handleBack}
+              canGoBack={canGoBack || Boolean(selectedBridge)}
+              scrollTargetRef={pageContentRef}
+              bridges={bridges}
+              culverts={culverts}
+              layoutKey={modernTab}
+            />
+          )}
+
           {/* Capture Modes (Full height workspace) */}
           {modernTab === 'capture_bridge' && (
             <div className="ent-workspace"><BridgeInventoryForm bridges={bridges} onBridgesUpdate={setBridges} /></div>
@@ -86,6 +96,9 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
                 setSelectedBridge(asset);
                 setModernTab('map');
               }}
+              onBack={handleBack}
+              canGoBack={canGoBack || Boolean(selectedBridge)}
+              scrollTargetRef={pageContentRef}
             />
           )}
           {modernTab === 'map' && (
@@ -133,13 +146,6 @@ export default function AdminDashboardShell({ bridges, culverts, setBridges, set
           {modernTab === 'bms_users' && <UserManagement onNavigate={(tab) => setModernTab(tab)} />}
           {modernTab === 'login_tracking' && <LoginTracking />}
         </div>
-        <PageUtilityBar
-          onBack={handleBack}
-          canGoBack={canGoBack || Boolean(selectedBridge)}
-          scrollTargetRef={pageContentRef}
-          bridges={bridges}
-          culverts={culverts}
-        />
       </main>
     </div>
   );

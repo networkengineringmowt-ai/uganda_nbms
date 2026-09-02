@@ -2,16 +2,30 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUp, Download, ChevronDown, Printer, Check } from 'lucide-react';
 import { exportStructuresCSV, printCurrentPage } from '../../utils/exportUtils';
 
-// Floating utility cluster -- Back / Scroll-to-top / Export -- pinned to the
-// top-right corner of every page/tab, just below the horizontal nav bar.
-// Shared by every shell (Admin, Super, Mobile) so a change here is a change
-// everywhere. `topOffset` lets each shell clear its own header height.
+// Utility cluster -- Back / Scroll-to-top / Export -- pinned to the
+// top-right corner of every page/tab. Shared by every shell (Admin, Super,
+// Mobile) and by the Dashboard's own filter bar, so a change here is a
+// change everywhere. Two render modes, picked by props:
+//
+//  - default: `position: fixed`, top offset auto-measured live from
+//    whatever is stacked above the content (the horizontal nav bar, its
+//    contextual subnav when a section has multiple tabs). Measuring
+//    instead of hardcoding means subnav presence/height can vary per
+//    section without ever causing overlap or a gap. Re-measures on resize
+//    and on tab change (`layoutKey`). It does NOT try to dodge arbitrary
+//    per-page heading content further down a tab's own markup -- pages with
+//    something in that top-right corner reserve their own clearance (see
+//    .twin-heading in operational.css for an example).
+//  - `inline`: renders just the bar itself, no fixed positioning, for
+//    embedding inside another element that is already pinned top-right
+//    (the Dashboard/overview tab's sticky filter bar corner cluster).
 export default function PageUtilityBar({
-  onBack, canGoBack, scrollTargetRef, bridges = [], culverts = [], topOffset = 84,
+  onBack, canGoBack, scrollTargetRef, bridges = [], culverts = [], inline = false, layoutKey,
 }) {
   const [showTop, setShowTop] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [exported, setExported] = useState(false);
+  const [autoTop, setAutoTop] = useState(84);
   const menuRef = useRef(null);
   const exportTimerRef = useRef(null);
 
@@ -23,6 +37,34 @@ export default function PageUtilityBar({
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, [scrollTargetRef]);
+
+  useEffect(() => {
+    if (inline) return undefined;
+
+    // .horiz-nav-wrapper covers the Admin/Super desktop shells (nav + its
+    // contextual subnav); .bms-mobile-header covers the simpler mobile shell.
+    const findHeader = () => document.querySelector('.horiz-nav-wrapper') || document.querySelector('.bms-mobile-header');
+
+    const measure = () => {
+      const headerEl = findHeader();
+      const bottom = headerEl ? headerEl.getBoundingClientRect().bottom : 68;
+      setAutoTop(Math.round(bottom + 12));
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    const navEl = findHeader();
+    if (navEl) ro.observe(navEl);
+    window.addEventListener('resize', measure);
+    // Subnav mounting/unmounting on tab switch doesn't itself fire a resize
+    // event, so re-measure shortly after too.
+    const settleTimer = setTimeout(measure, 60);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      clearTimeout(settleTimer);
+    };
+  }, [inline, layoutKey]);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -58,60 +100,64 @@ export default function PageUtilityBar({
     printCurrentPage();
   };
 
+  const bar = (
+    <div className="putil-bar" style={inline ? undefined : { position: 'fixed', top: autoTop, right: 20 }}>
+      <button
+        type="button"
+        onClick={onBack}
+        disabled={!canGoBack}
+        title="Back"
+        aria-label="Back"
+        className={`putil-btn${canGoBack ? '' : ' is-disabled'}`}
+      >
+        <ArrowLeft size={16} />
+        <span className="putil-label">Back</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={scrollToTop}
+        disabled={!showTop}
+        title="Scroll to top"
+        aria-label="Scroll to top"
+        className={`putil-btn${showTop ? '' : ' is-disabled'}`}
+      >
+        <ArrowUp size={16} />
+        <span className="putil-label">Top</span>
+      </button>
+
+      <div className="putil-export-wrap" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          title="Export"
+          aria-label="Export"
+          aria-expanded={menuOpen}
+          className={`putil-export-btn${exported ? ' is-success' : ''}`}
+        >
+          {exported ? <Check size={14} /> : <Download size={14} />}
+          <span>{exported ? 'Exported' : 'Export'}</span>
+          <ChevronDown size={13} className="putil-chevron" style={{ transform: menuOpen ? 'rotate(180deg)' : 'none' }} />
+        </button>
+
+        {menuOpen && (
+          <div className="putil-menu">
+            <button type="button" onClick={handleExportCSV} className="putil-menu-item">
+              <Download size={13} /> Export structures (CSV)
+            </button>
+            <button type="button" onClick={handlePrint} className="putil-menu-item">
+              <Printer size={13} /> Print / Save as PDF
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <style>{PAGE_UTILITY_BAR_CSS}</style>
-      <div className="putil-bar" style={{ top: topOffset }}>
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={!canGoBack}
-          title="Back"
-          aria-label="Back"
-          className={`putil-btn${canGoBack ? '' : ' is-disabled'}`}
-        >
-          <ArrowLeft size={16} />
-          <span className="putil-label">Back</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={scrollToTop}
-          disabled={!showTop}
-          title="Scroll to top"
-          aria-label="Scroll to top"
-          className={`putil-btn${showTop ? '' : ' is-disabled'}`}
-        >
-          <ArrowUp size={16} />
-          <span className="putil-label">Top</span>
-        </button>
-
-        <div className="putil-export-wrap" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            title="Export"
-            aria-label="Export"
-            aria-expanded={menuOpen}
-            className={`putil-export-btn${exported ? ' is-success' : ''}`}
-          >
-            {exported ? <Check size={14} /> : <Download size={14} />}
-            <span>{exported ? 'Exported' : 'Export'}</span>
-            <ChevronDown size={13} className="putil-chevron" style={{ transform: menuOpen ? 'rotate(180deg)' : 'none' }} />
-          </button>
-
-          {menuOpen && (
-            <div className="putil-menu">
-              <button type="button" onClick={handleExportCSV} className="putil-menu-item">
-                <Download size={13} /> Export structures (CSV)
-              </button>
-              <button type="button" onClick={handlePrint} className="putil-menu-item">
-                <Printer size={13} /> Print / Save as PDF
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      {bar}
     </>
   );
 }
@@ -131,8 +177,6 @@ const PAGE_UTILITY_BAR_CSS = `
   100% { transform: scale(1); }
 }
 .putil-bar {
-  position: fixed;
-  right: 20px;
   z-index: 1200;
   display: flex;
   align-items: center;
