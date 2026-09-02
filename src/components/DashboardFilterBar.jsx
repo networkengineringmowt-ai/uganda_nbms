@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Filter, RotateCcw, Search, ChevronDown, X, ArrowLeft, ArrowUp, Download, Printer } from 'lucide-react';
+import { Filter, RotateCcw, Search, ChevronDown, X } from 'lucide-react';
 import { buildDashboardFilterOptions } from '../utils/dashboardFilters';
-import { exportStructuresCSV, printCurrentPage } from '../utils/exportUtils';
 
 // Each field is a combobox: it shows the full option list like a dropdown,
 // but typing narrows that list by substring match, so a 500-row bridge name
@@ -107,9 +106,9 @@ function SearchableFilterSelect({ label, value, options, onChange }) {
   );
 }
 
-// Compact icon button shared by the Back / Scroll-to-top / Clear-filters
-// controls in the corner cluster -- same enabled/disabled treatment as the
-// old floating PageUtilityBar, just sized to sit inline in the filter bar.
+// Compact icon button for the Clear-filters control in the corner cluster.
+// Back / Scroll-to-top / Export now live in the shared PageUtilityBar,
+// pinned top-right on every tab (including this one) -- see PageUtilityBar.jsx.
 function CornerIconButton({ onClick, disabled, title, danger, children }) {
   return (
     <button
@@ -146,50 +145,9 @@ export default function DashboardFilterBar({
   onChange,
   onReset,
   resultCount,
-  onBack,
-  canGoBack,
-  scrollTargetRef,
 }) {
   const options = buildDashboardFilterOptions(bridges, culverts);
   const isActive = Object.values(filters).some((v) => v !== 'All');
-
-  const [showTop, setShowTop] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
-  const exportMenuRef = useRef(null);
-
-  useEffect(() => {
-    const el = scrollTargetRef?.current;
-    if (!el) return undefined;
-    const onScroll = () => setShowTop(el.scrollTop > 240);
-    onScroll();
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [scrollTargetRef]);
-
-  useEffect(() => {
-    if (!exportOpen) return undefined;
-    const closeIfOutside = (e) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) setExportOpen(false);
-    };
-    document.addEventListener('mousedown', closeIfOutside);
-    return () => document.removeEventListener('mousedown', closeIfOutside);
-  }, [exportOpen]);
-
-  const scrollToTop = () => {
-    const el = scrollTargetRef?.current;
-    if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleExportCSV = () => {
-    setExportOpen(false);
-    const ok = exportStructuresCSV(bridges, culverts);
-    if (!ok) printCurrentPage();
-  };
-
-  const handlePrint = () => {
-    setExportOpen(false);
-    printCurrentPage();
-  };
 
   return (
     <div className="dashboard-filter-bar">
@@ -202,73 +160,12 @@ export default function DashboardFilterBar({
       <SearchableFilterSelect label="All stations" value={filters.station} options={options.stations} onChange={(v) => onChange('station', v)} />
       <SearchableFilterSelect label="All road link names" value={filters.roadLinkName} options={options.roadLinkNames} onChange={(v) => onChange('roadLinkName', v)} />
 
-      {/* Corner cluster: result count + Back / Scroll-to-top / Export / Clear-filters,
-          pushed to the far right of the bar with marginLeft: auto. */}
+      {/* Corner cluster: result count + Clear-filters, pushed to the far
+          right of the bar. Back / Scroll-to-top / Export live in the
+          shared, top-right PageUtilityBar on this tab too now. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
         <div className="dashboard-filter-bar-result">
           {resultCount.bridges.toLocaleString()} bridges · {resultCount.culverts.toLocaleString()} culverts
-        </div>
-
-        {onBack && (
-          <CornerIconButton onClick={onBack} disabled={!canGoBack} title="Back">
-            <ArrowLeft size={16} />
-          </CornerIconButton>
-        )}
-
-        {scrollTargetRef && (
-          <CornerIconButton onClick={scrollToTop} disabled={!showTop} title="Scroll to top">
-            <ArrowUp size={16} />
-          </CornerIconButton>
-        )}
-
-        <div style={{ position: 'relative' }} ref={exportMenuRef}>
-          <button
-            type="button"
-            onClick={() => setExportOpen((v) => !v)}
-            title="Export"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'linear-gradient(135deg, #059669, #047857)',
-              color: '#fff',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 8,
-              padding: '0 10px',
-              height: 34,
-              cursor: 'pointer',
-              fontSize: 12.5,
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Download size={13} /> Export
-            <ChevronDown size={12} style={{ transform: exportOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
-          </button>
-
-          {exportOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                right: 0,
-                minWidth: 210,
-                background: '#0c1830',
-                border: '1px solid var(--border-light)',
-                borderRadius: 8,
-                boxShadow: '0 16px 36px rgba(0, 0, 0, 0.5)',
-                overflow: 'hidden',
-                zIndex: 50,
-              }}
-            >
-              <button type="button" onClick={handleExportCSV} style={menuItemStyle}>
-                <Download size={13} /> Export structures (CSV)
-              </button>
-              <button type="button" onClick={handlePrint} style={menuItemStyle}>
-                <Printer size={13} /> Print / Save as PDF
-              </button>
-            </div>
-          )}
         </div>
 
         <CornerIconButton onClick={onReset} disabled={!isActive} title="Clear all filters" danger>
@@ -278,17 +175,3 @@ export default function DashboardFilterBar({
     </div>
   );
 }
-
-const menuItemStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  width: '100%',
-  padding: '10px 12px',
-  background: 'transparent',
-  border: 'none',
-  color: '#e2e8f0',
-  fontSize: 12.5,
-  cursor: 'pointer',
-  textAlign: 'left',
-};
