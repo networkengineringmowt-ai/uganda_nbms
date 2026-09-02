@@ -15,8 +15,11 @@ export default function UserManagement({ onNavigate } = {}) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '24px' }}>
       
-      {/* Top Stats */}
-      <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+      {/* Top Stats -- marginTop reserves clearance below the floating
+          Back/Top/Export bar (PageUtilityBar, position: fixed), which
+          otherwise sits on top of this row's rightmost card since this is
+          the first element in the tab's content. */}
+      <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '40px' }}>
         <div className="glass-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}><Shield size={24} /></div>
           <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Users</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>124</div></div>
