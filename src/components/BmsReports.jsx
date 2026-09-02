@@ -93,15 +93,23 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
     const unchecked = bridges.filter(b => !hasInspectionOnFile(b));
     const checked = bridges.filter(b => hasInspectionOnFile(b));
 
+    // Ratings run 0-9, and 0 is a real (worst-case) rating a structure can
+    // legitimately have on file -- not an absent one. A plain falsy check
+    // (!legacy.foo_rating) treats a genuine 0 the same as null/undefined,
+    // so a handful of the most critical structures were being miscounted
+    // as "missing" their ratings. Check for actual absence instead.
+    const isMissingRating = (v) => v === null || v === undefined || v === '';
+
     const outstandingRatings = bridges.filter(b => {
       const legacy = b.LegacyData || {};
-      return !legacy.approaches_rating || !legacy.waterway_rating || !legacy.substructure_rating || !legacy.superstructure_rating;
+      return isMissingRating(legacy.approaches_rating) || isMissingRating(legacy.waterway_rating)
+        || isMissingRating(legacy.substructure_rating) || isMissingRating(legacy.superstructure_rating);
     });
 
     const noInspections = bridges.filter(b => {
       const legacy = b.LegacyData || {};
       const ratings = ['approaches', 'waterway', 'substructure', 'superstructure', 'roadway', 'expansion_joints', 'drainage'];
-      return ratings.every(r => !legacy[`${r}_rating`]);
+      return ratings.every(r => isMissingRating(legacy[`${r}_rating`]));
     });
 
     return { unchecked, checked, outstandingRatings, noInspections };

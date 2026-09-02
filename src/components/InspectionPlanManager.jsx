@@ -10,9 +10,12 @@ export default function InspectionPlanManager() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '20px', padding: '24px' }}>
-      
-      {/* Top controls */}
-      <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderRadius: '12px' }}>
+
+      {/* Top controls -- marginTop reserves clearance below the floating
+          Back/Top/Export bar (PageUtilityBar, position: fixed), which
+          otherwise sits on top of the "+ Add New Plan" button since this
+          is the first element in the tab's content. */}
+      <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderRadius: '12px', marginTop: '40px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div style={{ position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--text-muted)' }} />

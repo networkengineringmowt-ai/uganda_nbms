@@ -474,7 +474,7 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
           <div className="kpi-icon red"><AlertTriangle size={21} /></div>
           <span className="kpi-eyebrow">Immediate attention</span>
           <strong>{critical.length}</strong>
-          <p>{metrics.poor} bridges rated poor or worse</p>
+          <p>Bridges in the critical registry</p>
         </article>
         <article className="kpi-card">
           <div className="kpi-icon blue"><ClipboardCheck size={21} /></div>

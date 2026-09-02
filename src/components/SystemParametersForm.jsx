@@ -346,10 +346,13 @@ export default function SystemParametersForm() {
         </div>
       </div>
 
-      {/* Right: Visual Summary */}
+      {/* Right: Visual Summary -- extra top padding reserves clearance
+          below the floating Back/Top/Export bar (PageUtilityBar,
+          position: fixed), which otherwise sits on top of the "Weight
+          Distribution" heading since this panel starts at the tab's top. */}
       <div style={{
         width: '260px', minWidth: '260px', background: 'rgba(0,0,0,0.2)',
-        borderLeft: '1px solid var(--border)', padding: '20px',
+        borderLeft: '1px solid var(--border)', padding: '60px 20px 20px',
         display: 'flex', flexDirection: 'column', gap: '20px'
       }}>
         <div>

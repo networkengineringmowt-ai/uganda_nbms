@@ -84,7 +84,7 @@ export default function InvestmentDashboard() {
   );
 
   const kpis = [
-    { icon: <Wallet size={20} />, label: 'Total capital need', value: `UGX ${fmtBn(s.total_cost_ugx_mn)} Bn`, sub: `${s.total_bridges} bridges · UNRA model 2026` },
+    { icon: <Wallet size={20} />, label: 'Total capital need', value: `UGX ${fmtBn(s.total_cost_ugx_mn)} Bn`, sub: `${s.total_bridges} bridges assessed · FY2026/27 model` },
     { icon: <AlertTriangle size={20} />, label: 'Replacements', value: s.by_intervention['Bridge Replacement']?.count || 0, sub: `UGX ${fmtBn(s.by_intervention['Bridge Replacement']?.cost)} Bn` },
     { icon: <Wrench size={20} />, label: 'Major rehabilitations', value: s.by_intervention['Major Rehabilitation']?.count || 0, sub: `UGX ${fmtBn(s.by_intervention['Major Rehabilitation']?.cost)} Bn` },
     { icon: <Layers size={20} />, label: 'Preventive + routine', value: (s.by_intervention['Preventive Repair']?.count || 0) + (s.by_intervention['Routine Maintenance']?.count || 0), sub: 'Programmed preservation' },

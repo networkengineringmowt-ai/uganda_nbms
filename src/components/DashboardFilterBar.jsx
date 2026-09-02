@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Filter, RotateCcw, Search, ChevronDown, X } from 'lucide-react';
 import { buildDashboardFilterOptions } from '../utils/dashboardFilters';
+import PageUtilityBar from './modern/PageUtilityBar';
 
 // Each field is a combobox: it shows the full option list like a dropdown,
 // but typing narrows that list by substring match, so a 500-row bridge name
@@ -145,6 +146,9 @@ export default function DashboardFilterBar({
   onChange,
   onReset,
   resultCount,
+  onBack,
+  canGoBack,
+  scrollTargetRef,
 }) {
   const options = buildDashboardFilterOptions(bridges, culverts);
   const isActive = Object.values(filters).some((v) => v !== 'All');
@@ -160,9 +164,9 @@ export default function DashboardFilterBar({
       <SearchableFilterSelect label="All stations" value={filters.station} options={options.stations} onChange={(v) => onChange('station', v)} />
       <SearchableFilterSelect label="All road link names" value={filters.roadLinkName} options={options.roadLinkNames} onChange={(v) => onChange('roadLinkName', v)} />
 
-      {/* Corner cluster: result count + Clear-filters, pushed to the far
-          right of the bar. Back / Scroll-to-top / Export live in the
-          shared, top-right PageUtilityBar on this tab too now. */}
+      {/* Corner cluster: result count + Clear-filters + the shared Back/Top/Export
+          bar (inline mode -- this row is already sticky top-right, so the shared
+          bar renders bare here instead of wrapping in its own sticky row). */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
         <div className="dashboard-filter-bar-result">
           {resultCount.bridges.toLocaleString()} bridges · {resultCount.culverts.toLocaleString()} culverts
@@ -171,6 +175,15 @@ export default function DashboardFilterBar({
         <CornerIconButton onClick={onReset} disabled={!isActive} title="Clear all filters" danger>
           <RotateCcw size={15} />
         </CornerIconButton>
+
+        <PageUtilityBar
+          inline
+          onBack={onBack}
+          canGoBack={canGoBack}
+          scrollTargetRef={scrollTargetRef}
+          bridges={bridges}
+          culverts={culverts}
+        />
       </div>
     </div>
   );

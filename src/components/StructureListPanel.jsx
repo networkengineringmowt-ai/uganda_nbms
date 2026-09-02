@@ -125,8 +125,15 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
     if (filterAuditStatus !== 'All') {
       result = result.filter(b => {
         const legacy = b.LegacyData || {};
-        if (filterAuditStatus === 'Checked') return !!legacy.data_checked;
-        if (filterAuditStatus === 'Unchecked') return !legacy.data_checked;
+        // "data_checked" isn't a real field in the source registry, so
+        // testing for it always came back false -- "Checked" matched
+        // nothing and "Unchecked" matched everything, regardless of a
+        // structure's actual state. Whether a field inspection has been
+        // logged is what the registry actually records (same fix as the
+        // Reports validation view), so use that instead.
+        const hasInspectionOnFile = Boolean(String(legacy.inspector || legacy.firm || '').trim());
+        if (filterAuditStatus === 'Checked') return hasInspectionOnFile;
+        if (filterAuditStatus === 'Unchecked') return !hasInspectionOnFile;
         if (filterAuditStatus === 'Missing Component Ratings') {
           return legacy.approaches_rating == null || legacy.roadway_rating == null || legacy.substructure_rating == null || legacy.superstructure_rating == null || legacy.waterway_rating == null;
         }
