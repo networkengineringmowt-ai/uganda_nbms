@@ -252,7 +252,12 @@ export const getDictionaryLabel = (dictionary, code) => {
   if (strCode.length === 1 && !isNaN(strCode)) {
     strCode = '0' + strCode;
   }
-  return dictionary[strCode] || dictionary[code] || code;
+  // A code with no matching dictionary entry must never fall back to
+  // displaying the raw code itself -- an unlabelled code looks exactly
+  // like a real label to a reader, and this product shows actual labels
+  // and descriptions, never codes. Say plainly that it isn't recognised
+  // instead of leaking the source value as if it were meaningful.
+  return dictionary[strCode] || dictionary[code] || 'Unrecognised code';
 };
 
 export const TYPE_CULVERT = {

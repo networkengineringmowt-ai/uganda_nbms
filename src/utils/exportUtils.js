@@ -1,6 +1,17 @@
 // Small, dependency-free CSV export + print helpers shared by the
 // per-page utility bar (back / scroll-to-top / export) across every shell.
 
+// Structure records carry raw source-spreadsheet metadata alongside the
+// real engineering data: who inspected/checked a record, which firm did
+// the work, and which source workbook/sheet/row it was imported from.
+// None of that belongs in an export a user can download -- this mirrors
+// the CONFIDENTIAL_FIELD_PATTERN already used to keep the same fields out
+// of the statistics pipeline (see utils/statistics.js), plus a few
+// export-only exclusions for internal ids and source-file references that
+// numeric stats never touch anyway. "Unnamed: NN" columns are blank
+// leftover artifacts from the original spreadsheet import, not real data.
+const EXPORT_EXCLUDE_PATTERN = /inspector|checked.?by|firm\b|surveyor|engineer|^_id$|^file$|m.?film|source_workbook|source_sheet|source_row|^unnamed/i;
+
 const escapeCsvValue = (val) => {
   if (val === null || val === undefined) return '';
   const str = String(val).replace(/"/g, '""');
@@ -12,7 +23,9 @@ export function downloadCSV(filename, rows) {
 
   const headers = Array.from(
     rows.reduce((set, row) => {
-      Object.keys(row || {}).forEach((key) => set.add(key));
+      Object.keys(row || {}).forEach((key) => {
+        if (!EXPORT_EXCLUDE_PATTERN.test(key)) set.add(key);
+      });
       return set;
     }, new Set())
   );
