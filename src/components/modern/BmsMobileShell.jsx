@@ -52,7 +52,7 @@ export default function BmsMobileShell({ bridges, culverts, setBridges, setCulve
         scrollTargetRef={pageContentRef}
         bridges={bridges}
         culverts={culverts}
-        bottomOffset={86}
+        topOffset={72}
       />
 
       {/* Bottom Navigation */}
