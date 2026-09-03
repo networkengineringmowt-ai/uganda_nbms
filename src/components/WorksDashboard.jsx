@@ -7,6 +7,25 @@ import { ROAD_SURFACE_STYLE, getRoadSurface } from '../utils/roadSymbology';
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
 
+// `status` is a long free-text progress narrative, not an enum -- most
+// contracts are still under construction, but a handful explicitly record
+// that the works were finished and formally taken over ("ToC" = Taken-Over
+// Certificate) or commissioned. Treating every non-empty status string as
+// "Ongoing" (the previous behaviour) contradicts those contracts' own
+// recorded text. Only flag a contract Completed when its status actually
+// says so; everything else keeps reading as Ongoing/Planned exactly as
+// before.
+const isWorkComplete = (status) => {
+  if (!status) return false;
+  const s = status.toLowerCase();
+  return s.includes('complete') && (s.includes('taken over') || s.includes('practical completion') || s.includes('commissioned'));
+};
+
+const getWorkStatusLabel = (status) => {
+  if (isWorkComplete(status)) return 'Completed';
+  return status ? 'Ongoing' : 'Planned';
+};
+
 const WORKS_COORDS = {
   "Lot 1: Nyamugasani Bridge (Lower) on Rwentare-Katwe-Katojo Road": [0.057398, 29.835154],
   "Lot 2: Kyanya Bridge on Mobuku-Maliba-Kyanya-Ibanda Road and Isango Bridge on Bwera-Kithoma-Kiraro Road": [0.287, 30.045],
@@ -104,7 +123,7 @@ export default function WorksDashboard() {
             >
               <Tooltip>
                 <strong>{work.bridge}</strong><br/>
-                Status: {work.status ? 'Ongoing' : 'Planned'}
+                Status: {getWorkStatusLabel(work.status)}
               </Tooltip>
             </CircleMarker>
           ))}
@@ -188,8 +207,8 @@ export default function WorksDashboard() {
                   </div>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid var(--border-light)' }}>
-                    <span style={{ color: 'var(--accent-cyan)', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <CheckCircle2 size={12} /> Ongoing
+                    <span style={{ color: isWorkComplete(work.status) ? 'var(--accent-emerald)' : 'var(--accent-cyan)', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCircle2 size={12} /> {getWorkStatusLabel(work.status)}
                     </span>
                     <span style={{ color: 'var(--accent-emerald)', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <DollarSign size={12} /> {work.funder || work.Funder || 'GOU'}

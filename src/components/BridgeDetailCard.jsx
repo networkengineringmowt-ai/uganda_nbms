@@ -323,7 +323,9 @@ export default function BridgeDetailCard({ bridge, onClose }) {
               <div className="bdc-field">
                 <span className="bdc-label">Growth Rate</span>
                 <span className="bdc-value" style={{ color: traffic.growth_rate >= 0 ? '#168257' : '#be3a34' }}>
-                  {(traffic.growth_rate * 100).toFixed(1)}%
+                  {traffic.growth_rate != null && !Number.isNaN(Number(traffic.growth_rate))
+                    ? `${(traffic.growth_rate * 100).toFixed(1)}%`
+                    : EMPTY}
                 </span>
               </div>
               <div className="bdc-field">

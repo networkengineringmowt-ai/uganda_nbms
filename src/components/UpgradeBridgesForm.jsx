@@ -33,7 +33,12 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
         return {
           bridgeNo: item.bridge,
           date: 'Active',
-          desc: item.status?.slice(0, 100) + '...',
+          // `item.status?.slice(...) + '...'` printed the literal string
+          // "undefined..." for any work record with no status field, since
+          // string concatenation coerces `undefined` to text instead of
+          // short-circuiting. Only append text (and the ellipsis) when a
+          // status was actually present.
+          desc: item.status ? `${item.status.slice(0, 100)}...` : 'No status update on file',
           ref: item.funder,
           budget,
           hasReport: 'Yes',

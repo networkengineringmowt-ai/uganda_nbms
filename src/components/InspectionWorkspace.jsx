@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { CalendarClock, CheckCircle2, ClipboardCheck, TriangleAlert } from 'lucide-react';
 import BridgeInspectionForm from './capture/BridgeInspectionForm';
 
-export default function InspectionWorkspace({ bridges, onBridgesUpdate }) {
+export default function InspectionWorkspace({ bridges, onBridgesUpdate, readOnly = false }) {
   const metrics = useMemo(() => {
     const rated = bridges.filter((row) => row.LegacyData?.overall_rating != null || row.OverallConditionRating != null);
     const review = bridges.filter((row) => row.LegacyData?.location_requires_review);
@@ -30,7 +30,7 @@ export default function InspectionWorkspace({ bridges, onBridgesUpdate }) {
       <section className="inspection-grid">
         <div className="panel inspection-form-panel">
           <div className="panel-header"><div><span className="panel-kicker">Field inspection</span><h2>Element condition assessment</h2></div></div>
-          <BridgeInspectionForm bridges={bridges} onBridgesUpdate={onBridgesUpdate} />
+          <BridgeInspectionForm bridges={bridges} onBridgesUpdate={onBridgesUpdate} readOnly={readOnly} />
         </div>
         <aside className="panel recent-inspections">
           <div className="panel-header"><div><span className="panel-kicker">Register activity</span><h2>Needs attention</h2></div></div>

@@ -8,7 +8,10 @@ import { getConditionLabel } from '../utils/dataDictionary';
 // Simulated condition projection model (simplified Markov/deterioration curve)
 const generateTimeSeries = (baseRating, yearBuilt, currentYear) => {
   const startYear = yearBuilt || 1990;
-  const rating2017 = baseRating || 7;
+  // A rating of 0 ("Beyond Repair") is real and must not be treated as
+  // "not provided" -- `baseRating || 7` was discarding it and charting a
+  // worst-case structure as "Good" instead.
+  const rating2017 = baseRating !== null && baseRating !== undefined && !Number.isNaN(Number(baseRating)) ? Number(baseRating) : 7;
   
   const series = [];
   let currentRating = 9; // Max condition when built
@@ -42,8 +45,9 @@ export default function StructureTimeSeries({ bridges }) {
 
   const timeSeriesData = useMemo(() => {
     if (!bridge) return [];
+    const rating = bridge.OverallConditionRating ?? bridge.LegacyData?.overall_rating;
     return generateTimeSeries(
-      bridge.OverallConditionRating || bridge.LegacyData?.overall_rating,
+      rating,
       parseInt(bridge.LegacyData?.year_compl, 10),
       2026
     );

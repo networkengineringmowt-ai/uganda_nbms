@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Landmark, MapPin, TrendingUp } from 'lucide-react';
 import DataTable from './DataTable';
 import StatisticalAnalysis from './StatisticalAnalysis';
-import { fetchCulverts } from '../services/bmsDataService';
+import { fetchBridges, fetchCulverts } from '../services/bmsDataService';
 import {
   TYPE_ABUTMENT,
   TYPE_BEARINGS,
@@ -167,7 +167,13 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     fetch(`${BASE_URL}data/analytics.json`).then((response) => response.json()).then(setData).catch(console.error);
-    fetch(`${BASE_URL}data/bridges.json`).then((response) => response.json()).then(setBridges).catch(console.error);
+    // Read bridges through the same shared service (and its OverallCondition/
+    // rating normalization) that every other bridge view in the app uses,
+    // rather than a raw JSON fetch -- culverts already went through
+    // fetchCulverts() here, but bridges bypassed it, risking a condition/
+    // region breakdown that silently diverges from the rest of the app once
+    // records are edited through a live backend.
+    fetchBridges().then(setBridges).catch(console.error);
     fetchCulverts().then(setCulverts).catch(console.error);
   }, []);
 
