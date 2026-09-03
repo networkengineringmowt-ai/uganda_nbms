@@ -281,3 +281,78 @@ export const getCulvertTypeLabel = (value) => {
   const label = getDictionaryLabel(TYPE_CULVERT, value);
   return label === '?' ? 'Unknown' : label;
 };
+
+// road_class ('A'/'B'/'C'/'M') has no dictionary entry in any UNRA manual --
+// there is no documented meaning for these letters to decode to. Formatting
+// only (e.g. "Class A") makes clear it's a classification code without
+// fabricating what the letter stands for.
+export const getRoadClassLabel = (code) => {
+  if (code === null || code === undefined || code === '') return 'Unknown';
+  const str = String(code).trim();
+  return str ? `Class ${str}` : 'Unknown';
+};
+
+// scour_risk is a 3-way flag ('Y'/'N'/'U') plus assorted raw placeholder
+// values (0, 'Unknown') seen in the source data -- decode all of them so a
+// raw code never renders bare.
+export const getScourRiskLabel = (value) => {
+  if (value === 'Y') return 'Yes';
+  if (value === 'N') return 'No';
+  if (value === 'U' || value === 'Unknown' || value === 0 || value === '0') return 'Unknown risk';
+  return 'Unknown risk';
+};
+
+// Turns a raw snake_case data field key into a readable label, with an
+// override map for known abbreviations/compound terms that a naive
+// title-case would render awkwardly (e.g. "Aadt 2025" or "No Of Lane").
+const FIELD_NAME_OVERRIDES = {
+  aadt_2025: 'AADT 2025',
+  aadt: 'AADT',
+  no_of_lane: 'Number Of Lanes',
+  overall_rating: 'Overall Rating',
+  pave_age: 'Pavement Age',
+  bridge_len: 'Bridge Length',
+  chainage_km: 'Chainage (km)',
+  weight_load_restr: 'Weight Load Restriction',
+  road_class: 'Road Class',
+  scour_risk: 'Scour Risk',
+};
+
+export const humanizeFieldName = (key) => {
+  if (key === null || key === undefined || key === '') return 'Unknown';
+  const str = String(key).trim();
+  if (!str) return 'Unknown';
+  const lower = str.toLowerCase();
+  if (FIELD_NAME_OVERRIDES[lower]) return FIELD_NAME_OVERRIDES[lower];
+  return lower
+    .split('_')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+// Some source registers (critical_structures.json in particular) mix ALL
+// CAPS names ("RWIZI BRIDGE") with already-proper-case names ("Ogeng
+// Bridge") -- title-case every word so structure names read consistently
+// wherever they're displayed, without altering already-correct casing.
+// Small connector words stay lowercase (unless first/last) to match normal
+// title-case convention; a short all-caps word that looks like an
+// abbreviation (<=3 letters, e.g. "T/C") is left as-is rather than
+// lowercased into something unreadable.
+const TITLE_CASE_MINOR_WORDS = new Set(['a', 'an', 'and', 'at', 'in', 'of', 'on', 'or', 'the', 'to']);
+export const toProperCase = (value) => {
+  if (value === null || value === undefined || value === '') return value;
+  const str = String(value);
+  const words = str.split(/(\s+)/);
+  return words
+    .map((word, idx) => {
+      if (/^\s+$/.test(word) || word === '') return word;
+      const isAllCapsAbbrev = /^[A-Z0-9/().-]{1,3}$/.test(word) && /[A-Z]/.test(word);
+      if (isAllCapsAbbrev && !/^[a-z]+$/i.test(word.replace(/[^A-Za-z]/g, ''))) return word;
+      const lower = word.toLowerCase();
+      const isFirstOrLast = idx === 0 || idx === words.length - 1;
+      if (!isFirstOrLast && TITLE_CASE_MINOR_WORDS.has(lower)) return lower;
+      return lower.replace(/(^|[-'])([a-z])/g, (m, sep, ch) => sep + ch.toUpperCase());
+    })
+    .join('');
+};
