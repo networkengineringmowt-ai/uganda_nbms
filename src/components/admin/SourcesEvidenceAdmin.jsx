@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   BookOpen,
   Camera,
   CheckCircle2,
@@ -10,6 +13,17 @@ import {
   Search,
   ShieldCheck,
 } from 'lucide-react';
+import { fetchBridges, fetchCulverts } from '../../services/bmsDataService';
+
+// Source Register column config: key resolves the raw sort value per row,
+// so the "Category" column (computed, not a stored field) can sort too.
+const SOURCE_TABLE_COLUMNS = [
+  { key: 'filename', header: 'Document' },
+  { key: 'category', header: 'Category' },
+  { key: 'type', header: 'Type' },
+  { key: 'size_mb', header: 'Size' },
+  { key: 'snippet', header: 'Extracted evidence' },
+];
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
@@ -93,6 +107,10 @@ export default function SourcesEvidenceAdmin() {
   const [photoAudit, setPhotoAudit] = useState({});
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
+  // Real register totals (never hardcoded) so the "covered" counts below can
+  // be shown as "N of <total>" rather than an unscoped bare number.
+  const [bridgeTotal, setBridgeTotal] = useState(0);
+  const [culvertTotal, setCulvertTotal] = useState(0);
 
   useEffect(() => {
     Promise.all([
@@ -104,6 +122,8 @@ export default function SourcesEvidenceAdmin() {
       setPhotos(photoRows);
       setPhotoAudit(audit);
     }).catch(console.error);
+    fetchBridges().then((rows) => setBridgeTotal(rows.length)).catch(console.error);
+    fetchCulverts().then((rows) => setCulvertTotal(rows.length)).catch(console.error);
   }, []);
 
   const documentTypes = useMemo(() => ['All', ...new Set(documents.map((document) => document.type))], [documents]);
@@ -115,6 +135,26 @@ export default function SourcesEvidenceAdmin() {
       return matchesType && matchesTerm;
     });
   }, [documents, query, typeFilter]);
+
+  const [sourceSort, setSourceSort] = useState({ key: null, direction: 'asc' });
+  const toggleSourceSort = (key) => setSourceSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+  }));
+  const sortedDocuments = useMemo(() => {
+    if (!sourceSort.key) return filteredDocuments;
+    const getValue = (document) => (sourceSort.key === 'category' ? documentCategory(document) : document[sourceSort.key]);
+    return [...filteredDocuments].sort((a, b) => {
+      const aValue = getValue(a);
+      const bValue = getValue(b);
+      const aNumber = Number(aValue);
+      const bNumber = Number(bValue);
+      const result = Number.isFinite(aNumber) && Number.isFinite(bNumber)
+        ? aNumber - bNumber
+        : String(aValue ?? '').localeCompare(String(bValue ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return sourceSort.direction === 'asc' ? result : -result;
+    });
+  }, [filteredDocuments, sourceSort]);
   const metrics = useMemo(() => ({
     documentSize: documents.reduce((sum, document) => sum + Number(document.size_mb || 0), 0),
     // Bridges and culverts are always reported separately, never combined
@@ -187,9 +227,26 @@ export default function SourcesEvidenceAdmin() {
           </div>
           <div className="source-table-wrap">
             <table className="source-table">
-              <thead><tr><th>Document</th><th>Category</th><th>Type</th><th>Size</th><th>Extracted evidence</th></tr></thead>
+              <thead>
+                <tr>
+                  {SOURCE_TABLE_COLUMNS.map((col) => (
+                    <th key={col.key}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSourceSort(col.key)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 0, padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer' }}
+                      >
+                        <span>{col.header}</span>
+                        {sourceSort.key === col.key
+                          ? (sourceSort.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)
+                          : <ArrowUpDown size={12} opacity={0.35} />}
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
-                {filteredDocuments.map((document, index) => (
+                {sortedDocuments.map((document, index) => (
                   <tr key={`${document.filename}-${index}`}>
                     <td><FileText size={15} /><strong>{document.filename}</strong></td>
                     <td>{documentCategory(document)}</td>
@@ -209,8 +266,8 @@ export default function SourcesEvidenceAdmin() {
           <div className="evidence-summary-grid">
             <article><Image size={20} /><span>Bridge evidence</span><strong>{metrics.bridgePhotos.toLocaleString()}</strong><small>Indexed bridge photographs</small></article>
             <article><Image size={20} /><span>Culvert evidence</span><strong>{metrics.culvertPhotos.toLocaleString()}</strong><small>Indexed major-culvert photographs</small></article>
-            <article><CheckCircle2 size={20} /><span>Bridges covered</span><strong>{metrics.bridgeStructuresCovered}</strong><small>Bridges with linked evidence</small></article>
-            <article><CheckCircle2 size={20} /><span>Culverts covered</span><strong>{metrics.culvertStructuresCovered}</strong><small>Culverts with linked evidence</small></article>
+            <article><CheckCircle2 size={20} /><span>Bridges covered</span><strong>{metrics.bridgeStructuresCovered} of {bridgeTotal}</strong><small>Bridges with linked evidence</small></article>
+            <article><CheckCircle2 size={20} /><span>Culverts covered</span><strong>{metrics.culvertStructuresCovered} of {culvertTotal}</strong><small>Culverts with linked evidence</small></article>
             <article><FolderArchive size={20} /><span>Source-folder confirmed</span><strong>{metrics.sourceConfirmed.toLocaleString()}</strong><small>{metrics.aliases.toLocaleString()} duplicate aliases retained for lineage</small></article>
           </div>
           <div className="dataset-register">

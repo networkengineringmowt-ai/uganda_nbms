@@ -1,5 +1,12 @@
-import { useState } from 'react';
-import { UserPlus, Search, Shield, History, Activity } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { UserPlus, Search, Shield, History, Activity, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+
+const USER_TABLE_COLUMNS = [
+  { key: 'id', header: 'Emp ID' },
+  { key: 'department', header: 'Dept' },
+  { key: 'role', header: 'Role' },
+  { key: 'status', header: 'Status' },
+];
 
 export default function UserManagement({ onNavigate } = {}) {
   // Placeholder rows for a user-provisioning screen that is not yet wired to
@@ -12,6 +19,31 @@ export default function UserManagement({ onNavigate } = {}) {
     { id: 'E103', department: 'Maintenance', role: 'Bridge Manager', status: 'Pending Approval' }
   ]);
 
+  // Headline stats must reflect the actual rows above, not a stale hardcoded
+  // figure that no longer matches the (currently small, placeholder) user set.
+  const totalUsers = users.length;
+  const pendingApprovals = users.filter((u) => u.status === 'Pending Approval').length;
+
+  const [sort, setSort] = useState({ key: null, direction: 'asc' });
+  const toggleSort = (key) => setSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+  }));
+  const sortedUsers = useMemo(() => {
+    if (!sort.key) return users;
+    return [...users].sort((a, b) => {
+      const result = String(a[sort.key] ?? '').localeCompare(String(b[sort.key] ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return sort.direction === 'asc' ? result : -result;
+    });
+  }, [users, sort]);
+
+  // This page has no live directory/activity backend to read usage history
+  // from (see the disabled Add/Edit buttons above). Previously this panel
+  // showed hardcoded fake activity entries as if they were real system
+  // history; per the same standing rule already applied in AuditTools.jsx,
+  // that fabricated data is removed in favour of an honest empty state.
+  const USAGE_HISTORY = [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '24px' }}>
       
@@ -22,11 +54,11 @@ export default function UserManagement({ onNavigate } = {}) {
       <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '40px' }}>
         <div className="glass-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}><Shield size={24} /></div>
-          <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Users</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>124</div></div>
+          <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Users</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{totalUsers}</div></div>
         </div>
         <div className="glass-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}><Activity size={24} /></div>
-          <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Pending Approvals</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>8</div></div>
+          <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Pending Approvals</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{pendingApprovals}</div></div>
         </div>
         <div className="glass-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}><History size={24} /></div>
@@ -56,15 +88,25 @@ export default function UserManagement({ onNavigate } = {}) {
           <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead style={{ background: 'rgba(3, 9, 24, 0.72)', color: '#7dd3fc' }}>
               <tr>
-                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Emp ID</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Dept</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Role</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
+                {USER_TABLE_COLUMNS.map((col) => (
+                  <th key={col.key} style={{ padding: '12px 16px', fontWeight: 600 }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(col.key)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 0, padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer' }}
+                    >
+                      <span>{col.header}</span>
+                      {sort.key === col.key
+                        ? (sort.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)
+                        : <ArrowUpDown size={12} opacity={0.35} />}
+                    </button>
+                  </th>
+                ))}
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.map(u => (
+              {sortedUsers.map(u => (
                 <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>{u.id}</td>
                   <td style={{ padding: '12px 16px', color: '#64748b' }}>{u.department}</td>
@@ -93,23 +135,21 @@ export default function UserManagement({ onNavigate } = {}) {
             <History size={16} /> System Usage History
           </div>
           <div style={{ padding: '20px', flex: 1 }}>
-            <div style={{ fontSize: '13px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>User E101 (Operations Manager)</span>
-                <span>Approved user 'E102'</span>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>10 mins ago</span>
+            {USAGE_HISTORY.length === 0 ? (
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>
+                No usage history recorded yet. This panel will populate once the app is wired to a live activity/audit backend.
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>User E102 (Inspector)</span>
-                <span>Uploaded inspection results for 'Nile Bridge'</span>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>2 hours ago</span>
+            ) : (
+              <div style={{ fontSize: '13px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {USAGE_HISTORY.map((entry, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{entry.actor}</span>
+                    <span>{entry.action}</span>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>{entry.when}</span>
+                  </div>
+                ))}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>System</span>
-                <span>Updated condition descriptions for 'Karuma Falls'</span>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>5 hours ago</span>
-              </div>
-            </div>
+            )}
             <button
               onClick={() => onNavigate?.('architecture')}
               title="Open Database Audit & Integrity Tools"
