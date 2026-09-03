@@ -124,12 +124,26 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
       parsedRatings[el.id] = ratings[el.id] === '' || ratings[el.id] === undefined ? null : Number(ratings[el.id]);
     });
 
+    // Ratings run 0-9, and 0 ("Beyond Repair") is a real, legitimate worst-case
+    // score -- not an absence of one. `Math.max(a || 0, b || 0, ...) || null`
+    // looks safe but isn't: if every sub-element is genuinely rated 0, the max
+    // is 0, and `0 || null` then discards that real 0 and reports "not rated"
+    // instead of the catastrophic score, silently dropping that component
+    // from the weighted overall-rating calculation below. Take the max of
+    // only the elements that were actually entered instead, so a group left
+    // completely blank still resolves to null while a group rated all-zeros
+    // correctly resolves to 0.
+    const maxRating = (...values) => {
+      const entered = values.filter((v) => v !== null && v !== undefined);
+      return entered.length ? Math.max(...entered) : null;
+    };
+
     const engineRatings = {
-      superstructure: Math.max(parsedRatings.main_girders || 0, parsedRatings.cross_girders || 0, parsedRatings.deck_slab || 0, parsedRatings.bearings || 0) || null,
-      substructure: Math.max(parsedRatings.abutments || 0, parsedRatings.piers || 0, parsedRatings.foundations || 0, parsedRatings.wingwalls || 0) || null,
-      roadway: Math.max(parsedRatings.surfacing || 0, parsedRatings.expansion_joints || 0, parsedRatings.footways || 0, parsedRatings.parapets || 0) || null,
-      approaches: Math.max(parsedRatings.approaches || 0, parsedRatings.embankment || 0) || null,
-      waterway: parsedRatings.waterway || null
+      superstructure: maxRating(parsedRatings.main_girders, parsedRatings.cross_girders, parsedRatings.deck_slab, parsedRatings.bearings),
+      substructure: maxRating(parsedRatings.abutments, parsedRatings.piers, parsedRatings.foundations, parsedRatings.wingwalls),
+      roadway: maxRating(parsedRatings.surfacing, parsedRatings.expansion_joints, parsedRatings.footways, parsedRatings.parapets),
+      approaches: maxRating(parsedRatings.approaches, parsedRatings.embankment),
+      waterway: parsedRatings.waterway
     };
 
     const overall = calculateOverallRating(engineRatings);
