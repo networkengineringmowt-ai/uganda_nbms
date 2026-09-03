@@ -70,7 +70,7 @@ const DATASETS = [
   ['bridges.json', 'Bridge asset register', '546 bridge records'],
   ['culverts.json', 'Major culvert register', '452 culvert records'],
   ['road_network.json', 'National-road link register', '1,023 road links'],
-  ['critical_structures.json', 'Priority engineering queue', '69 critical structures'],
+  ['critical_structures.json', 'Priority engineering queue', '65 critical structures'],
   ['analytics.json', 'Generated condition and regional analytics', 'Dashboard aggregates'],
   ['historical_traffic.json', 'Historical and projected traffic evidence', 'Traffic time series'],
   ['documents.json', 'Indexed source-document corpus', 'Searchable extracted text'],
@@ -117,7 +117,11 @@ export default function SourcesEvidenceAdmin() {
   }, [documents, query, typeFilter]);
   const metrics = useMemo(() => ({
     documentSize: documents.reduce((sum, document) => sum + Number(document.size_mb || 0), 0),
-    photoStructures: new Set(photos.map((photo) => photo.structure_id).filter(Boolean)).size,
+    // Bridges and culverts are always reported separately, never combined
+    // into one "structures" figure -- split the covered-structure count by
+    // id prefix the same way the photo counts two cards over already are.
+    bridgeStructuresCovered: new Set(photos.filter((photo) => String(photo.structure_id || '').startsWith('B')).map((photo) => photo.structure_id)).size,
+    culvertStructuresCovered: new Set(photos.filter((photo) => String(photo.structure_id || '').startsWith('C')).map((photo) => photo.structure_id)).size,
     bridgePhotos: photos.filter((photo) => String(photo.structure_id || '').startsWith('B')).length,
     culvertPhotos: photos.filter((photo) => String(photo.structure_id || '').startsWith('C')).length,
     sourceConfirmed: photos.filter((photo) => String(photo.match_method || '').includes('source-folder')).length,
@@ -205,7 +209,8 @@ export default function SourcesEvidenceAdmin() {
           <div className="evidence-summary-grid">
             <article><Image size={20} /><span>Bridge evidence</span><strong>{metrics.bridgePhotos.toLocaleString()}</strong><small>Indexed bridge photographs</small></article>
             <article><Image size={20} /><span>Culvert evidence</span><strong>{metrics.culvertPhotos.toLocaleString()}</strong><small>Indexed major-culvert photographs</small></article>
-            <article><CheckCircle2 size={20} /><span>Structures covered</span><strong>{metrics.photoStructures}</strong><small>Assets with linked evidence</small></article>
+            <article><CheckCircle2 size={20} /><span>Bridges covered</span><strong>{metrics.bridgeStructuresCovered}</strong><small>Bridges with linked evidence</small></article>
+            <article><CheckCircle2 size={20} /><span>Culverts covered</span><strong>{metrics.culvertStructuresCovered}</strong><small>Culverts with linked evidence</small></article>
             <article><FolderArchive size={20} /><span>Source-folder confirmed</span><strong>{metrics.sourceConfirmed.toLocaleString()}</strong><small>{metrics.aliases.toLocaleString()} duplicate aliases retained for lineage</small></article>
           </div>
           <div className="dataset-register">
