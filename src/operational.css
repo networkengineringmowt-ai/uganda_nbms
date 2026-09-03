@@ -849,6 +849,16 @@
   gap: 24px;
 }
 
+/* .maintenance-header is the tab's first element and its search box +
+   condition filter sit at flex-end (top-right), the same corner the
+   floating Back/Top/Export bar (PageUtilityBar, position: fixed) occupies.
+   Unlike other page-top rows already fixed with a shared class, this
+   header class is unique to MaintenanceWorkspace, so it's safe to add
+   clearance directly here. */
+.modern-theme-root .maintenance-header {
+  margin-top: 40px;
+}
+
 /* Wraps merged multi-section tab content (Dashboard = filter bar + Overview +
    Visual Analytics + Cross Analysis) so `.page-content > *` only ever sees a
    single direct child -- see the flex-shrink note on that rule below. */
@@ -1245,7 +1255,9 @@
 }
 .photo-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* 5 cards -- bridge and culvert coverage are reported as separate cards
+     rather than one combined "structures covered" figure. */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 .photo-kpi-grid article {
