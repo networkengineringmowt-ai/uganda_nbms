@@ -76,7 +76,7 @@ export default function BridgesDashboard({ initialBridges = [] }) {
     { header: 'Scour Risk', cell: (row) => row.LegacyData?.scour_risk === 'Y' ? 'Yes' : row.LegacyData?.scour_risk === 'N' ? 'No' : row.LegacyData?.scour_risk || row.scour_risk || 'Unknown' },
     { header: 'Latitude', cell: (row) => row.Latitude ?? row.Lat ?? row.LegacyData?.location_corrected_lat ?? row.LegacyData?.map_y ?? 'Unknown' },
     { header: 'Longitude', cell: (row) => row.Longitude ?? row.Lon ?? row.LegacyData?.location_corrected_lon ?? row.LegacyData?.map_x ?? 'Unknown' },
-    { header: 'AADT', cell: (row) => { const aadt = row.Traffic?.aadt_2026 || row.aadt_rebuilt_2026 || row.current_predicted_aadt; return aadt ? Math.round(aadt).toLocaleString() : 'Unknown'; } },
+    { header: 'AADT', cell: (row) => { const aadt = row.Traffic?.aadt_2026 ?? row.aadt_rebuilt_2026 ?? row.current_predicted_aadt; return aadt !== null && aadt !== undefined ? Math.round(aadt).toLocaleString() : 'Unknown'; } },
     condCol('Superstructure', (row) => row.LegacyData?.superstructure_rating != null ? getConditionLabel(row.LegacyData.superstructure_rating) : row.superstructure_rating != null ? getConditionLabel(row.superstructure_rating) : 'Unknown'),
     condCol('Substructure', (row) => row.LegacyData?.substructure_rating != null ? getConditionLabel(row.LegacyData.substructure_rating) : row.substructure_rating != null ? getConditionLabel(row.substructure_rating) : 'Unknown'),
     condCol('Deck / Roadway', (row) => row.LegacyData?.roadway_rating != null ? getConditionLabel(row.LegacyData.roadway_rating) : row.roadway_rating != null ? getConditionLabel(row.roadway_rating) : 'Unknown'),

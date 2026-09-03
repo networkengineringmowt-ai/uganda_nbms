@@ -51,6 +51,10 @@ export default function PhotoLibrary({ bridges = [], culverts = [] }) {
   const activeStructure = filteredStructures.find((structure) => structure.id === activeId) || filteredStructures[0] || structures[0];
   const assigned = photos.filter((photo) => photo.structure_id).length;
   const sourceConfirmed = photos.filter((photo) => photo.match_method?.includes('source-folder')).length;
+  // Bridges and culverts are always reported separately, never merged into
+  // one "structures covered" figure.
+  const bridgesCovered = structures.filter((structure) => structureType(structure.id) === 'Bridge').length;
+  const culvertsCovered = structures.filter((structure) => structureType(structure.id) === 'Culvert').length;
 
   return (
     <div className="photo-library evidence-library">
@@ -64,7 +68,8 @@ export default function PhotoLibrary({ bridges = [], culverts = [] }) {
 
       <section className="photo-kpi-grid">
         <article><Camera size={20} /><span>Publishable evidence</span><strong>{photos.length.toLocaleString()}</strong></article>
-        <article><Images size={20} /><span>Structures covered</span><strong>{structures.length.toLocaleString()}</strong></article>
+        <article><Images size={20} /><span>Bridges covered</span><strong>{bridgesCovered.toLocaleString()}</strong></article>
+        <article><Images size={20} /><span>Culverts covered</span><strong>{culvertsCovered.toLocaleString()}</strong></article>
         <article><FolderCheck size={20} /><span>Source-folder confirmed</span><strong>{sourceConfirmed.toLocaleString()}</strong></article>
         <article><Image size={20} /><span>Assigned evidence</span><strong>{assigned.toLocaleString()}</strong></article>
       </section>
@@ -86,7 +91,10 @@ export default function PhotoLibrary({ bridges = [], culverts = [] }) {
                 <span className={`photo-type ${structureType(structure.id).toLowerCase()}`}>{structureType(structure.id)}</span>
                 <strong>{structure.id}</strong>
                 <small>{names.get(structure.id) || 'Structure evidence'}</small>
-                <em>{structure.photos.length} photos / {structure.years.size || 1} records</em>
+                {/* years.size can legitimately be 0 when no photo in the
+                    group has a capture_year on file -- reporting "1 records"
+                    in that case fabricates a year that doesn't exist. */}
+                <em>{structure.photos.length} photos / {structure.years.size > 0 ? `${structure.years.size} year${structure.years.size === 1 ? '' : 's'}` : 'year unknown'}</em>
               </button>
             ))}
           </div>

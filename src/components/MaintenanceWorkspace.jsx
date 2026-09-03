@@ -71,7 +71,7 @@ export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
             return (
               <div className="maintenance-table-row" key={`${row.BridgeNumber}-${row.LinkID}`}>
                 <span><strong>{row.BridgeNumber}</strong><small>{row.BridgeName || 'Unnamed bridge'}</small></span>
-                <span><strong>{row.LinkName || row.LinkID || 'Unlinked'}</strong><small>{row.BridgeLength || '-'} m long / {row.BridgeWidth || '-'} m wide</small></span>
+                <span><strong>{row.LinkName || row.LinkID || 'Unlinked'}</strong><small>{row.BridgeLength ?? '-'} m long / {row.BridgeWidth ?? '-'} m wide</small></span>
                 <span>{row.MaintenanceStation || 'Unassigned'}</span>
                 <span><em className={`condition-pill ${conditionClass(getConditionLabel(row.OverallRating))}`}>{getConditionLabel(row.OverallRating)}</em></span>
                 <span>{row.Comment || 'Engineering assessment required'}</span>

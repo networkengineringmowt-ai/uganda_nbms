@@ -528,20 +528,32 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                           <td style={cellStyle}>{fmtDec(leg.overall_width || leg.bridge_wid || leg.width)}</td>
                         </tr>
                         <tr>
+                          {/* The registry stores this as min_bridge_roadway_width
+                              (falling back to carriageway_width for records
+                              captured through the newer Inventory form) --
+                              carriageway_width/carriage_w alone never
+                              matched anything, so this cell printed "-" for
+                              every bridge regardless of whether the width
+                              was actually on file. Same field mapping
+                              DigitalTwin.jsx already uses. */}
                           <td style={headerCell}>Carriageway Width (m)</td>
-                          <td style={cellStyle}>{fmtDec(leg.carriageway_width || leg.carriage_w)}</td>
+                          <td style={cellStyle}>{fmtDec(leg.min_bridge_roadway_width || leg.carriageway_width)}</td>
                           <td style={headerCell}>Number of Lanes</td>
                           <td style={cellStyle}>{leg.no_of_lane || leg.no_of_lanes || '-'}</td>
                         </tr>
                         <tr>
-                          <td style={headerCell}>Vertical Clearance (m)</td>
-                          <td style={cellStyle}>{fmtDec(leg.vertical_clearance || leg.vert_clear)}</td>
-                          <td style={headerCell}>Horizontal Clearance (m)</td>
-                          <td style={cellStyle}>{fmtDec(leg.horizontal_clearance || leg.horiz_clea)}</td>
-                        </tr>
-                        <tr>
-                          <td style={headerCell}>Skew Angle (°)</td>
-                          <td style={cellStyle}>{leg.skew_angle || leg.skew || '-'}</td>
+                          {/* Vertical/horizontal clearance and skew angle are not
+                              fields the bridge registry collects at all (unlike
+                              culverts, which do carry them) -- there is no
+                              vertical_clearance/vert_clear/skew_angle/skew key
+                              anywhere in the source data, so this row would
+                              print "-" for every bridge unconditionally,
+                              indistinguishable from a genuinely missing survey
+                              value. Report what the registry actually has for
+                              this bridge instead: expansion-joint count and
+                              computed deck area. */}
+                          <td style={headerCell}>Number of Expansion Joints</td>
+                          <td style={cellStyle}>{leg.no_of_exp_joints ?? '-'}</td>
                           <td style={headerCell}>Deck Area (m²)</td>
                           <td style={cellStyle}><strong>{fmtDec(am.area)}</strong></td>
                         </tr>

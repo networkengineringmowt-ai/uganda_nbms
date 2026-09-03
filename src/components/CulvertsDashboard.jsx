@@ -62,7 +62,6 @@ export default function CulvertsDashboard({ initialCulverts = [] }) {
     { header: 'Maintenance Region', cell: (row) => row.Maintenance_Region || row.Region || 'Unknown' },
     { header: 'Km', cell: (row) => row.Km || row.km || 'Unknown' },
     { header: 'Region', cell: (row) => row.Region || row.Maintenance_Region || row.region || 'Unknown' },
-    { header: 'Firm', cell: (row) => row.Firm || row.firm || 'Unknown' },
     { header: 'Cells / Pipes', cell: (row) => row.NoOfPipesOrCells || row.LegacyData?.no_of_pipes || row.no_of_pipes || 'Unknown' },
     { header: 'Span / Diameter', cell: (row) => row.SpanOrDiameter || row.LegacyData?.span_diameter || row.span_diameter || 'Unknown' },
     { header: 'Length (m)', cell: (row) => row['Overall Length'] || row.LegacyData?.culvert_len || row.culvert_len || 'Unknown' },
@@ -76,7 +75,11 @@ export default function CulvertsDashboard({ initialCulverts = [] }) {
     condCol('Roadway', (row) => getConditionLabel(row.LegacyData?.roadway_rating ?? row.roadway_rating)),
     condCol('Waterway', (row) => getConditionLabel(row.LegacyData?.waterway_rating ?? row.waterway_rating)),
     condCol('Overall Condition', (row) => getConditionLabel(row['Overall Rating'] ?? row.LegacyData?.overall_rating ?? row.overall_rating ?? row['Condition Category'] ?? row['Condition Category.4'])),
-    { header: 'Inspection Date', cell: (row) => row.InspectionDate || row.LegacyData?.InspectionDate || row.DateModified || row.date_modified || 'Unknown' },
+    // Falls back only to other genuine inspection-date fields, never to
+    // DateModified/date_modified -- that's a record-edit timestamp, not an
+    // inspection date, and showing it here with no distinction would read
+    // as if the structure had been physically inspected on that date.
+    { header: 'Inspection Date', cell: (row) => row.InspectionDate || row.LegacyData?.InspectionDate || 'Not yet inspected' },
     { header: 'Date Modified', cell: (row) => row.DateModified || row.date_modified || 'Unknown' },
     { header: 'Comments', cell: (row) => row.Comments || row['Comment '] || row.LegacyData?.Comments || row.LegacyData?.['Comment '] || 'None' },
   ];

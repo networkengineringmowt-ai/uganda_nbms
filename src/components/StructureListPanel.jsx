@@ -138,7 +138,19 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
           return legacy.approaches_rating == null || legacy.roadway_rating == null || legacy.substructure_rating == null || legacy.superstructure_rating == null || legacy.waterway_rating == null;
         }
         if (filterAuditStatus === 'Insufficient Ranking Data') {
-          return !b.Traffic?.aadt_2026 || !b.MinVerticalClearance || !b.MinClearWidth;
+          // MinVerticalClearance/MinClearWidth are not real field names on
+          // this record -- the registry stores these as 'Min Vertical
+          // Clearance'/min_vertical_clearance and 'Min Clear Width'/
+          // min_clear_width (see DigitalTwin.jsx, BridgeDetailCard.jsx).
+          // Reading the wrong keys meant they were undefined on every
+          // bridge, so this filter matched 100% of the registry regardless
+          // of whether ranking data was actually missing. Read the real
+          // fields, and treat a legitimate 0 as present data, not missing.
+          const isMissing = (v) => v === null || v === undefined || v === '';
+          const aadt = b.Traffic?.aadt_2026;
+          const vClear = b['Min Vertical Clearance'] ?? legacy.min_vertical_clearance;
+          const cWidth = b['Min Clear Width'] ?? legacy.min_clear_width;
+          return isMissing(aadt) || isMissing(vClear) || isMissing(cWidth);
         }
         return true;
       });
