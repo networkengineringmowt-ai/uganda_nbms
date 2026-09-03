@@ -44,7 +44,7 @@ const RATING_GROUPS = [
 
 const RATING_ELEMENTS = RATING_GROUPS.flatMap(g => g.elements);
 
-export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) {
+export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate, readOnly = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [message, setMessage] = useState('');
@@ -103,6 +103,12 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
   };
 
   const handleRatingSelect = (elId, num) => {
+    // Views that pass readOnly (e.g. the Super dashboard's Inspection tab)
+    // must not be able to actually change or submit inspection data --
+    // previously this prop was accepted by the parent workspace but never
+    // enforced here, so a "read-only" viewer could still edit ratings and
+    // save them through to the backend.
+    if (readOnly) return;
     setRatings(prev => ({ ...prev, [elId]: num }));
   };
 
@@ -157,7 +163,7 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
   }, [ratings, selectedId]);
 
   const handleSave = async () => {
-    if (!selectedId) return;
+    if (!selectedId || readOnly) return;
     setMessage('Saving...');
     setIsError(false);
     
@@ -383,9 +389,11 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate }) 
               <ReactECharts option={radarOption} style={{ height: '100%', width: '100%' }} />
             </div>
 
-            <button className="ent-btn-primary" onClick={handleSave}>
-              <Save size={16} /> Save Inspection
-            </button>
+            {!readOnly && (
+              <button className="ent-btn-primary" onClick={handleSave}>
+                <Save size={16} /> Save Inspection
+              </button>
+            )}
           </>
         ) : (
           <div style={{ fontSize: '13px', color: 'var(--ent-text-muted)' }}>No record active.</div>

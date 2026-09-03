@@ -1,16 +1,21 @@
 import { useState, useMemo } from 'react';
 import { saveCulvert } from '../../services/bmsDataService';
 import { CONDITION_RATINGS, getConditionColor, getConditionLabel } from '../../utils/dataDictionary';
+import { calculateCulvertOverallRating } from '../../utils/bmsAlgorithms';
+import { getConditionCategory } from '../../utils/rankingEngine';
 import { Search, Save, AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
+// Matches the real 4-component culvert schema used everywhere else this
+// registry's culvert ratings are read or reported (CulvertPrintReport.jsx,
+// calculateCulvertOverallRating in bmsAlgorithms.js), rather than an
+// invented 6-part rubric. Field ids double as the `ratings` object keys
+// passed straight into calculateCulvertOverallRating.
 const CULVERT_RATING_ELEMENTS = [
-  { id: 'alignment', label: '1. Barrel Alignment' },
-  { id: 'joints', label: '2. Seams & Joints' },
-  { id: 'material', label: '3. Barrel Material' },
-  { id: 'footings', label: '4. Footings & Scour' },
-  { id: 'approaches', label: '5. Approaches' },
-  { id: 'roadway', label: '6. Roadway Deck' }
+  { id: 'waterway', label: '1. Waterway', legacyKey: 'waterway_rating' },
+  { id: 'inletOutlet', label: '2. Inlet / Outlet', legacyKey: 'inlet_outlet_rating' },
+  { id: 'structure', label: '3. Culvert Structure', legacyKey: 'structure_rating' },
+  { id: 'roadway', label: '4. Roadway', legacyKey: 'roadway_rating' }
 ];
 
 export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate }) {
@@ -20,11 +25,11 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
   const [isError, setIsError] = useState(false);
 
   const [ratings, setRatings] = useState({
-    alignment: '', joints: '', material: '', footings: '', approaches: '', roadway: ''
+    waterway: '', inletOutlet: '', structure: '', roadway: ''
   });
 
-  const filteredCulverts = culverts.filter(c => 
-    c.CulvertNumber?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredCulverts = culverts.filter(c =>
+    c.CulvertNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.River?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -32,11 +37,9 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
     setMessage('');
     setSelectedId(c.CulvertNumber);
     setRatings({
-      alignment: c.LegacyData?.alignment_rating ?? '',
-      joints: c.LegacyData?.joints_rating ?? '',
-      material: c.LegacyData?.material_rating ?? '',
-      footings: c.LegacyData?.footings_rating ?? '',
-      approaches: c.LegacyData?.approaches_rating ?? '',
+      waterway: c.LegacyData?.waterway_rating ?? '',
+      inletOutlet: c.LegacyData?.inlet_outlet_rating ?? '',
+      structure: c.LegacyData?.structure_rating ?? '',
       roadway: c.LegacyData?.roadway_rating ?? ''
     });
   };
@@ -47,18 +50,20 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
 
   const results = useMemo(() => {
     if (!selectedId) return null;
-    const vals = Object.values(ratings).map(v => v === '' || v === undefined ? null : Number(v)).filter(x => x !== null);
-    if (vals.length === 0) return { overallRating: null, category: 'Unrated' };
-    
-    const avg = Math.round(vals.reduce((sum, v) => sum + v, 0) / vals.length);
-    let category = 'Unrated';
-    if (avg >= 8) category = 'Excellent';
-    else if (avg >= 6) category = 'Good';
-    else if (avg >= 4) category = 'Fair';
-    else if (avg >= 2) category = 'Poor';
-    else if (avg >= 0) category = 'Critical';
+    const parsed = {};
+    Object.keys(ratings).forEach((key) => {
+      parsed[key] = ratings[key] === '' || ratings[key] === undefined ? null : Number(ratings[key]);
+    });
+    const hasAny = Object.values(parsed).some((v) => v !== null);
+    if (!hasAny) return { overallRating: null, category: 'Unrated' };
 
-    return { overallRating: avg, category };
+    // Use the same weighted formula (waterway 20% / inlet-outlet 25% /
+    // structure 45% / roadway 10%) that every other culvert view in the
+    // app relies on, instead of a plain average -- a plain average would
+    // silently disagree with the Overall Condition shown on the Culverts
+    // Dashboard and the Print Report for the same structure.
+    const overall = calculateCulvertOverallRating(parsed);
+    return { overallRating: overall, category: getConditionCategory(overall) };
   }, [ratings, selectedId]);
 
   const handleSave = async () => {
@@ -72,15 +77,15 @@ export default function CulvertInspectionForm({ culverts = [], onCulvertsUpdate 
     if (idx > -1) {
       const c = { ...updated[idx] };
       c.LegacyData = c.LegacyData || {};
-      
-      Object.keys(ratings).forEach(key => {
-        c.LegacyData[`${key}_rating`] = ratings[key] === '' ? null : Number(ratings[key]);
+
+      CULVERT_RATING_ELEMENTS.forEach(({ id, legacyKey }) => {
+        c.LegacyData[legacyKey] = ratings[id] === '' || ratings[id] === undefined ? null : Number(ratings[id]);
       });
-      
+
       if (results && results.overallRating != null) {
         c.LegacyData.overall_rating = results.overallRating;
       }
-      
+
       updated[idx] = c;
 
       try {

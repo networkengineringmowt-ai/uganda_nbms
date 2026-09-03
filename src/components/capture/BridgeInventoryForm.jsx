@@ -82,20 +82,37 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
       return;
     }
 
+    // This form only exposes a subset of a bridge record's fields (it has
+    // no inputs for Region, ConditionRating, Traffic, RoadClass, and other
+    // attributes that live elsewhere in the app). Replacing the existing
+    // record outright with `formData` on save would silently delete every
+    // field this form doesn't know about. Merge the edited fields onto the
+    // full original record instead, so anything not shown here survives.
+    let recordToSave;
     if (selectedId === 'NEW') {
       if (updated.some(x => x.BridgeNumber === id)) {
         setMessage('Bridge Number already exists.');
         setIsError(true);
         return;
       }
-      updated.unshift(formData);
+      recordToSave = formData;
+      updated.unshift(recordToSave);
     } else {
       const idx = updated.findIndex(x => x.BridgeNumber === selectedId);
-      if (idx > -1) updated[idx] = formData;
+      if (idx > -1) {
+        recordToSave = {
+          ...updated[idx],
+          ...formData,
+          LegacyData: { ...(updated[idx].LegacyData || {}), ...formData.LegacyData }
+        };
+        updated[idx] = recordToSave;
+      } else {
+        recordToSave = formData;
+      }
     }
 
     try {
-      await saveBridge(formData);
+      await saveBridge(recordToSave);
       setMessage(`Record saved successfully.`);
       if (onBridgesUpdate) onBridgesUpdate(updated);
       setSelectedId(formData.BridgeNumber);
@@ -135,25 +152,31 @@ export default function BridgeInventoryForm({ bridges = [], onBridgesUpdate }) {
 
   const renderInputField = (label, name, type = 'text', dict = null) => {
     const val = name.startsWith('LegacyData.') ? formData.LegacyData[name.split('.')[1]] : formData[name];
+    // A dimension/measurement field can legitimately be 0 (e.g. Sidewalks,
+    // Clearances). `val || ''` treats that real 0 the same as an empty
+    // field and blanks it out of the input on every re-render, making it
+    // impossible to enter or keep a genuine 0. Only fall back to '' when
+    // there's truly nothing entered.
+    const displayVal = val === null || val === undefined ? '' : val;
     return (
       <div className="ent-field">
         <label className="ent-label">{label}</label>
         {dict ? (
-           <select name={name} className="ent-select" value={val || ''} onChange={handleChange}>
+           <select name={name} className="ent-select" value={displayVal} onChange={handleChange}>
              <option value="">Select...</option>
              {Object.entries(dict).map(([code, desc]) => (
                <option key={code} value={code}>{code} - {desc}</option>
              ))}
            </select>
         ) : type === 'select' ? (
-           <select name={name} className="ent-select" value={val || ''} onChange={handleChange}>
+           <select name={name} className="ent-select" value={displayVal} onChange={handleChange}>
              <option value="">Select...</option>
              <option value="Yes">Yes</option>
              <option value="No">No</option>
            </select>
         ) : (
-          <input 
-            type={type} name={name} className="ent-input" value={val || ''} onChange={handleChange}
+          <input
+            type={type} name={name} className="ent-input" value={displayVal} onChange={handleChange}
             disabled={name === 'BridgeNumber' && selectedId !== 'NEW'}
           />
         )}

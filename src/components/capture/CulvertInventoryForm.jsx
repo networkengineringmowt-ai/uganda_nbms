@@ -65,20 +65,33 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
       return;
     }
 
+    // This form only exposes a subset of a culvert record's fields -- it
+    // has no inputs at all for LegacyData (ratings, condition history, and
+    // every other legacy-registry attribute). Replacing the existing
+    // record outright with `formData` on save would silently wipe
+    // LegacyData and anything else this form doesn't know about. Merge the
+    // edited fields onto the full original record instead.
+    let recordToSave;
     if (selectedId === 'NEW') {
       if (updated.some(x => x.CulvertNumber === id)) {
         setMessage('Culvert Number already exists.');
         setIsError(true);
         return;
       }
-      updated.unshift(formData);
+      recordToSave = formData;
+      updated.unshift(recordToSave);
     } else {
       const idx = updated.findIndex(x => x.CulvertNumber === selectedId);
-      if (idx > -1) updated[idx] = formData;
+      if (idx > -1) {
+        recordToSave = { ...updated[idx], ...formData };
+        updated[idx] = recordToSave;
+      } else {
+        recordToSave = formData;
+      }
     }
 
     try {
-      await saveCulvert(formData);
+      await saveCulvert(recordToSave);
       setMessage(`Record saved successfully.`);
       if (onCulvertsUpdate) onCulvertsUpdate(updated);
       setSelectedId(formData.CulvertNumber);
@@ -116,18 +129,23 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
   };
 
   const renderInputField = (label, name, type = 'text', dict = null) => {
+    // Span/opening width (and similar dimension fields) can legitimately
+    // be 0; `formData[name] || ''` would blank a real 0 back out of the
+    // input on every re-render.
+    const rawVal = formData[name];
+    const displayVal = rawVal === null || rawVal === undefined ? '' : rawVal;
     return (
       <div className="ent-field">
         <label className="ent-label">{label}</label>
         {dict ? (
-           <select name={name} className="ent-select" value={formData[name] || ''} onChange={handleChange}>
+           <select name={name} className="ent-select" value={displayVal} onChange={handleChange}>
              <option value="">Select...</option>
              {Object.entries(dict).map(([code, desc]) => (
                <option key={code} value={code}>{code} - {desc}</option>
              ))}
            </select>
         ) : type === 'select' ? (
-           <select name={name} className="ent-select" value={formData[name] || ''} onChange={handleChange}>
+           <select name={name} className="ent-select" value={displayVal} onChange={handleChange}>
              <option value="">Select...</option>
              <option value="Concrete Box">Concrete Box</option>
              <option value="Concrete Pipe">Concrete Pipe</option>
@@ -135,8 +153,8 @@ export default function CulvertInventoryForm({ culverts = [], onCulvertsUpdate }
              <option value="Masonry Arch">Masonry Arch</option>
            </select>
         ) : (
-           <input 
-             type={type} name={name} className="ent-input" value={formData[name] || ''} onChange={handleChange}
+           <input
+             type={type} name={name} className="ent-input" value={displayVal} onChange={handleChange}
              disabled={name === 'CulvertNumber' && selectedId !== 'NEW'}
            />
         )}
