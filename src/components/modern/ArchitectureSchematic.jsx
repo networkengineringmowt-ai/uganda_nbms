@@ -12,7 +12,7 @@ import {
   MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Database, Camera, TrendingUp, CloudCog, Cpu, Smartphone, LayoutDashboard, ShieldCheck, Box, KeyRound, Server, Gauge, FileText, X, Activity, BrainCircuit } from 'lucide-react';
+import { Database, Camera, TrendingUp, CloudCog, Cpu, Smartphone, LayoutDashboard, ShieldCheck, Box, KeyRound, Server, Gauge, FileText, X, Activity } from 'lucide-react';
 import AdminDocumentation from '../admin/AdminDocumentation';
 import AuditTools from '../admin/AuditTools';
 
@@ -175,24 +175,17 @@ const initialNodes = [
       techDocs: 'Connects to /metrics endpoints across all services. Includes pre-built dashboards for API latency, GeoServer layer rendering times, and PostGIS transaction throughput.'
     }
   },
-  {
-    id: '13', type: 'engineNode', position: { x: 350, y: 525 },
-    data: {
-      label: 'Deep Learning Vision API', subline: 'Defect & Crack Detection',
-      icon: <BrainCircuit size={18} />, color: 'rgba(236, 72, 153, 0.1)', iconColor: '#ec4899',
-      details: ['PyTorch CNN', 'YOLOv8'],
-      techDocs: 'Processes images from the Photo Evidence subsystem to detect spalling, cracking, and rust automatically using convolutional neural networks.'
-    }
-  },
-  {
-    id: '14', type: 'engineNode', position: { x: 650, y: 187 },
-    data: {
-      label: 'Predictive Deterioration ML', subline: 'Time-series Lifecycle Engine',
-      icon: <BrainCircuit size={18} />, color: 'rgba(236, 72, 153, 0.1)', iconColor: '#ec4899',
-      details: ['LSTM', 'Markov Chains'],
-      techDocs: 'Consumes historical condition data from PostGIS to predict future degradation curves for bridges using Deep Learning (LSTMs).'
-    }
-  },
+  // Note: this schematic mirrors the real enterprise-gis/ scaffold and
+  // docs/ENTERPRISE_GIS_ARCHITECTURE.md (Keycloak, Nginx/MapProxy, PostGIS,
+  // MinIO, pygeoapi/GeoServer, Prometheus+Grafana all have actual service
+  // definitions there, even though that stack is an optional deployment
+  // target and not what the live GitHub Pages app runs on). A "Deep
+  // Learning Vision API" (PyTorch CNN / YOLOv8 defect detection) and a
+  // "Predictive Deterioration ML" (LSTM / Markov chain) node used to be
+  // shown here too, but neither has any corresponding service, model, or
+  // even a roadmap mention anywhere in enterprise-gis/ or the architecture
+  // docs -- they were invented. Removed rather than presented as real
+  // system capabilities.
 ];
 
 const animatedEdgeStyle = { stroke: '#8b5cf6', strokeWidth: 2 };
@@ -210,10 +203,6 @@ const initialEdges = [
   { id: 'e10-11', source: '10', target: '11', type: 'smoothstep', animated: true, style: animatedEdgeStyle, markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } },
   { id: 'e11-6', source: '11', target: '6', type: 'smoothstep', animated: true, style: animatedEdgeStyle, markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } },
   { id: 'e6-12', source: '6', target: '12', type: 'smoothstep', animated: true, style: animatedEdgeStyle, markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } },
-  { id: 'e3-13', source: '3', target: '13', type: 'smoothstep', animated: true, style: animatedEdgeStyle, markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } },
-  { id: 'e13-4', source: '13', target: '4', type: 'smoothstep', animated: true, style: animatedEdgeStyle, markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } },
-  { id: 'e4-14', source: '4', target: '14', type: 'smoothstep', animated: true, style: animatedEdgeStyle, markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } },
-  { id: 'e14-9', source: '14', target: '9', type: 'smoothstep', animated: true, style: animatedEdgeStyle, markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } },
 ];
 
 export default function ArchitectureSchematic() {

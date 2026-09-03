@@ -161,7 +161,13 @@ const visibleSections = (isAdmin) => sectionDefinitions
 
 const APP_LAUNCHER_ITEMS = [
   { id: 'bms', name: 'BMS Core', desc: 'National Roads Registry', icon: Database, color: '#3b82f6', targetTab: 'overview' },
-  { id: 'ai', name: 'AI Analytics', desc: 'Defect Detection Hub', icon: BrainCircuit, color: '#ec4899', targetTab: 'algorithms' },
+  // This tile links to the Algorithms & Decision Logic reference page,
+  // which documents the app's real deterministic condition-rating,
+  // deficiency-index and asset-valuation formulas -- there is no AI/ML
+  // defect-detection model anywhere in this codebase, so labeling the
+  // tile that way (as it previously was) misrepresented what the page
+  // actually shows.
+  { id: 'ai', name: 'Algorithms', desc: 'Rating & Deficiency Formulas', icon: BrainCircuit, color: '#ec4899', targetTab: 'algorithms' },
   { id: 'twin', name: 'Digital Twin', desc: 'Reality Meshes & LiDAR', icon: Box, color: '#10b981', targetTab: 'bms_3d' },
   { id: 'capture', name: 'Data Capture', desc: 'Field Collection API', icon: Smartphone, color: '#f59e0b', targetTab: 'capture_bridge' },
 ];
