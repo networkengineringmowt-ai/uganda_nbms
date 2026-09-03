@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { History, LogIn, UserX } from 'lucide-react';
 
-const MOCK_LOGINS = [
-  { id: 1, user: 'admin.super', time: '2 mins ago', ip: '192.168.1.45', status: 'SUCCESS', location: 'Kampala, UG' },
-  { id: 2, user: 'inspector.mbale', time: '14 mins ago', ip: '10.0.0.12', status: 'SUCCESS', location: 'Mbale, UG' },
-  { id: 3, user: 'unknown', time: '1 hour ago', ip: '144.12.33.2', status: 'FAILED_ATTEMPT', location: 'London, UK' },
-  { id: 4, user: 'admin.super', time: '3 hours ago', ip: '192.168.1.45', status: 'SUCCESS', location: 'Kampala, UG' },
-  { id: 5, user: 'data.clerk', time: '5 hours ago', ip: '192.168.1.112', status: 'SUCCESS', location: 'Kampala, UG' },
-];
+// No live authentication backend feeds this page (see the standing
+// safety note on this engagement: the production login gate is a
+// separate "Secure Gateway" this app doesn't have log access to).
+// Previously this page displayed invented usernames, IP addresses, and
+// geolocations as if they were real login history -- fabricated
+// security data is worse than none, so the table is left genuinely
+// empty until a real access-log backend is connected.
+const LOGIN_RECORDS = [];
 
 export default function LoginTracking() {
-  const [logs] = useState(MOCK_LOGINS);
+  const [logs] = useState(LOGIN_RECORDS);
 
   return (
     <div className="panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -36,6 +37,11 @@ export default function LoginTracking() {
             </tr>
           </thead>
           <tbody>
+            {logs.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>No login activity available.</td>
+              </tr>
+            )}
             {logs.map((log) => (
               <tr key={log.id}>
                 <td>{log.time}</td>

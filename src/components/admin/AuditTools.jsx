@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { Database, History, Clock, Search, ArrowLeftRight } from 'lucide-react';
 import { downloadCSV } from '../../utils/exportUtils';
 
-const MOCK_AUDIT_LOGS = [
-  { id: 'AL-9921', time: '10 mins ago', user: 'system_sync', action: 'BULK_UPDATE', target: 'core.structure', status: 'SUCCESS', details: 'Synced 14 records from QField' },
-  { id: 'AL-9920', time: '1 hour ago', user: 'admin_kato', action: 'UPDATE_CONDITION', target: 'inspection.inspection', status: 'SUCCESS', details: 'Changed B001 condition from Satisfactory to Fair' },
-  { id: 'AL-9919', time: '2 hours ago', user: 'api_service', action: 'SCHEMA_ALTER', target: 'twin.reconstruction', status: 'DENIED', details: 'Insufficient permissions' },
-  { id: 'AL-9918', time: '5 hours ago', user: 'admin_kato', action: 'DELETE_EVIDENCE', target: 'evidence.media', status: 'SUCCESS', details: 'Removed duplicate photo B001_DUP' },
-  { id: 'AL-9917', time: '1 day ago', user: 'system_backup', action: 'BACKUP_DUMP', target: 'pg_dump', status: 'SUCCESS', details: 'Nightly custom-format backup' },
-];
+// This app has no live database change-log backend to read from (see
+// bmsDataService.js -- writes go to a local-drive server, not a
+// transaction-logged database). Previously this page displayed a
+// hardcoded set of invented log rows and connection/transaction counts
+// as if they were real activity; that fabricated data has been removed
+// rather than left to mislead anyone reviewing it as an actual security
+// or integrity record. The table stays empty until a real audited
+// backend is wired in.
+const AUDIT_LOGS = [];
 
 export default function AuditTools() {
   const [searchTerm, setSearchTerm] = useState('');
-  const filteredLogs = MOCK_AUDIT_LOGS.filter(l => l.user.includes(searchTerm) || l.action.includes(searchTerm));
+  const filteredLogs = AUDIT_LOGS.filter(l => l.user.includes(searchTerm) || l.action.includes(searchTerm));
 
   return (
     <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -47,29 +49,14 @@ export default function AuditTools() {
         </div>
       </div>
 
-      <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-        <div className="glass-card" style={{ padding: '16px', borderLeft: '3px solid #10b981' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>Active Connections</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>14</div>
-        </div>
-        <div className="glass-card" style={{ padding: '16px', borderLeft: '3px solid #38bdf8' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>Transactions (24h)</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>1,284</div>
-        </div>
-        <div className="glass-card" style={{ padding: '16px', borderLeft: '3px solid #f59e0b' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>Schema Changes (7d)</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>2</div>
-        </div>
-        <div className="glass-card" style={{ padding: '16px', borderLeft: '3px solid #ef4444' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>Denied Queries (24h)</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#ef4444' }}>7</div>
-        </div>
+      <div className="glass-card" style={{ padding: '16px', borderLeft: '3px solid #f59e0b', fontSize: '13px', color: 'var(--text-secondary)' }}>
+        No live database audit backend is connected yet, so there is no transaction/connection activity to report here. This tool will populate once the app is wired to an audited database backend.
       </div>
 
       <div className="glass-card" style={{ flex: 1, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.4)', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <History size={16} color="#94a3b8" />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Recent Transaction Logs (audit.change_log)</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Transaction Logs</span>
         </div>
         <div style={{ overflowY: 'auto', overflowX: 'auto', flex: 1 }}>
           <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '12px' }}>
@@ -85,6 +72,11 @@ export default function AuditTools() {
               </tr>
             </thead>
             <tbody>
+              {filteredLogs.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>No audit log entries available.</td>
+                </tr>
+              )}
               {filteredLogs.map((log) => (
                 <tr key={log.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{log.id}</td>

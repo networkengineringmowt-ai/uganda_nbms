@@ -1,11 +1,9 @@
-import { 
-  Calculator, 
+import {
+  Calculator,
   TrendingUp,
   AlertTriangle,
   GitBranch,
-  Settings2,
-  BrainCircuit,
-  Camera
+  Settings2
 } from 'lucide-react';
 
 export default function AdminAlgorithms() {
@@ -19,181 +17,130 @@ export default function AdminAlgorithms() {
       </div>
 
       <div className="algo-dense-grid">
-        {/* Rating Algorithm */}
-        <div className="algo-tech-card">
+        {/* Bridge Overall Condition Rating -- rankingEngine.js calculateOverallRating(),
+            wired into the Inspect Bridge capture form. Weights depend on which
+            condition band (0-2 / 3-4 / 5-9) each component's own rating falls in,
+            per Table 3 of the 2017 UNRA BMS manual -- not a fixed 40/40/20 split. */}
+        <div className="algo-tech-card full-width">
           <div className="algo-tech-header">
             <Calculator size={16} className="tech-icon blue" />
-            <span className="tech-title">CONDITION_RATING_CALC</span>
+            <span className="tech-title">BRIDGE_OVERALL_CONDITION_RATING</span>
           </div>
-          <div className="tech-desc">Calculates macroscopic structural health from component inspections.</div>
-          
-          <div className="code-block">
-            <code>Condition = Σ(ElementScore × ElementWeight) / Σ(ElementWeights)</code>
-          </div>
-          
-          <div className="decision-tree">
-            <div className="dt-node root-node">Bridge (100%)</div>
-            <div className="dt-branches">
-              <div className="dt-branch">
-                <div className="dt-node sub-node">Superstructure (40%)</div>
-                <div className="dt-leaf">Girders, Trusses, Arches</div>
-              </div>
-              <div className="dt-branch">
-                <div className="dt-node sub-node">Substructure (40%)</div>
-                <div className="dt-leaf">Piers, Abutments, Foundations</div>
-              </div>
-              <div className="dt-branch">
-                <div className="dt-node sub-node">Deck (20%)</div>
-                <div className="dt-leaf">Surface, Joints, Railings</div>
-              </div>
-            </div>
-          </div>
-        </div>
+          <div className="tech-desc">Weighted average of the five component ratings entered on a bridge inspection (Approaches, Waterway, Substructure, Superstructure, Roadway). Each component's weight depends on how severe its own rating is -- a badly-rated component counts for more, not less.</div>
 
-        {/* Traffic Demand */}
-        <div className="algo-tech-card">
-          <div className="algo-tech-header">
-            <TrendingUp size={16} className="tech-icon green" />
-            <span className="tech-title">TRAFFIC_DEMAND_PROJECTION</span>
-          </div>
-          <div className="tech-desc">Projects future AADT using regional factors and historical census data.</div>
-          
           <div className="code-block">
-            <code>AADT_Future = AADT_Base × (1 + GrowthFactor)^Years</code>
+            <code>Overall = Σ(weight[component][rating] × rating) / Σ(weight[component][rating])</code>
           </div>
 
           <div className="param-table-wrapper">
             <table className="tech-param-table">
               <thead>
                 <tr>
-                  <th>PARAMETER</th>
-                  <th>VALUE</th>
-                  <th>TYPE</th>
+                  <th>COMPONENT</th>
+                  <th>RATING 0-2</th>
+                  <th>RATING 3-4</th>
+                  <th>RATING 5-9</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>BaseYear</td>
-                  <td className="tech-val">2026</td>
-                  <td className="tech-type">INT</td>
-                </tr>
-                <tr>
-                  <td>Growth_Corridor</td>
-                  <td className="tech-val">0.045</td>
-                  <td className="tech-type">FLOAT</td>
-                </tr>
-                <tr>
-                  <td>Growth_Feeder</td>
-                  <td className="tech-val">0.028</td>
-                  <td className="tech-type">FLOAT</td>
-                </tr>
+                <tr><td>Substructure</td><td className="tech-val">8</td><td className="tech-val">4</td><td className="tech-val">2</td></tr>
+                <tr><td>Superstructure</td><td className="tech-val">8</td><td className="tech-val">4</td><td className="tech-val">2</td></tr>
+                <tr><td>Waterway</td><td className="tech-val">8</td><td className="tech-val">2</td><td className="tech-val">1</td></tr>
+                <tr><td>Roadway</td><td className="tech-val">6</td><td className="tech-val">2</td><td className="tech-val">0.5</td></tr>
+                <tr><td>Approaches</td><td className="tech-val">6</td><td className="tech-val">2</td><td className="tech-val">0.25</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Priority Ranking */}
+        {/* Culvert Overall Condition Rating -- bmsAlgorithms.js calculateCulvertOverallRating(),
+            wired into the Inspect Culvert capture form and shown on the Culvert Print Report. */}
+        <div className="algo-tech-card">
+          <div className="algo-tech-header">
+            <Calculator size={16} className="tech-icon green" />
+            <span className="tech-title">CULVERT_OVERALL_CONDITION_RATING</span>
+          </div>
+          <div className="tech-desc">Fixed-weight average of the four culvert component ratings (Waterway, Inlet/Outlet, Structure, Roadway).</div>
+
+          <div className="code-block">
+            <code>Overall = Σ(weight[component] × rating) / Σ(weight[component])</code>
+          </div>
+
+          <div className="param-table-wrapper">
+            <table className="tech-param-table">
+              <thead><tr><th>COMPONENT</th><th>WEIGHT</th></tr></thead>
+              <tbody>
+                <tr><td>Structure</td><td className="tech-val">45%</td></tr>
+                <tr><td>Inlet / Outlet</td><td className="tech-val">25%</td></tr>
+                <tr><td>Waterway</td><td className="tech-val">20%</td></tr>
+                <tr><td>Roadway</td><td className="tech-val">10%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Traffic -- there is no fixed global growth-rate table; each link's
+            AADT growth is a per-record field carried through from the traffic
+            dataset, not projected from a system-wide constant. */}
+        <div className="algo-tech-card">
+          <div className="algo-tech-header">
+            <TrendingUp size={16} className="tech-icon green" />
+            <span className="tech-title">TRAFFIC_AADT</span>
+          </div>
+          <div className="tech-desc">AADT and its annual growth rate are read per road link directly from the traffic survey dataset (field <code>annual_weighted_growth_rate</code>) -- the system does not project future traffic from a fixed corridor/feeder growth constant.</div>
+          <div className="code-block">
+            <code>AADT_shown = Traffic.aadt_2026 (from survey, per link)</code>
+          </div>
+        </div>
+
+        {/* Bridge Condition Deficiency Index -- rankingEngine.js calculateConditionDeficiency()
+            (used in the Inspect Bridge form) / the equivalent bmsAlgorithms.js
+            calculateBridgeDeficiencyIndex() (used on the Bridge Detail Card). Both
+            implement the same DC formula from the 2017 UNRA manual. */}
         <div className="algo-tech-card full-width">
           <div className="algo-tech-header">
             <AlertTriangle size={16} className="tech-icon red" />
-            <span className="tech-title">INTERVENTION_PRIORITY_RANKING</span>
+            <span className="tech-title">BRIDGE_CONDITION_DEFICIENCY_INDEX</span>
           </div>
-          <div className="tech-desc">Generates the national ranked list of structures requiring immediate intervention based on deficiency, traffic, and vulnerability.</div>
-          
+          <div className="tech-desc">Scores a bridge's condition deficiency from 0 (perfect) to 100 (critical), scaled by traffic demand, per the 2017 UNRA BMS manual (Tables 8-10). This is what drives the Deficiency Score shown on the bridge detail view -- it is not part of a machine-learning ranking model.</div>
+
           <div className="code-block">
-            <code>PriorityScore = (W_Cond × CondDeficit) + (W_Traf × Log(AADT)) + (W_Risk × ScourRisk)</code>
+            <code>DC = 100 × (ADTO / 5400)^0.2 × Σ(k[component][rating] × w[component]) / Σ(w[component])</code>
           </div>
 
           <div className="decision-tree horizontal">
-            <div className="dt-node root-node"><GitBranch size={14}/> Priority Engine</div>
+            <div className="dt-node root-node"><GitBranch size={14}/> Component weights (w)</div>
             <div className="dt-branches row-layout">
               <div className="dt-branch">
-                <div className="dt-node sub-node">CondDeficit (50%)</div>
-                <div className="dt-leaf">100 - ConditionRating</div>
+                <div className="dt-node sub-node">Superstructure / Substructure</div>
+                <div className="dt-leaf">1.00</div>
               </div>
               <div className="dt-branch">
-                <div className="dt-node sub-node">Log(AADT) (30%)</div>
-                <div className="dt-leaf">Economic Impact Weight</div>
+                <div className="dt-node sub-node">Waterway</div>
+                <div className="dt-leaf">0.83</div>
               </div>
               <div className="dt-branch">
-                <div className="dt-node sub-node">ScourRisk (20%)</div>
-                <div className="dt-leaf">Vulnerability Multiplier</div>
+                <div className="dt-node sub-node">Roadway</div>
+                <div className="dt-leaf">0.50</div>
+              </div>
+              <div className="dt-branch">
+                <div className="dt-node sub-node">Approach</div>
+                <div className="dt-leaf">0.25</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Predictive Deterioration LSTM */}
+        {/* Asset Valuation -- bmsAlgorithms.js calculateAssetValue(), used on the
+            Bridge/Culvert Detail Card and the printed structural reports. */}
         <div className="algo-tech-card full-width">
           <div className="algo-tech-header">
-            <BrainCircuit size={16} className="tech-icon purple" />
-            <span className="tech-title">PREDICTIVE_DETERIORATION_LSTM</span>
+            <Calculator size={16} className="tech-icon blue" />
+            <span className="tech-title">ASSET_VALUATION_CRC_CDRC</span>
           </div>
-          <div className="tech-desc">Time-series forecasting of structural degradation curves using Long Short-Term Memory (LSTM) neural networks trained on historical inspection data.</div>
-          
+          <div className="tech-desc">Current Replacement Cost (CRC) is estimated from deck area at a fixed unit rate; Current Depreciated Replacement Cost (CDRC) scales CRC down by the structure's own overall condition rating out of 9.</div>
           <div className="code-block">
-            <code>Condition_{'{t+1}'} = LSTM(Condition_{'{0..t}'}, Traffic_{'{t}'}, Climate_{'{t}'})</code>
-          </div>
-
-          <div className="decision-tree horizontal">
-            <div className="dt-node root-node" style={{background: 'rgba(236, 72, 153, 0.15)', borderColor: 'rgba(236, 72, 153, 0.3)', color: '#ec4899'}}>
-              <TrendingUp size={14}/> Input: Time-Series sequence
-            </div>
-            <div className="dt-branches row-layout" style={{alignItems: 'center'}}>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderStyle: 'dashed'}}>LSTM Layer 1</div>
-              </div>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderStyle: 'dashed'}}>LSTM Layer 2</div>
-              </div>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderStyle: 'dashed'}}>Dense (Features)</div>
-              </div>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderColor: '#ec4899', color: '#ec4899'}}>Output: Degradation Curve</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Deep Learning Vision */}
-        <div className="algo-tech-card full-width">
-          <div className="algo-tech-header">
-            <BrainCircuit size={16} className="tech-icon purple" />
-            <span className="tech-title">DEEP_LEARNING_VISION_MODEL</span>
-          </div>
-          <div className="tech-desc">Processes photometric point clouds and drone imagery using Convolutional Neural Networks to automatically classify and quantify structural defects.</div>
-          
-          <div className="code-block">
-            <code>Defect_Probability = Softmax(CNN_Features × W_Output + b_Output)</code>
-          </div>
-
-          <div className="decision-tree horizontal">
-            <div className="dt-node root-node" style={{background: 'rgba(236, 72, 153, 0.15)', borderColor: 'rgba(236, 72, 153, 0.3)', color: '#ec4899'}}>
-              <Camera size={14}/> Input: Drone Image
-            </div>
-            <div className="dt-branches row-layout" style={{alignItems: 'center'}}>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderStyle: 'dashed'}}>Conv2D (Features)</div>
-              </div>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderStyle: 'dashed'}}>MaxPooling</div>
-              </div>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderStyle: 'dashed'}}>Dense Layers</div>
-              </div>
-              <span style={{color: '#64748b', fontSize: '12px'}}>→</span>
-              <div className="dt-branch">
-                <div className="dt-node sub-node" style={{borderColor: '#ec4899', color: '#ec4899'}}>Output: Spalling (98%)</div>
-              </div>
-            </div>
+            <code>CRC = Length × Width × UnitCost(UGX/m²) × HeightFactor{'\n'}CDRC = CRC × (OverallRating / 9)</code>
           </div>
         </div>
       </div>
