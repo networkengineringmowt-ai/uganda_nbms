@@ -71,6 +71,13 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px', color: '#ef4444' }}>Critical Structures Network</h2>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>High-priority bridges and major culverts requiring immediate intervention. Includes most recent photo evidence.</p>
+          {/* Page never stated the network size these counts are drawn from --
+              scope each critical count against the real register length
+              (never hardcoded), bridges and culverts always reported
+              separately. */}
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+            {criticalBridges.length} of {bridges.length} bridges &middot; {criticalCulverts.length} of {culverts.length} culverts
+          </p>
         </div>
       </div>
 
