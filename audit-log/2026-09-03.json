@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-03",
+  "repo": "uganda_nbms",
+  "url": "https://networkengineringmowt-ai.github.io/uganda_nbms/",
+  "technical": {
+    "httpStatus": 200,
+    "loadFailed": false,
+    "pageRendered": true,
+    "bodyTextLength": 178,
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "brokenImages": [
+      "https://networkengineringmowt-ai.github.io/uganda_nbms/mowt.jpg"
+    ],
+    "hashLinksFound": [],
+    "chartElementCount": 3
+  },
+  "accuracy": {
+    "extractedFigures": [],
+    "discrepancies": []
+  },
+  "consistency": {
+    "districtList": null,
+    "notes": []
+  }
+}
