@@ -18,7 +18,7 @@ import {
   TYPE_CROSSING, TYPE_BRIDGE, TYPE_DECK_MATERIAL, TYPE_DECK,
   TYPE_ABUTMENT, TYPE_PIERS, TYPE_PARAPET_RAILING,
   TYPE_EXPANSION_JOINTS, getConditionLabel, getDictionaryLabel,
-  getCulvertTypeLabel
+  getCulvertTypeLabel, getRoadClassLabel, getScourRiskLabel
 } from '../utils/dataDictionary';
 import { calculateBridgeDeficiencyIndex, calculateAssetValue } from '../utils/bmsAlgorithms';
 
@@ -146,7 +146,9 @@ export default function BridgeDetailCard({ bridge, onClose }) {
             {isCulvert && (
               <>
                 <div className="bdc-field"><span className="bdc-label">Road Number</span><span className="bdc-value">{bridge.Road_No || legacy.road_no || EMPTY}</span></div>
-                <div className="bdc-field"><span className="bdc-label">Road Class</span><span className="bdc-value">{bridge.Road_Class || legacy.road_class || EMPTY}</span></div>
+                {/* road_class has no code dictionary -- format-only decode
+                    ("Class A") rather than showing the bare letter. */}
+                <div className="bdc-field"><span className="bdc-label">Road Class</span><span className="bdc-value">{(bridge.Road_Class || legacy.road_class) ? getRoadClassLabel(bridge.Road_Class || legacy.road_class) : EMPTY}</span></div>
                 <div className="bdc-field"><span className="bdc-label">Link Name</span><span className="bdc-value">{bridge.LinkName || bridge.Link_Name || legacy.link_name || EMPTY}</span></div>
                 <div className="bdc-field"><span className="bdc-label">Chainage From</span><span className="bdc-value">{bridge.Chainage_From ?? legacy.chainage_from ?? EMPTY} km</span></div>
                 <div className="bdc-field"><span className="bdc-label">Chainage To</span><span className="bdc-value">{bridge.Chainage_To ?? legacy.chainage_to ?? EMPTY} km</span></div>
@@ -223,8 +225,11 @@ export default function BridgeDetailCard({ bridge, onClose }) {
               </div>
               <div className="bdc-field">
                 <span className="bdc-label">Scour Risk</span>
+                {/* Previously only decoded 'Y'/'N' -- any other raw value
+                    ('U', 0, 'Unknown') rendered bare. Decode the full 3-way
+                    (plus missing) via the shared helper instead. */}
                 <span className="bdc-value" style={{ color: legacy.scour_risk === 'Y' ? '#be3a34' : legacy.scour_risk === 'N' ? '#168257' : '#e3a008' }}>
-                  {legacy.scour_risk === 'Y' ? 'Yes' : legacy.scour_risk === 'N' ? 'No' : legacy.scour_risk || EMPTY}
+                  {legacy.scour_risk !== undefined && legacy.scour_risk !== null && legacy.scour_risk !== '' ? getScourRiskLabel(legacy.scour_risk) : EMPTY}
                 </span>
               </div>
             </div>

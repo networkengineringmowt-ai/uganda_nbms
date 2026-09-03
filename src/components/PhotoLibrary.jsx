@@ -68,8 +68,10 @@ export default function PhotoLibrary({ bridges = [], culverts = [] }) {
 
       <section className="photo-kpi-grid">
         <article><Camera size={20} /><span>Publishable evidence</span><strong>{photos.length.toLocaleString()}</strong></article>
-        <article><Images size={20} /><span>Bridges covered</span><strong>{bridgesCovered.toLocaleString()}</strong></article>
-        <article><Images size={20} /><span>Culverts covered</span><strong>{culvertsCovered.toLocaleString()}</strong></article>
+        {/* Bare counts read as complete on their own -- scope each against
+            the real register length (never a hardcoded total). */}
+        <article><Images size={20} /><span>Bridges covered</span><strong>{bridgesCovered.toLocaleString()} of {bridges.length.toLocaleString()}</strong></article>
+        <article><Images size={20} /><span>Culverts covered</span><strong>{culvertsCovered.toLocaleString()} of {culverts.length.toLocaleString()}</strong></article>
         <article><FolderCheck size={20} /><span>Source-folder confirmed</span><strong>{sourceConfirmed.toLocaleString()}</strong></article>
         <article><Image size={20} /><span>Assigned evidence</span><strong>{assigned.toLocaleString()}</strong></article>
       </section>

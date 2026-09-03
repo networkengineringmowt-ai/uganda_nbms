@@ -1,27 +1,53 @@
-import { useState } from 'react';
-import { Calendar, CheckCircle, Search, Download } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Calendar, CheckCircle, Search, Download, Info } from 'lucide-react';
 
 export default function InspectionPlanManager() {
   const [plans] = useState([
-    { id: 1, name: 'Kajjansi IC Regular', bridge: 'Kajjansi IC', period: '2026-05 to 2026-06', status: 'In Progress', progress: 65 },
-    { id: 2, name: 'Nile Bridge Casual', bridge: 'New Jinja Nile', period: '2026-04', status: 'Completed', progress: 100 },
-    { id: 3, name: 'Karuma Routine', bridge: 'Karuma Falls', period: '2026-07', status: 'Planned', progress: 0 }
+    { id: 1, name: 'Kajjansi IC Regular', bridge: 'Kajjansi IC', period: '2026-05 to 2026-06', status: 'In Progress', progress: 65, type: 'Regular' },
+    { id: 2, name: 'Nile Bridge Casual', bridge: 'New Jinja Nile', period: '2026-04', status: 'Completed', progress: 100, type: 'Casual' },
+    { id: 3, name: 'Karuma Routine', bridge: 'Karuma Falls', period: '2026-07', status: 'Planned', progress: 0, type: 'Routine' }
   ]);
+  const [query, setQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('All Types');
+
+  // Search box and type filter previously had no backing state and did not
+  // filter anything -- wire them to the (currently small, placeholder) plan
+  // list so the controls are genuinely functional rather than dead UI.
+  const filteredPlans = useMemo(() => plans.filter((plan) => {
+    const matchesType = typeFilter === 'All Types' || plan.type === typeFilter;
+    const term = query.trim().toLowerCase();
+    const matchesQuery = !term || [plan.name, plan.bridge, plan.period, plan.status]
+      .some((value) => String(value || '').toLowerCase().includes(term));
+    return matchesType && matchesQuery;
+  }), [plans, query, typeFilter]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '20px', padding: '24px' }}>
 
-      {/* Top controls -- marginTop reserves clearance below the floating
-          Back/Top/Export bar (PageUtilityBar, position: fixed), which
-          otherwise sits on top of the "+ Add New Plan" button since this
-          is the first element in the tab's content. */}
-      <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderRadius: '12px', marginTop: '40px' }}>
+      {/* Honest disclosure: this page's plan list is a preview of the
+          planning workflow, not a live view over the national bridge/culvert
+          register (~998 real structures) -- see the standing rule against
+          presenting incomplete/mock views as if they were complete. */}
+      <div className="glass-card" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '14px 18px', borderRadius: '12px', borderLeft: '3px solid #f59e0b', marginTop: '40px' }}>
+        <Info size={16} color="#f59e0b" style={{ flexShrink: 0, marginTop: '1px' }} />
+        <span style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          Preview of the inspection planning workflow. This page does not yet reflect the full bridge and culvert structure register -- only the sample plans below are shown.
+        </span>
+      </div>
+
+      {/* Top controls */}
+      <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderRadius: '12px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div style={{ position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--text-muted)' }} />
-            <input type="text" placeholder="Search plans..." style={{ padding: '8px 12px 8px 36px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', width: '250px', background: 'rgba(0,0,0,0.3)', color: 'var(--text-primary)' }} />
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search plans..."
+              style={{ padding: '8px 12px 8px 36px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', width: '250px', background: 'rgba(0,0,0,0.3)', color: 'var(--text-primary)' }} />
           </div>
-          <select style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', background: 'rgba(0,0,0,0.3)', color: 'var(--text-primary)' }}>
+          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', background: 'rgba(0,0,0,0.3)', color: 'var(--text-primary)' }}>
             <option>All Types</option>
             <option>Routine</option>
             <option>Casual</option>
@@ -41,7 +67,10 @@ export default function InspectionPlanManager() {
             Inspection Schedule (Gantt)
           </div>
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-            {plans.map(plan => (
+            {filteredPlans.length === 0 && (
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>No plans match this search/filter.</div>
+            )}
+            {filteredPlans.map(plan => (
               <div key={plan.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', background: 'rgba(0,0,0,0.1)' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px', marginBottom: '4px' }}>{plan.name}</div>

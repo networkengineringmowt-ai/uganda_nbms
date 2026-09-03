@@ -13,14 +13,18 @@ import {
   TYPE_PARAPET_RAILING,
   TYPE_PIERS,
   getDictionaryLabel,
+  getRoadClassLabel,
+  getScourRiskLabel,
 } from '../utils/dataDictionary';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 
 const fieldValue = (row, key) => row[key] ?? row.LegacyData?.[key];
-const countField = (rows, key, dictionary) => rows.reduce((counts, row) => {
+// labelFn takes precedence over dictionary -- used for fields like road_class/
+// scour_risk that have a formatting-only decode rather than a code dictionary.
+const countField = (rows, key, dictionary, labelFn) => rows.reduce((counts, row) => {
   const raw = fieldValue(row, key);
-  const label = dictionary ? getDictionaryLabel(dictionary, raw) : (raw || 'Unknown');
+  const label = labelFn ? labelFn(raw) : (dictionary ? getDictionaryLabel(dictionary, raw) : (raw || 'Unknown'));
   counts[label] = (counts[label] || 0) + 1;
   return counts;
 }, {});
@@ -34,8 +38,10 @@ const categoricalFields = [
   { id: 'type_piers', label: 'Pier Type', dictionary: TYPE_PIERS },
   { id: 'type_para_rail', label: 'Parapet / Railing', dictionary: TYPE_PARAPET_RAILING },
   { id: 'type_bearings', label: 'Bearing Type', dictionary: TYPE_BEARINGS },
-  { id: 'road_class', label: 'Road Class' },
-  { id: 'scour_risk', label: 'Scour Risk' },
+  // road_class/scour_risk have no code dictionary -- use the formatting-only
+  // decode helpers instead of leaking the bare letter/flag as a category.
+  { id: 'road_class', label: 'Road Class', labelFn: getRoadClassLabel },
+  { id: 'scour_risk', label: 'Scour Risk', labelFn: getScourRiskLabel },
 ];
 
 // Every category is shown — no top-N truncation / "Other" bucket, per the
@@ -81,6 +87,10 @@ function BreakdownTable({ kicker, title, formula, data }) {
 // row/column/grand totals so the numbers can be reconciled against the total
 // record count at a glance.
 function CrossTabTable({ kicker, title, rows, rowField, colField, unitLabel }) {
+  // colField is "road_class"/"Road_Class" for every call site today -- decode
+  // it via the formatting-only helper so column headers read "Class A" rather
+  // than a bare letter code.
+  const colLabelFn = /road_class/i.test(colField) ? getRoadClassLabel : (v) => v || 'Unknown';
   const { matrix, rowKeys, colKeys, rowTotals, colTotals, grandTotal } = useMemo(() => {
     const matrix = {};
     const rowTotals = {};
@@ -88,7 +98,7 @@ function CrossTabTable({ kicker, title, rows, rowField, colField, unitLabel }) {
     let grandTotal = 0;
     (rows || []).forEach((record) => {
       const rowKey = fieldValue(record, rowField) || 'Unknown';
-      const colKey = fieldValue(record, colField) || 'Unknown';
+      const colKey = colLabelFn(fieldValue(record, colField));
       matrix[rowKey] = matrix[rowKey] || {};
       matrix[rowKey][colKey] = (matrix[rowKey][colKey] || 0) + 1;
       rowTotals[rowKey] = (rowTotals[rowKey] || 0) + 1;
@@ -103,7 +113,7 @@ function CrossTabTable({ kicker, title, rows, rowField, colField, unitLabel }) {
       colTotals,
       grandTotal,
     };
-  }, [rows, rowField, colField]);
+  }, [rows, rowField, colField, colLabelFn]);
 
   return (
     <article className="panel glass-card">
@@ -195,7 +205,7 @@ export default function AnalyticsDashboard() {
 
   const categories = useMemo(() => Object.fromEntries(categoricalFields.map((field) => [
     field.id,
-    countField(bridges, field.id, field.dictionary),
+    countField(bridges, field.id, field.dictionary, field.labelFn),
   ])), [bridges]);
 
   if (!data || !bridges.length) return <div className="page-loader"><div className="spinner" /><span>Preparing analytics...</span></div>;
@@ -205,8 +215,11 @@ export default function AnalyticsDashboard() {
       <section className="kpi-grid compact">
         <article className="kpi-card"><div className="kpi-icon blue"><Landmark size={20} /></div><span className="kpi-eyebrow">Bridges analysed</span><strong>{metrics.totalBridges}</strong><p>Across six maintenance regions</p></article>
         <article className="kpi-card"><div className="kpi-icon blue"><MapPin size={20} /></div><span className="kpi-eyebrow">Major culverts</span><strong>{metrics.totalCulverts}</strong><p>Linked to the national road network</p></article>
-        <article className="kpi-card"><div className="kpi-icon red"><BarChart3 size={20} /></div><span className="kpi-eyebrow">Poor or worse</span><strong>{metrics.poor}</strong><p>Bridge records requiring intervention</p></article>
-        <article className="kpi-card"><div className="kpi-icon amber"><TrendingUp size={20} /></div><span className="kpi-eyebrow">High-traffic bridges</span><strong>{metrics.highTraffic}</strong><p>Estimated AADT above 10,000</p></article>
+        {/* Bare counts read as complete numbers on their own -- show the denominator
+            (real bridge register length, never a hardcoded total) so a KPI card
+            is legible as "X of Y", not an unscoped absolute. */}
+        <article className="kpi-card"><div className="kpi-icon red"><BarChart3 size={20} /></div><span className="kpi-eyebrow">Poor or worse</span><strong>{metrics.poor} of {bridges.length}</strong><p>Bridge records requiring intervention</p></article>
+        <article className="kpi-card"><div className="kpi-icon amber"><TrendingUp size={20} /></div><span className="kpi-eyebrow">High-traffic bridges</span><strong>{metrics.highTraffic} of {bridges.length}</strong><p>Estimated AADT above 10,000</p></article>
       </section>
 
       <section className="category-explorer">

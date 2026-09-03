@@ -11,6 +11,7 @@ import {
   neonTooltipBase,
   chartFieldValue,
 } from '../utils/chartTheme';
+import { getRoadClassLabel } from '../utils/dataDictionary';
 
 // ── Shared helpers (mirrors VisualAnalytics.jsx conventions for consistency) ─
 
@@ -341,10 +342,15 @@ export default function CrossAnalysis({ bridges: bridgesProp, culverts: culverts
   };
 
   const sunburstDataFor = (rows, classField) => {
+    // classField is always road_class/Road_Class at today's call sites -- it
+    // has no code dictionary, so decode via the formatting-only helper
+    // rather than let a bare letter render as the middle-ring label.
+    const isRoadClass = /road_class/i.test(classField);
     const tree = {};
     rows.forEach((row) => {
       const region = chartFieldValue(row, 'Region') || 'Unknown';
-      const cls = chartFieldValue(row, classField) || 'Unknown';
+      const rawCls = chartFieldValue(row, classField);
+      const cls = isRoadClass ? getRoadClassLabel(rawCls) : (rawCls || 'Unknown');
       const cond = chartFieldValue(row, 'OverallCondition') || 'Unknown';
       tree[region] = tree[region] || {};
       tree[region][cls] = tree[region][cls] || {};
@@ -435,7 +441,10 @@ export default function CrossAnalysis({ bridges: bridgesProp, culverts: culverts
     { label: 'AADT', accessor: (r) => Number(r.Traffic?.aadt_2026 ?? r.aadt_rebuilt_2026 ?? r.current_predicted_aadt) },
     { label: 'No. of spans', accessor: (r) => Number(r.no_of_spans ?? r.no_of_span) },
   ]), [bridges]);
-  const bPareto = useMemo(() => Object.entries(countBy(bridges, 'road_class')).filter(([k]) => k !== 'Unknown').sort((a, b) => b[1] - a[1]), [bridges]);
+  // road_class has no code dictionary -- decode the Pareto category keys via
+  // the formatting-only helper before charting so the x-axis never shows a
+  // bare letter.
+  const bPareto = useMemo(() => Object.entries(countBy(bridges, 'road_class')).filter(([k]) => k !== 'Unknown').map(([k, v]) => [getRoadClassLabel(k), v]).sort((a, b) => b[1] - a[1]), [bridges]);
   const bPictorial = useMemo(() => countBy(bridges, 'Region'), [bridges]);
 
   // ── Culverts derived cross-analysis data ─────────────────────────────────

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import { getConditionColor, getConditionLabel, getCulvertTypeLabel } from '../utils/dataDictionary';
+import { getConditionColor, getConditionLabel, getCulvertTypeLabel, getRoadClassLabel } from '../utils/dataDictionary';
 import DataTable from './DataTable';
 import { fetchCulverts } from '../services/bmsDataService';
 
@@ -51,7 +51,9 @@ export default function CulvertsDashboard({ initialCulverts = [] }) {
     { header: 'Road', cell: (row) => row.Road || row.road_descr_principal || 'Unknown' },
     { header: 'Culvert Type', cell: (row) => row.CulvertType || getCulvertTypeLabel(row.TypeCulvert ?? row.LegacyData?.type_culvert ?? row.type_culvert ?? row.Type) },
     { header: 'Road No', cell: (row) => row.Road_No || row.RoadNumber || 'Unknown' },
-    { header: 'Road Class', cell: (row) => row.Road_Class || row.RoadClass || 'Unknown' },
+    // road_class has no code dictionary -- format-only decode ("Class A")
+    // rather than showing the bare letter code.
+    { header: 'Road Class', cell: (row) => getRoadClassLabel(row.Road_Class || row.RoadClass) },
     { header: 'Link ID', cell: (row) => row.Link_ID || row.LinkID || row.SectionOrLinkNo || row.link_no || 'Unknown' },
     { header: 'Link Name', cell: (row) => row.Link_Name || row.LinkName || row.Link__Name || 'Unknown' },
     { header: 'Chainage From (km)', cell: (row) => row.Chainage_From ?? 'Unknown' },

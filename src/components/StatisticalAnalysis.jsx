@@ -8,6 +8,7 @@ import {
   simpleLinearRegression,
   allOneWayAnovas,
 } from '../utils/statistics';
+import { humanizeFieldName } from '../utils/dataDictionary';
 
 // Full descriptive + inferential statistics for one dataset (bridges or
 // culverts), computed live from whatever rows are currently loaded — nothing
@@ -94,10 +95,12 @@ export default function StatisticalAnalysis({ rows, label, groupFields }) {
   const correlationRows = useMemo(() => {
     return correlations.map((c) => {
       const reg = c.p < 0.05 ? simpleLinearRegression(rows || [], c.keyA, c.keyB) : null;
+      // Humanize the raw snake_case field keys wherever they're rendered as
+      // a label, here included, rather than leaking source column names.
       return {
         ...c,
         r2: c.r * c.r,
-        equation: reg ? `${c.keyB} = ${fmt(reg.intercept)} + ${fmt(reg.slope)} × ${c.keyA}` : '—',
+        equation: reg ? `${humanizeFieldName(c.keyB)} = ${fmt(reg.intercept)} + ${fmt(reg.slope)} × ${humanizeFieldName(c.keyA)}` : '—',
       };
     });
   }, [correlations, rows]);
@@ -123,7 +126,9 @@ export default function StatisticalAnalysis({ rows, label, groupFields }) {
   })), [anovas]);
 
   const descriptiveColumns = useMemo(() => [
-    { header: 'Field', cell: (r) => r.field, sortValue: (r) => r.field },
+    // Raw snake_case source keys (aadt_2025, pave_age, ...) are humanized for
+    // display -- this only relabels the field name, it never decodes values.
+    { header: 'Field', cell: (r) => humanizeFieldName(r.field), sortValue: (r) => r.field },
     numCol('n', 'n', 0),
     numCol('Missing', 'missing', 0),
     numCol('Mean', 'mean'),
@@ -151,8 +156,8 @@ export default function StatisticalAnalysis({ rows, label, groupFields }) {
   ], []);
 
   const correlationColumns = useMemo(() => [
-    { header: 'Field A', cell: (r) => r.keyA, sortValue: (r) => r.keyA },
-    { header: 'Field B', cell: (r) => r.keyB, sortValue: (r) => r.keyB },
+    { header: 'Field A', cell: (r) => humanizeFieldName(r.keyA), sortValue: (r) => r.keyA },
+    { header: 'Field B', cell: (r) => humanizeFieldName(r.keyB), sortValue: (r) => r.keyB },
     numCol('n', 'n', 0),
     numCol('r', 'r', 3),
     numCol('R²', 'r2', 3),
@@ -164,7 +169,7 @@ export default function StatisticalAnalysis({ rows, label, groupFields }) {
   ], []);
 
   const anovaColumns = useMemo(() => [
-    { header: 'Numeric field', cell: (r) => r.numericKey, sortValue: (r) => r.numericKey },
+    { header: 'Numeric field', cell: (r) => humanizeFieldName(r.numericKey), sortValue: (r) => r.numericKey },
     { header: 'Grouped by', cell: (r) => r.groupLabel, sortValue: (r) => r.groupLabel },
     numCol('Groups (k)', 'k', 0),
     numCol('n', 'n', 0),

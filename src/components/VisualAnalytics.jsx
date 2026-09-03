@@ -12,6 +12,7 @@ import {
   neonTooltipBase,
   chartFieldValue,
 } from '../utils/chartTheme';
+import { getRoadClassLabel } from '../utils/dataDictionary';
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -403,7 +404,13 @@ export default function VisualAnalytics({ bridges: bridgesProp, culverts: culver
     const map = {};
     regions.forEach((region) => {
       const inRegion = rows.filter((r) => (chartFieldValue(r, 'Region') || 'Unknown') === region);
-      map[region] = countBy(inRegion, classField);
+      // road_class/Road_Class has no code dictionary -- decode the tile keys
+      // via the formatting-only helper so treemap labels never show a bare
+      // letter code (this map is only ever built with a road_class field).
+      const rawCounts = countBy(inRegion, classField);
+      map[region] = Object.fromEntries(
+        Object.entries(rawCounts).map(([code, count]) => [getRoadClassLabel(code === 'Unknown' ? null : code), count])
+      );
     });
     return map;
   };
@@ -423,11 +430,21 @@ export default function VisualAnalytics({ bridges: bridgesProp, culverts: culver
   };
 
   const boxplotDataFor = (rows, lengthField) => {
-    const regions = sortedNonUnknownKeys(countBy(rows, 'Region'));
-    const boxData = regions.map((region) => {
+    const allRegions = sortedNonUnknownKeys(countBy(rows, 'Region'));
+    // The chart caption promises regions with fewer than 4 measured lengths
+    // are omitted from the spread -- actually drop them from both `regions`
+    // and `boxData` here (rather than keeping the region with a [0,0,0,0,0]
+    // placeholder row) so a sparsely-measured region can't render as a fake
+    // all-zero boxplot.
+    const regions = [];
+    const boxData = [];
+    allRegions.forEach((region) => {
       const values = rows.filter((r) => (chartFieldValue(r, 'Region') || 'Unknown') === region)
         .map((r) => Number(chartFieldValue(r, lengthField))).filter((v) => Number.isFinite(v) && v > 0);
-      return values.length >= 4 ? boxStats(values) : [0, 0, 0, 0, 0];
+      if (values.length >= 4) {
+        regions.push(region);
+        boxData.push(boxStats(values));
+      }
     });
     return { regions, boxData };
   };

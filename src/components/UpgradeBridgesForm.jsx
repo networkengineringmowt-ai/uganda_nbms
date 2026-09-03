@@ -1,6 +1,78 @@
-import { useState, useEffect } from 'react';
-import { Save, FilePlus, ArrowUpCircle } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Save, FilePlus, ArrowUpCircle, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { fetchBridgeWorks } from '../services/bmsDataService';
+
+// Reuses DashboardFilterBar.jsx's type-to-filter combobox pattern (same
+// dashboard-filter-* classes) so a 546-option bridge list is searchable here
+// too, instead of a long native <select> scroll.
+function SearchableBridgeSelect({ value, onChange, options, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    function handleOutside(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery('');
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
+  const filtered = query.trim()
+    ? options.filter((opt) => opt.label.toLowerCase().includes(query.trim().toLowerCase()))
+    : options;
+  const selected = options.find((opt) => opt.value === value);
+  const displayValue = open ? query : (selected ? selected.label : '');
+
+  const selectOption = (opt) => {
+    onChange(opt.value);
+    setQuery('');
+    setOpen(false);
+  };
+
+  return (
+    <div className="dashboard-filter-field" ref={rootRef} style={{ width: '100%', flex: 'none' }}>
+      <div className={`dashboard-filter-input-wrap${open ? ' is-open' : ''}`} style={{ height: '40px' }}>
+        <Search size={12} className="dashboard-filter-search-icon" />
+        <input
+          type="text"
+          value={displayValue}
+          placeholder={placeholder}
+          aria-label={placeholder}
+          role="combobox"
+          aria-expanded={open}
+          autoComplete="off"
+          onFocus={() => { setOpen(true); setQuery(''); }}
+          onClick={() => { setOpen(true); setQuery(''); }}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') { setOpen(false); setQuery(''); }
+            else if (e.key === 'Enter' && filtered[0]) selectOption(filtered[0]);
+          }}
+        />
+        <ChevronDown size={12} className="dashboard-filter-chevron" />
+      </div>
+      {open && (
+        <div className="dashboard-filter-dropdown">
+          {filtered.length === 0 && <div className="dashboard-filter-empty">No matches</div>}
+          {filtered.map((opt) => (
+            <button
+              type="button"
+              key={opt.value}
+              className={`dashboard-filter-option${value === opt.value ? ' is-selected' : ''}`}
+              onClick={() => selectOption(opt)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // financial_status is free text ("Contract Sum:\nUGX 29,544,160,265\n\nAmount
 // Certified: ..."), not a structured number -- taking just its first line
@@ -52,6 +124,45 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
     date: '', desc: '', ref: '', budget: '', hasReport: 'No'
   });
 
+  // Sort state for the "Active Upgrades" table -- toggles asc/desc on the
+  // clicked column, matching the click-to-sort convention used by
+  // DataTable.jsx elsewhere in the app.
+  const [sort, setSort] = useState({ key: null, direction: 'asc' });
+  const toggleSort = (key) => setSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+  }));
+  const sortedUpgrades = useMemo(() => {
+    if (!sort.key) return upgradesList;
+    return [...upgradesList].sort((a, b) => {
+      const aValue = a[sort.key];
+      const bValue = b[sort.key];
+      const aNumber = Number(aValue);
+      const bNumber = Number(bValue);
+      const result = Number.isFinite(aNumber) && Number.isFinite(bNumber)
+        ? aNumber - bNumber
+        : String(aValue ?? '').localeCompare(String(bValue ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return sort.direction === 'asc' ? result : -result;
+    });
+  }, [upgradesList, sort]);
+  const sortIcon = (key) => (
+    sort.key === key
+      ? (sort.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)
+      : <ArrowUpDown size={12} opacity={0.35} />
+  );
+  const sortableTh = (label, key, align = 'left') => (
+    <th style={{ padding: '16px 24px', textAlign: align, fontWeight: 700, color: 'var(--text-secondary)' }}>
+      <button
+        type="button"
+        onClick={() => toggleSort(key)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 0, padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer', flexDirection: align === 'right' ? 'row-reverse' : 'row' }}
+      >
+        <span>{label}</span>
+        {sortIcon(key)}
+      </button>
+    </th>
+  );
+
   const handleAddUpgrade = () => {
     if (!selectedBridgeId || !formData.date || !formData.desc) return;
     
@@ -91,18 +202,12 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
           <div className="modern-filter-field">
             <label>Select Bridge</label>
             <div className="modern-select-wrapper">
-              <select 
+              <SearchableBridgeSelect
                 value={selectedBridgeId}
-                onChange={(e) => setSelectedBridgeId(e.target.value)}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.02)', color: 'var(--text-primary)', height: '40px' }}
-              >
-                <option value="">-- Choose Bridge --</option>
-                {bridges.map(b => (
-                  <option key={b.BridgeNumber} value={b.BridgeNumber}>
-                    {b.BridgeNumber} - {b.BridgeName || 'Unnamed'}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedBridgeId}
+                placeholder="-- Choose Bridge --"
+                options={bridges.map((b) => ({ value: b.BridgeNumber, label: `${b.BridgeNumber} - ${b.BridgeName || 'Unnamed'}` }))}
+              />
             </div>
           </div>
 
@@ -179,23 +284,23 @@ export default function UpgradeBridgesForm({ bridges = [] }) {
             <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ background: 'rgba(0,0,0,0.02)', position: 'sticky', top: 0, zIndex: 10 }}>
                 <tr>
-                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Bridge #</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Date</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Reference</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Description</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>Budget (UGX)</th>
+                  {sortableTh('Bridge #', 'bridgeNo')}
+                  {sortableTh('Date', 'date')}
+                  {sortableTh('Reference', 'ref')}
+                  {sortableTh('Description', 'desc')}
+                  {sortableTh('Budget (UGX)', 'budget', 'right')}
                   <th style={{ padding: '16px 24px', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)' }}>Report</th>
                 </tr>
               </thead>
               <tbody>
-                {upgradesList.length === 0 ? (
+                {sortedUpgrades.length === 0 ? (
                   <tr>
                     <td colSpan="6" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
                       <FilePlus size={32} style={{ opacity: 0.3, margin: '0 auto 16px' }} />
                       No upgrades recorded yet.
                     </td>
                   </tr>
-                ) : upgradesList.map((row, index) => (
+                ) : sortedUpgrades.map((row, index) => (
                   <tr key={index} style={{ borderBottom: '1px solid var(--border-light)', transition: 'background 0.2s' }}>
                     <td style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--accent-primary)' }}>{row.bridgeNo}</td>
                     <td style={{ padding: '16px 24px' }}>{row.date}</td>

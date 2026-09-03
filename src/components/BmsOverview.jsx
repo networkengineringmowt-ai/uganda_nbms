@@ -24,6 +24,9 @@ import {
   TYPE_PIERS,
   getConditionLabel,
   getDictionaryLabel,
+  getRoadClassLabel,
+  getScourRiskLabel,
+  toProperCase,
 } from '../utils/dataDictionary';
 import {
   chartTextStyle,
@@ -107,6 +110,13 @@ const bar2DOption = (rawData, xName) => {
 };
 
 const countChartField = (rows, key, dictionary) => themeCountChartField(rows, key, dictionary, getDictionaryLabel);
+// road_class/scour_risk have no code dictionary -- count using the
+// formatting-only decode helpers so charts never show a bare letter/flag.
+const countChartFieldWithLabelFn = (rows, key, labelFn) => rows.reduce((counts, row) => {
+  const label = labelFn(chartFieldValue(row, key));
+  counts[label] = (counts[label] || 0) + 1;
+  return counts;
+}, {});
 
 const categoricalChartFields = [
   { id: 'type_bridge', label: 'Structural Type', dictionary: TYPE_BRIDGE },
@@ -117,8 +127,8 @@ const categoricalChartFields = [
   { id: 'type_piers', label: 'Pier Type', dictionary: TYPE_PIERS },
   { id: 'type_para_rail', label: 'Parapet / Railing', dictionary: TYPE_PARAPET_RAILING },
   { id: 'type_bearings', label: 'Bearing Type', dictionary: TYPE_BEARINGS },
-  { id: 'road_class', label: 'Road Class' },
-  { id: 'scour_risk', label: 'Scour Risk' },
+  { id: 'road_class', label: 'Road Class', labelFn: getRoadClassLabel },
+  { id: 'scour_risk', label: 'Scour Risk', labelFn: getScourRiskLabel },
 ];
 
 // Culverts use their own normalized field names (set by normalizeCulvert) --
@@ -127,7 +137,7 @@ const categoricalChartFields = [
 const categoricalCulvertChartFields = [
   { id: 'CulvertType', label: 'Culvert Type' },
   { id: 'Surface_Type', label: 'Surface Type' },
-  { id: 'Road_Class', label: 'Road Class' },
+  { id: 'Road_Class', label: 'Road Class', labelFn: getRoadClassLabel },
   { id: 'Region', label: 'Region' },
 ];
 
@@ -144,8 +154,11 @@ function ChartPanel({ kicker, title, data, wide = false }) {
 // category per col-field value (e.g. functional class) — every combination
 // shown, no top-N cut.
 const groupedBarOption = (rows, rowField, colField, xName) => {
+  // road_class has no code dictionary -- decode via the formatting-only
+  // helper so x-axis categories read "Class A" rather than a bare letter.
+  const colNorm = /road_class/i.test(colField) ? getRoadClassLabel : (v) => v || 'Unknown';
   const norm = (v) => v || 'Unknown';
-  const colKeys = [...new Set(rows.map((r) => norm(chartFieldValue(r, colField))))].sort();
+  const colKeys = [...new Set(rows.map((r) => colNorm(chartFieldValue(r, colField))))].sort();
   const rowKeys = [...new Set(rows.map((r) => norm(chartFieldValue(r, rowField))))].sort();
   const series = rowKeys.map((rk, i) => {
     const hex = chartColors[i % chartColors.length];
@@ -153,7 +166,7 @@ const groupedBarOption = (rows, rowField, colField, xName) => {
       name: rk,
       type: 'bar',
       stack: 'total',
-      data: colKeys.map((ck) => rows.filter((r) => norm(chartFieldValue(r, rowField)) === rk && norm(chartFieldValue(r, colField)) === ck).length),
+      data: colKeys.map((ck) => rows.filter((r) => norm(chartFieldValue(r, rowField)) === rk && colNorm(chartFieldValue(r, colField)) === ck).length),
       itemStyle: neonItemStyle(hex),
       emphasis: neonEmphasisStyle(hex),
       label: { show: true, ...chartTextStyle, fontSize: 10 },
@@ -333,12 +346,12 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
 
   const categoryChartData = useMemo(() => Object.fromEntries(categoricalChartFields.map((field) => [
     field.id,
-    countChartField(bridges, field.id, field.dictionary),
+    field.labelFn ? countChartFieldWithLabelFn(bridges, field.id, field.labelFn) : countChartField(bridges, field.id, field.dictionary),
   ])), [bridges]);
 
   const categoryChartDataCulverts = useMemo(() => Object.fromEntries(categoricalCulvertChartFields.map((field) => [
     field.id,
-    countChartField(culverts, field.id),
+    field.labelFn ? countChartFieldWithLabelFn(culverts, field.id, field.labelFn) : countChartField(culverts, field.id),
   ])), [culverts]);
 
   const priorityRows = useMemo(() => critical.map((row) => ({
@@ -359,6 +372,14 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
       }))
       .sort((a, b) => (b.bridges + b.culverts) - (a.bridges + a.culverts));
   }, [bridges, culverts]);
+  // Records with no region on file are silently dropped from the panel above
+  // rather than shown as a row -- surface the drop instead of letting the
+  // panel look complete when it is missing coverage.
+  const regionMissingCount = useMemo(() => {
+    const missingRegion = (v) => !v || v === 'Unknown';
+    return bridges.filter((b) => missingRegion(chartFieldValue(b, 'Region'))).length
+      + culverts.filter((c) => missingRegion(chartFieldValue(c, 'Region'))).length;
+  }, [bridges, culverts]);
 
   const stationRows = useMemo(() => {
     const stationMap = new Map();
@@ -377,6 +398,14 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
       .filter(r => r.station !== 'Unknown' && r.station !== '-' && r.station !== '')
       .sort((a, b) => (b.bridges + b.culverts) - (a.bridges + a.culverts));
   }, [bridges, culverts]);
+  // Same silent-drop issue as regions: records with no station on file never
+  // appear in the panel, so disclose the count that's missing.
+  const stationMissingCount = useMemo(() => {
+    const missingStation = (v) => !v || ['Unknown', '-', ''].includes(String(v).trim());
+    const bridgeMissing = bridges.filter((b) => missingStation(b.LegacyData?.maintenanc || b.LegacyData?.maintenance_station || b.MaintenanceStation || b.maintenanc)).length;
+    const culvertMissing = culverts.filter((c) => missingStation(c.MaintenanceStation || c.Maintenance_Station)).length;
+    return bridgeMissing + culvertMissing;
+  }, [bridges, culverts]);
 
   const roadRows = useMemo(() => {
     const roadMap = new Map();
@@ -394,6 +423,13 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
       .map(([road, counts]) => ({ road, ...counts }))
       .filter(r => r.road !== 'Unknown' && r.road !== '-' && r.road !== '')
       .sort((a, b) => (b.bridges + b.culverts) - (a.bridges + a.culverts));
+  }, [bridges, culverts]);
+  // Same silent-drop issue as regions/stations for road name.
+  const roadMissingCount = useMemo(() => {
+    const missingRoad = (v) => !v || ['Unknown', '-', ''].includes(String(v).trim());
+    const bridgeMissing = bridges.filter((b) => missingRoad(b.RoadDescrPrincipal || b.RoadName)).length;
+    const culvertMissing = culverts.filter((c) => missingRoad(c.Road || c.Link__Name)).length;
+    return bridgeMissing + culvertMissing;
   }, [bridges, culverts]);
 
   const conditionChartOptions = useMemo(() => {
@@ -473,7 +509,9 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
         <article className="kpi-card">
           <div className="kpi-icon red"><AlertTriangle size={21} /></div>
           <span className="kpi-eyebrow">Immediate attention</span>
-          <strong>{critical.length}</strong>
+          {/* Bare count reads as complete on its own -- scope it against the
+              real bridge register length rather than a hardcoded total. */}
+          <strong>{critical.length} of {bridges.length}</strong>
           <p>Bridges in the critical registry</p>
         </article>
         <article className="kpi-card">
@@ -503,6 +541,11 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
 
         <article className="panel coverage-panel glass-card">
           <div className="panel-header"><div><span className="panel-kicker">Regional coverage</span><h2>Structures by maintenance region</h2></div></div>
+          {/* Records with no region on file are excluded from the rows above --
+              disclose the drop instead of letting the panel look complete. */}
+          {regionMissingCount > 0 && (
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 8px', padding: '0 16px' }}>{regionMissingCount} records have no region on file and are not shown below.</p>
+          )}
           <div className="region-list">
             {regionRows.map((row) => (
               <div className="region-row" key={row.region}>
@@ -519,6 +562,9 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
       <section className="overview-grid" style={{ gap: '16px', marginTop: '16px' }}>
         <article className="panel coverage-panel glass-card" style={{ display: 'flex', flexDirection: 'column', maxHeight: '450px' }}>
           <div className="panel-header" style={{ flexShrink: 0 }}><div><span className="panel-kicker">Station coverage</span><h2>Structures by maintenance station</h2></div></div>
+          {stationMissingCount > 0 && (
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 8px', padding: '0 16px' }}>{stationMissingCount} records have no station on file and are not shown below.</p>
+          )}
           <div className="region-list modern-scroll" style={{ overflowY: 'auto', flex: 1 }}>
             {stationRows.map((row) => (
               <div className="region-row" key={row.station}>
@@ -533,6 +579,9 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
 
         <article className="panel coverage-panel glass-card" style={{ display: 'flex', flexDirection: 'column', maxHeight: '450px' }}>
           <div className="panel-header" style={{ flexShrink: 0 }}><div><span className="panel-kicker">Route coverage</span><h2>Structures by road name</h2></div></div>
+          {roadMissingCount > 0 && (
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 8px', padding: '0 16px' }}>{roadMissingCount} records have no road name on file and are not shown below.</p>
+          )}
           <div className="region-list modern-scroll" style={{ overflowY: 'auto', flex: 1 }}>
             {roadRows.map((row) => (
               <div className="region-row" key={row.road}>
@@ -561,7 +610,7 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
                   key={`${row.BridgeNumber}-${row.LinkID}`}
                   onClick={() => row.asset && onSelectAsset({ ...row.asset, _structureType: 'bridge' })}
                 >
-                  <span><strong>{row.BridgeNumber}</strong><small>{row.BridgeName || 'Unnamed bridge'}</small></span>
+                  <span><strong>{row.BridgeNumber}</strong><small>{row.BridgeName ? toProperCase(row.BridgeName) : 'Unnamed bridge'}</small></span>
                   <span><strong>{row.MaintenanceStation || 'Unassigned'}</strong><small>{row.LinkName || row.LinkID}</small></span>
                   <span><em className={`condition-pill ${CONDITION_CLASS[getConditionLabel(row.OverallRating)] || 'condition-watch'}`}>{getConditionLabel(row.OverallRating)}</em></span>
                   <span>{row.Comment || 'Engineering review required'}</span>

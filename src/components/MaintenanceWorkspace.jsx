@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Search } from 'lucide-react';
-import { getConditionLabel } from '../utils/dataDictionary';
+import { ArrowRight, ArrowUp, ArrowDown, ArrowUpDown, Search } from 'lucide-react';
+import { getConditionLabel, toProperCase } from '../utils/dataDictionary';
+
+// Worst-to-best condition order, used only to give the "Condition" column a
+// meaningful sort (its display value is a label, not a number).
+const CONDITION_SORT_ORDER = ['Beyond Repair', 'Critical', 'Very Poor', 'Poor', 'Marginal', 'Fair', 'Satisfactory', 'Good', 'Very Good', 'Excellent', 'Unknown'];
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
 const dataUrl = (path) => `${BASE_URL}${path.replace(/^\/+/, '')}`;
@@ -50,6 +54,49 @@ export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
     return matchesFilter && matchesQuery;
   }), [critical, filter, query]);
 
+  // Sort state for the div-grid "2026 intervention queue" table below --
+  // this table has no <table>/<th> elements to attach sort to, so the sort
+  // is driven off column keys matched to each grid cell's underlying value.
+  const [sort, setSort] = useState({ key: null, direction: 'asc' });
+  const toggleSort = (key) => setSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+  }));
+  const queueSortValue = (row, key) => {
+    if (key === 'id') return row.BridgeNumber || '';
+    if (key === 'link') return row.LinkName || row.LinkID || '';
+    if (key === 'station') return row.MaintenanceStation || '';
+    if (key === 'condition') return CONDITION_SORT_ORDER.indexOf(getConditionLabel(row.OverallRating));
+    if (key === 'action') return row.Comment || '';
+    return '';
+  };
+  const sortedFiltered = useMemo(() => {
+    if (!sort.key) return filtered;
+    return [...filtered].sort((a, b) => {
+      const aValue = queueSortValue(a, sort.key);
+      const bValue = queueSortValue(b, sort.key);
+      const result = typeof aValue === 'number' && typeof bValue === 'number'
+        ? aValue - bValue
+        : String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' });
+      return sort.direction === 'asc' ? result : -result;
+    });
+  }, [filtered, sort]);
+  const sortIcon = (key) => (
+    sort.key === key
+      ? (sort.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)
+      : <ArrowUpDown size={12} opacity={0.35} />
+  );
+  const sortableHead = (label, key) => (
+    <button
+      type="button"
+      onClick={() => toggleSort(key)}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 0, padding: 0, font: 'inherit', textTransform: 'inherit', letterSpacing: 'inherit', color: 'inherit', cursor: 'pointer' }}
+    >
+      <span>{label}</span>
+      {sortIcon(key)}
+    </button>
+  );
+
   return (
     <div className="maintenance-layout">
 
@@ -65,12 +112,19 @@ export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
           </div>
         </div>
         <div className="maintenance-table">
-          <div className="maintenance-table-head"><span>ID / structure</span><span>Road link</span><span>Station</span><span>Condition</span><span>Engineering action</span><span /></div>
-          {filtered.map((row) => {
+          <div className="maintenance-table-head">
+            <span>{sortableHead('ID / structure', 'id')}</span>
+            <span>{sortableHead('Road link', 'link')}</span>
+            <span>{sortableHead('Station', 'station')}</span>
+            <span>{sortableHead('Condition', 'condition')}</span>
+            <span>{sortableHead('Engineering action', 'action')}</span>
+            <span />
+          </div>
+          {sortedFiltered.map((row) => {
             const asset = bridges.find((bridge) => bridge.BridgeNumber === row.BridgeNumber);
             return (
               <div className="maintenance-table-row" key={`${row.BridgeNumber}-${row.LinkID}`}>
-                <span><strong>{row.BridgeNumber}</strong><small>{row.BridgeName || 'Unnamed bridge'}</small></span>
+                <span><strong>{row.BridgeNumber}</strong><small>{row.BridgeName ? toProperCase(row.BridgeName) : 'Unnamed bridge'}</small></span>
                 <span><strong>{row.LinkName || row.LinkID || 'Unlinked'}</strong><small>{row.BridgeLength ?? '-'} m long / {row.BridgeWidth ?? '-'} m wide</small></span>
                 <span>{row.MaintenanceStation || 'Unassigned'}</span>
                 <span><em className={`condition-pill ${conditionClass(getConditionLabel(row.OverallRating))}`}>{getConditionLabel(row.OverallRating)}</em></span>
@@ -86,9 +140,12 @@ export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
         <section className="panel active-work-panel" key={`${work.bridge}-${index}`}>
           <div className="panel-header"><div><span className="panel-kicker">Active contract</span><h2>{work.bridge}</h2></div><span className="programme-badge">{work.funder || 'GOU'}</span></div>
           <div className="active-work-grid">
-            <div><span>Contract team</span><p>{stripPersonnelNames(work.contractor_consultant)}</p></div>
-            <div><span>Financial status</span><p>{work.financial_status}</p></div>
-            <div><span>Progress and constraints</span><p>{work.status}</p></div>
+            {/* financial_status/status/contractor_consultant are free text with embedded
+                blank-line paragraph breaks (e.g. multi-section "Challenges" narratives);
+                without pre-wrap those breaks collapse and the text reads as one jumbled block. */}
+            <div><span>Contract team</span><p style={{ whiteSpace: 'pre-wrap' }}>{stripPersonnelNames(work.contractor_consultant)}</p></div>
+            <div><span>Financial status</span><p style={{ whiteSpace: 'pre-wrap' }}>{work.financial_status}</p></div>
+            <div><span>Progress and constraints</span><p style={{ whiteSpace: 'pre-wrap' }}>{work.status}</p></div>
           </div>
         </section>
       ))}

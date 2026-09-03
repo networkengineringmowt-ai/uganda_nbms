@@ -11,6 +11,7 @@ import {
   getConditionLabel,
   getConditionColor,
   getDictionaryLabel,
+  getScourRiskLabel,
 } from '../utils/dataDictionary';
 
 export default function BridgesDashboard({ initialBridges = [] }) {
@@ -73,7 +74,9 @@ export default function BridgesDashboard({ initialBridges = [] }) {
     { header: 'Width (m)', cell: (row) => row.MinClearWidth || row.LegacyData?.width_m || row.bridge_wid || row.width || 'Unknown' },
     { header: 'Year Built', cell: (row) => row.YearBuilt || row.LegacyData?.year_built || row.year_compl || 'Unknown' },
     { header: 'Lanes', cell: (row) => row.LegacyData?.no_of_lane || row.no_of_lane || 'Unknown' },
-    { header: 'Scour Risk', cell: (row) => row.LegacyData?.scour_risk === 'Y' ? 'Yes' : row.LegacyData?.scour_risk === 'N' ? 'No' : row.LegacyData?.scour_risk || row.scour_risk || 'Unknown' },
+    // Previously fell back to the raw value (e.g. bare "U") when it wasn't
+    // 'Y'/'N' -- decode the full 3-way (plus missing) via the shared helper.
+    { header: 'Scour Risk', cell: (row) => getScourRiskLabel(row.LegacyData?.scour_risk ?? row.scour_risk) },
     { header: 'Latitude', cell: (row) => row.Latitude ?? row.Lat ?? row.LegacyData?.location_corrected_lat ?? row.LegacyData?.map_y ?? 'Unknown' },
     { header: 'Longitude', cell: (row) => row.Longitude ?? row.Lon ?? row.LegacyData?.location_corrected_lon ?? row.LegacyData?.map_x ?? 'Unknown' },
     { header: 'AADT', cell: (row) => { const aadt = row.Traffic?.aadt_2026 ?? row.aadt_rebuilt_2026 ?? row.current_predicted_aadt; return aadt !== null && aadt !== undefined ? Math.round(aadt).toLocaleString() : 'Unknown'; } },

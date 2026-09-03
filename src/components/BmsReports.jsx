@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect } from 'react';
-import { FileText, Printer, AlertCircle } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { FileText, Printer, AlertCircle, Search, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import DigitalTwin from './DigitalTwin';
 import CulvertPrintReport from './CulvertPrintReport';
 import ReportPhotoGrid from './ReportPhotoGrid';
@@ -7,7 +7,8 @@ import {
   TYPE_CROSSING, TYPE_BRIDGE, TYPE_DECK, TYPE_DECK_MATERIAL,
   TYPE_ABUTMENT, TYPE_PIERS, TYPE_PARAPET_RAILING, TYPE_EXPANSION_JOINTS,
   TYPE_BEARINGS,
-  getConditionColor, getConditionLabel, getDictionaryLabel
+  getConditionColor, getConditionLabel, getDictionaryLabel,
+  getRoadClassLabel, getScourRiskLabel
 } from '../utils/dataDictionary';
 
 /* ── helpers ─────────────────────────────────────────── */
@@ -62,6 +63,90 @@ const cellStyle = { padding: '6px 10px', border: '1px solid rgba(148, 184, 255, 
 const headerCell = { ...cellStyle, fontWeight: 700, background: '#101f39', width: '180px', color: '#7dd3fc' };
 const sectionTitle = { fontSize: '14px', fontWeight: 700, margin: '24px 0 10px 0', color: '#e8f2ff', borderBottom: '2px solid #274b83', paddingBottom: '4px' };
 
+// Reuses DashboardFilterBar.jsx's type-to-filter combobox pattern (same
+// dashboard-filter-* classes) so the 546-bridge / 452-culvert lists here are
+// searchable instead of a long native <select> scroll. Bridges and culverts
+// each get their own instance below -- never merged into one combined list.
+function SearchableStructureSelect({ value, onChange, options, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    function handleOutside(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery('');
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
+  const filtered = query.trim()
+    ? options.filter((opt) => opt.label.toLowerCase().includes(query.trim().toLowerCase()))
+    : options;
+  const selected = options.find((opt) => opt.value === value);
+  const displayValue = open ? query : (selected ? selected.label : '');
+
+  const selectOption = (opt) => {
+    onChange(opt.value);
+    setQuery('');
+    setOpen(false);
+  };
+
+  return (
+    <div className="dashboard-filter-field" ref={rootRef} style={{ width: '100%', flex: 'none' }}>
+      <div className={`dashboard-filter-input-wrap${open ? ' is-open' : ''}`} style={{ height: '44px' }}>
+        <Search size={12} className="dashboard-filter-search-icon" />
+        <input
+          type="text"
+          value={displayValue}
+          placeholder={placeholder}
+          aria-label={placeholder}
+          role="combobox"
+          aria-expanded={open}
+          autoComplete="off"
+          onFocus={() => { setOpen(true); setQuery(''); }}
+          onClick={() => { setOpen(true); setQuery(''); }}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') { setOpen(false); setQuery(''); }
+            else if (e.key === 'Enter' && filtered[0]) selectOption(filtered[0]);
+          }}
+        />
+        <ChevronDown size={12} className="dashboard-filter-chevron" />
+      </div>
+      {open && (
+        <div className="dashboard-filter-dropdown">
+          {filtered.length === 0 && <div className="dashboard-filter-empty">No matches</div>}
+          {filtered.map((opt) => (
+            <button
+              type="button"
+              key={opt.value}
+              className={`dashboard-filter-option${value === opt.value ? ' is-selected' : ''}`}
+              onClick={() => selectOption(opt)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const COST_TABLE_COLUMNS = [
+  { key: 'number', header: 'Bridge' },
+  { key: 'name', header: 'Name' },
+  { key: 'road', header: 'Road' },
+  { key: 'area', header: 'Area (m²)', align: 'right' },
+  { key: 'conditionDesc', header: 'Condition', align: 'center' },
+  { key: 'crc', header: 'CRC (UGX)', align: 'right' },
+  { key: 'cdrc', header: 'CDRC (UGX)', align: 'right' },
+  { key: 'depreciationPct', header: 'Deprec. %', align: 'right' },
+];
+
 export default function BmsReports({ bridges = [], culverts = [] }) {
   const [activeReport, setActiveReport] = useState('validation');
   const [selectedStructureType, setSelectedStructureType] = useState('bridge');
@@ -115,6 +200,26 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
     return { unchecked, checked, outstandingRatings, noInspections };
   }, [bridges]);
 
+  // The Data Validation tab historically only ever examined `bridges`, with
+  // nothing on the tab disclosing that culverts were left out -- run the
+  // same two checks (inspection-on-file, missing core ratings) over the
+  // culvert register too, reported as its own section so bridge and culvert
+  // counts are never combined into one number.
+  const validationDataCulverts = useMemo(() => {
+    const isMissingRating = (v) => v === null || v === undefined || v === '';
+    const hasInspectionOnFile = (c) => {
+      const legacy = c.LegacyData || {};
+      return Boolean(String(legacy.Firm || legacy.CheckedBy || c.Firm || c.CheckedBy || '').trim());
+    };
+    const unchecked = culverts.filter(c => !hasInspectionOnFile(c));
+    const outstandingRatings = culverts.filter(c => {
+      const legacy = c.LegacyData || {};
+      return isMissingRating(legacy.waterway_rating) || isMissingRating(legacy.inlet_outlet_rating)
+        || isMissingRating(legacy.structure_rating) || isMissingRating(legacy.roadway_rating);
+    });
+    return { unchecked, outstandingRatings };
+  }, [culverts]);
+
   const costSummary = useMemo(() => {
     return bridges.map(b => {
       const leg = b.LegacyData || {};
@@ -134,6 +239,26 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
       };
     });
   }, [bridges, unitCost]);
+
+  // Sort state for the "National Bridge Asset Valuation" table below.
+  const [costSort, setCostSort] = useState({ key: null, direction: 'asc' });
+  const toggleCostSort = (key) => setCostSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+  }));
+  const sortedCostSummary = useMemo(() => {
+    if (!costSort.key) return costSummary;
+    return [...costSummary].sort((a, b) => {
+      const aValue = a[costSort.key];
+      const bValue = b[costSort.key];
+      const aNumber = Number(aValue);
+      const bNumber = Number(bValue);
+      const result = Number.isFinite(aNumber) && Number.isFinite(bNumber)
+        ? aNumber - bNumber
+        : String(aValue ?? '').localeCompare(String(bValue ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return costSort.direction === 'asc' ? result : -result;
+    });
+  }, [costSummary, costSort]);
 
   /* ── Aggregate asset portfolio metrics ── */
   const portfolioMetrics = useMemo(() => {
@@ -245,34 +370,74 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
       <div className="modern-scroll bms-report-scroll" style={{ height: 'calc(100vh - 220px)', overflowY: 'auto' }}>
 
         {activeReport === 'validation' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="panel" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--accent-red)' }}>
-                <AlertCircle size={16} />
-                <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Unchecked Records ({validationData.unchecked.length})</h3>
+          <div>
+            <h3 style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--text-muted)', margin: '0 0 10px' }}>Bridges</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="panel" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--accent-red)' }}>
+                  <AlertCircle size={16} />
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Unchecked Records ({validationData.unchecked.length} of {bridges.length} bridges)</h3>
+                </div>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {validationData.unchecked.map(b => (
+                    <div key={b.BridgeNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{b.BridgeName}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {validationData.unchecked.map(b => (
-                  <div key={b.BridgeNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                    <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
-                    <span style={{ color: 'var(--text-muted)' }}>{b.BridgeName}</span>
-                  </div>
-                ))}
+
+              <div className="panel" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--accent-amber)' }}>
+                  <AlertCircle size={16} />
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Missing Core Ratings ({validationData.outstandingRatings.length} of {bridges.length} bridges)</h3>
+                </div>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {validationData.outstandingRatings.map(b => (
+                    <div key={b.BridgeNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
+                      <span style={{ color: 'var(--accent-amber)', fontSize: '11px', fontWeight: 700 }}>NEEDS INSPECTION</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="panel" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--accent-amber)' }}>
-                <AlertCircle size={16} />
-                <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Missing Core Ratings ({validationData.outstandingRatings.length})</h3>
+            {/* This tab previously only ever examined `bridges`, with nothing
+                disclosing that culverts were excluded -- run the same checks
+                over the culvert register too, as its own clearly separate
+                section (never combined into the bridge counts above). */}
+            <h3 style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--text-muted)', margin: '20px 0 10px' }}>Culverts</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="panel" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--accent-red)' }}>
+                  <AlertCircle size={16} />
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Unchecked Records ({validationDataCulverts.unchecked.length} of {culverts.length} culverts)</h3>
+                </div>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {validationDataCulverts.unchecked.map(c => (
+                    <div key={c.CulvertNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ fontWeight: 600 }}>{c.CulvertNumber}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{c.Road || c.Link_Name || ''}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {validationData.outstandingRatings.map(b => (
-                  <div key={b.BridgeNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                    <span style={{ fontWeight: 600 }}>{b.BridgeNumber}</span>
-                    <span style={{ color: 'var(--accent-amber)', fontSize: '11px', fontWeight: 700 }}>NEEDS INSPECTION</span>
-                  </div>
-                ))}
+
+              <div className="panel" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--accent-amber)' }}>
+                  <AlertCircle size={16} />
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Missing Core Ratings ({validationDataCulverts.outstandingRatings.length} of {culverts.length} culverts)</h3>
+                </div>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {validationDataCulverts.outstandingRatings.map(c => (
+                    <div key={c.CulvertNumber} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ fontWeight: 600 }}>{c.CulvertNumber}</span>
+                      <span style={{ color: 'var(--accent-amber)', fontSize: '11px', fontWeight: 700 }}>NEEDS INSPECTION</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -307,18 +472,24 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
             <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead style={{ background: 'rgba(0,0,0,0.02)', position: 'sticky', top: 0 }}>
                 <tr>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Bridge</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Name</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>Road</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>Area (m²)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)' }}>Condition</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>CRC (UGX)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>CDRC (UGX)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)' }}>Deprec. %</th>
+                  {COST_TABLE_COLUMNS.map(col => (
+                    <th key={col.key} style={{ padding: '10px 12px', textAlign: col.align || 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleCostSort(col.key)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 0, padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer', flexDirection: col.align === 'right' ? 'row-reverse' : 'row' }}
+                      >
+                        <span>{col.header}</span>
+                        {costSort.key === col.key
+                          ? (costSort.direction === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />)
+                          : <ArrowUpDown size={11} opacity={0.35} />}
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {costSummary.map(row => (
+                {sortedCostSummary.map(row => (
                   <tr key={row.number} style={{ borderBottom: '1px solid var(--border-light)' }}>
                     <td style={{ padding: '8px 12px', fontWeight: 700, color: 'var(--accent-primary)' }}>{row.number}</td>
                     <td style={{ padding: '8px 12px', color: 'var(--text-muted)' }}>{row.name || '-'}</td>
@@ -358,24 +529,18 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
             <div className="modern-filter-field" style={{ marginBottom: '16px' }}>
               <label>{selectedStructureType === 'bridge' ? 'Select Bridge Structure' : 'Select Major Culvert'}</label>
               <div className="modern-select-wrapper">
-                <select
+                {/* Bridges and culverts are always kept as two separate option
+                    lists (picked by selectedStructureType above), never merged
+                    into one combined list -- only the searchable-combobox
+                    control itself is shared between the two. */}
+                <SearchableStructureSelect
                   value={selectedStructureId}
-                  onChange={(e) => setSelectedStructureId(e.target.value)}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.02)', color: 'var(--text-primary)', height: '44px' }}
-                >
-                  <option value="">{selectedStructureType === 'bridge' ? '-- Choose Bridge --' : '-- Choose Major Culvert --'}</option>
-                  {selectedStructureType === 'bridge'
-                    ? bridges.map(b => (
-                      <option key={b.BridgeNumber} value={b.BridgeNumber}>
-                        {b.BridgeNumber} - {b.BridgeName}
-                      </option>
-                    ))
-                    : culverts.map(c => (
-                      <option key={c.CulvertNumber} value={c.CulvertNumber}>
-                        {c.CulvertNumber} - {c.River || c.LinkName || c.Link_Name || c.Road || 'Major culvert'}
-                      </option>
-                    ))}
-                </select>
+                  onChange={setSelectedStructureId}
+                  placeholder={selectedStructureType === 'bridge' ? '-- Choose Bridge --' : '-- Choose Major Culvert --'}
+                  options={selectedStructureType === 'bridge'
+                    ? bridges.map(b => ({ value: b.BridgeNumber, label: `${b.BridgeNumber} - ${b.BridgeName}` }))
+                    : culverts.map(c => ({ value: c.CulvertNumber, label: `${c.CulvertNumber} - ${c.River || c.LinkName || c.Link_Name || c.Road || 'Major culvert'}` }))}
+                />
               </div>
             </div>
             <button
@@ -445,7 +610,9 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                         </tr>
                         <tr>
                           <td style={headerCell}>Road Class</td>
-                          <td style={cellStyle}>{b.RoadClass || leg.road_class || '-'}</td>
+                          {/* road_class has no code dictionary -- format-only
+                              decode ("Class A") rather than a bare letter. */}
+                          <td style={cellStyle}>{(b.RoadClass || leg.road_class) ? getRoadClassLabel(b.RoadClass || leg.road_class) : '-'}</td>
                           <td style={headerCell}>Chainage (km)</td>
                           <td style={cellStyle}>{b.KmPrincipal || leg.chainage_km || leg.km || '-'}</td>
                         </tr>
@@ -642,7 +809,10 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                           <td style={headerCell}>Design Load</td>
                           <td style={cellStyle}>{leg.design_load || leg.loading || '-'}</td>
                           <td style={headerCell}>Scour Risk</td>
-                          <td style={cellStyle}>{leg.scour_risk || '-'}</td>
+                          {/* This official print report showed the raw 'Y'/'N'/'U'
+                              flag (or nothing at all) with no decode -- apply the
+                              full 3-way (plus missing) decode used elsewhere. */}
+                          <td style={cellStyle}>{leg.scour_risk !== undefined && leg.scour_risk !== null && leg.scour_risk !== '' ? getScourRiskLabel(leg.scour_risk) : '-'}</td>
                         </tr>
                       </tbody>
                     </table>

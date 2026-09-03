@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import {
   chartTextStyle,
   NEON_AXIS,
@@ -9,6 +10,7 @@ import {
   neonToolbox,
   neonTooltipBase,
 } from '../utils/chartTheme';
+import { getConditionColor } from '../utils/dataDictionary';
 
 // ── Historical BMS records (2015 legacy capture + the 2022 nationwide condition
 // re-rating survey) recovered from the department's archive and reconciled
@@ -36,6 +38,31 @@ function ChartCard({ kicker, title, note, height = 380, wide = false, option }) 
 }
 
 function TableCard({ kicker, title, note, wide = false, columns, rows, emptyLabel = 'No records to show.' }) {
+  // Sort state keyed by column index -- rows here are plain cell-value
+  // arrays (not row objects), so sorting compares the cell at sort.index
+  // the same numeric-aware way DataTable.jsx does.
+  const [sort, setSort] = useState({ index: null, direction: 'asc' });
+  const conditionIndex = columns.indexOf('Condition');
+
+  const sortedRows = useMemo(() => {
+    if (sort.index === null) return rows;
+    return [...rows].sort((a, b) => {
+      const aValue = a[sort.index];
+      const bValue = b[sort.index];
+      const aNumber = Number(String(aValue ?? '').replace(/,/g, ''));
+      const bNumber = Number(String(bValue ?? '').replace(/,/g, ''));
+      const result = Number.isFinite(aNumber) && Number.isFinite(bNumber)
+        ? aNumber - bNumber
+        : String(aValue ?? '').localeCompare(String(bValue ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return sort.direction === 'asc' ? result : -result;
+    });
+  }, [rows, sort]);
+
+  const toggleSort = (index) => setSort((current) => ({
+    index,
+    direction: current.index === index && current.direction === 'asc' ? 'desc' : 'asc',
+  }));
+
   return (
     <article className={`panel chart-panel glass-card${wide ? ' wide' : ''}`}>
       <div className="panel-header">
@@ -45,14 +72,35 @@ function TableCard({ kicker, title, note, wide = false, columns, rows, emptyLabe
       <div className="data-table-container" style={{ maxHeight: 320, overflowY: 'auto' }}>
         <table className="data-table">
           <thead>
-            <tr>{columns.map((c) => <th key={c}>{c}</th>)}</tr>
+            <tr>
+              {columns.map((c, i) => (
+                <th key={c}>
+                  <button className="table-sort-button" type="button" onClick={() => toggleSort(i)}>
+                    <span>{c}</span>
+                    <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {sort.index === i ? (
+                        sort.direction === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />
+                      ) : (
+                        <ArrowUpDown size={13} opacity={0.3} />
+                      )}
+                    </span>
+                  </button>
+                </th>
+              ))}
+            </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {sortedRows.length === 0 && (
               <tr><td colSpan={columns.length}>{emptyLabel}</td></tr>
             )}
-            {rows.map((row, i) => (
-              <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
+            {sortedRows.map((row, i) => (
+              <tr key={i}>
+                {row.map((cell, j) => (
+                  // Condition, like every other condition column in the app, is
+                  // color-coded by severity via the shared getConditionColor scale.
+                  <td key={j} style={j === conditionIndex ? { color: getConditionColor(cell), fontWeight: 600 } : undefined}>{cell}</td>
+                ))}
+              </tr>
             ))}
           </tbody>
         </table>

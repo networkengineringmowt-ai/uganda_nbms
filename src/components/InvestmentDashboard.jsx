@@ -1,6 +1,38 @@
 import { useState, useEffect, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { TrendingUp, Wallet, Wrench, AlertTriangle, Layers } from 'lucide-react';
+import { TrendingUp, Wallet, Wrench, AlertTriangle, Layers, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { getRoadClassLabel } from '../utils/dataDictionary';
+
+// Bridge names arrive with inconsistent source casing ("RWIZI BRIDGE" vs
+// "Rubaale - Muhanga - Kabale") -- title-case for display, but leave short
+// all-caps tokens (acronyms like "UNRA") untouched rather than mangling them,
+// and don't touch words that already carry non-leading capitals (e.g.
+// "McAllister") since a naive lowercase-then-capitalize would flatten those.
+const toTitleCase = (str) => {
+  if (!str) return str;
+  return str.replace(/[A-Za-z']+/g, (word) => {
+    // Preserve already mixed-case words (has a capital after position 0) --
+    // they're already properly cased, don't flatten them.
+    if (/[a-z]/.test(word) && /[A-Z]/.test(word.slice(1))) return word;
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
+};
+
+// Column config for the priority-ranking table's click-to-sort headers --
+// mirrors DataTable.jsx's accessor + comparator shape without pulling that
+// component in, since this table's per-column colored badges/text (band,
+// intervention) don't fit DataTable's plain-cell rendering.
+const RANK_COLUMNS = [
+  { key: 'priority_rank', header: 'Rank' },
+  { key: 'bridge_no', header: 'Bridge' },
+  { key: 'name', header: 'Name' },
+  { key: 'region', header: 'Region' },
+  { key: 'road_class', header: 'Class' },
+  { key: 'band', header: 'Band' },
+  { key: 'intervention', header: 'Recommended Intervention' },
+  { key: 'planning_window', header: 'Planning Window' },
+  { key: 'indicative_cost_ugx_mn', header: 'Cost (UGX Mn)', align: 'right' },
+];
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_nbms/';
 const dataUrl = (p) => `${BASE_URL}${p.replace(/^\/+/, '')}`;
@@ -30,6 +62,25 @@ export default function InvestmentDashboard() {
 
   const regions = useMemo(() => ['All', ...Object.keys(s?.by_region || {}).sort()], [s]);
 
+  const [sort, setSort] = useState({ key: 'priority_rank', direction: 'asc' });
+  const toggleSort = (key) => setSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+  }));
+  const sortedRanked = useMemo(() => {
+    const { key, direction } = sort;
+    return [...ranked].sort((a, b) => {
+      const aValue = a[key];
+      const bValue = b[key];
+      const aNumber = Number(aValue);
+      const bNumber = Number(bValue);
+      const result = Number.isFinite(aNumber) && Number.isFinite(bNumber)
+        ? aNumber - bNumber
+        : String(aValue ?? '').localeCompare(String(bValue ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return direction === 'asc' ? result : -result;
+    });
+  }, [ranked, sort]);
+
   const donut = useMemo(() => {
     if (!s) return {};
     const entries = Object.entries(s.by_band);
@@ -52,7 +103,10 @@ export default function InvestmentDashboard() {
     return {
       grid: { left: 140, right: 60, top: 10, bottom: 24 },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: p => `${p[0].name}<br/>UGX ${fmtMn(p[0].value)} Mn` },
-      xAxis: { type: 'value', axisLabel: { color: '#9aa5c4' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+      // Axis tick labels were plain numbers while the bar-end labels/tooltip
+      // used fmtMn's thousands-separator formatting -- match them so the
+      // same value doesn't read two different ways on one chart.
+      xAxis: { type: 'value', axisLabel: { color: '#9aa5c4', formatter: fmtMn }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
       yAxis: { type: 'category', data: rows, axisLabel: { color: '#f0f3fa', fontSize: 11 } },
       series: [{
         type: 'bar', barWidth: 18,
@@ -68,7 +122,8 @@ export default function InvestmentDashboard() {
     return {
       grid: { left: 90, right: 60, top: 10, bottom: 24 },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: p => `${p[0].name}<br/>UGX ${fmtMn(p[0].value)} Mn` },
-      xAxis: { type: 'value', axisLabel: { color: '#9aa5c4' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+      // Same axis/label formatting mismatch as costByInterv above.
+      xAxis: { type: 'value', axisLabel: { color: '#9aa5c4', formatter: fmtMn }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
       yAxis: { type: 'category', data: rows.map(r => r[0]), axisLabel: { color: '#f0f3fa', fontSize: 11 } },
       series: [{
         type: 'bar', barWidth: 16,
@@ -135,19 +190,28 @@ export default function InvestmentDashboard() {
           <table className="data-table" style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                {['Rank', 'Bridge', 'Name', 'Region', 'Class', 'Band', 'Recommended Intervention', 'Planning Window', 'Cost (UGX Mn)'].map(h => (
-                  <th key={h} style={{ textAlign: h.includes('Cost') ? 'right' : 'left', padding: '10px 12px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)' }}>{h}</th>
+                {RANK_COLUMNS.map(col => (
+                  <th key={col.key} style={{ textAlign: col.align === 'right' ? 'right' : 'left', padding: '10px 12px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: 10, letterSpacing: '.05em', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)' }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(col.key)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: 0, padding: 0, font: 'inherit', textTransform: 'inherit', letterSpacing: 'inherit', color: 'inherit', cursor: 'pointer', flexDirection: col.align === 'right' ? 'row-reverse' : 'row' }}
+                    >
+                      <span>{col.header}</span>
+                      {sort.key === col.key ? (sort.direction === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />) : <ArrowUpDown size={11} opacity={0.35} />}
+                    </button>
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {ranked.map(b => (
+              {sortedRanked.map(b => (
                 <tr key={b.bridge_no} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <td style={{ padding: '8px 12px', fontWeight: 800, color: 'var(--accent-primary)' }}>{b.priority_rank}</td>
                   <td style={{ padding: '8px 12px', fontWeight: 700 }}>{b.bridge_no}</td>
-                  <td style={{ padding: '8px 12px' }}>{b.name || '-'}</td>
+                  <td style={{ padding: '8px 12px' }}>{b.name ? toTitleCase(b.name) : '-'}</td>
                   <td style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{b.region || '-'}</td>
-                  <td style={{ padding: '8px 12px' }}>{b.road_class}</td>
+                  <td style={{ padding: '8px 12px' }}>{b.road_class ? getRoadClassLabel(b.road_class) : '-'}</td>
                   <td style={{ padding: '8px 12px' }}>
                     <span style={{ padding: '2px 9px', borderRadius: 999, fontSize: 10.5, fontWeight: 800, color: BAND_COLOR[b.band], background: `${BAND_COLOR[b.band]}22`, border: `1px solid ${BAND_COLOR[b.band]}55` }}>{b.band}</span>
                   </td>

@@ -1,6 +1,6 @@
 import DigitalTwin from './DigitalTwin';
 import ReportPhotoGrid from './ReportPhotoGrid';
-import { getConditionColor, getConditionLabel, getCulvertTypeLabel } from '../utils/dataDictionary';
+import { getConditionColor, getConditionLabel, getCulvertTypeLabel, getRoadClassLabel } from '../utils/dataDictionary';
 
 const cellStyle = { padding: '6px 10px', border: '1px solid rgba(148, 184, 255, 0.16)', fontSize: '12px', verticalAlign: 'top', color: '#cbd5e1' };
 const headerCell = { ...cellStyle, fontWeight: 700, background: '#101f39', width: '180px', color: '#7dd3fc' };
@@ -47,7 +47,10 @@ export default function CulvertPrintReport({ reportData }) {
       <FieldTable rows={[
         ['Culvert Number', c.CulvertNumber, 'River / Feature', c.River || c.CulvertName],
         ['Road', c.Road, 'Link Name', c.LinkName || c.Link_Name],
-        ['Road Number', c.Road_No, 'Road Class', c.Road_Class],
+        // road_class has no code dictionary -- format-only decode ("Class A")
+        // rather than showing the bare letter (leave falsy as-is so the
+        // FieldTable's own present() fallback to '-' still applies).
+        ['Road Number', c.Road_No, 'Road Class', c.Road_Class ? getRoadClassLabel(c.Road_Class) : c.Road_Class],
         ['Link ID', c.LinkID || c.Link_ID || c.SectionOrLinkNo, 'Surface Type', c.Surface_Type],
         ['Chainage From (km)', c.Chainage_From, 'Chainage To (km)', c.Chainage_To],
         ['Link Length (km)', c.LinkLengthKm ?? c['Length(km)'], 'Culvert Chainage (km)', c.Km],

@@ -83,22 +83,94 @@ export default function SystemParametersForm() {
   const totalDefWeight = deficiencySection.params.reduce((sum, p) => sum + (params[p.key] || 0), 0);
   const isDeficiencyValid = Math.abs(totalDefWeight - 1.0) < 0.005;
 
+  // Only sections whose params are genuinely a part-to-whole weighting (the
+  // Deficiency Index weights sum to 1.0; the Component Condition weights are
+  // the same kind of relative-importance factor) make sense as a pie/donut.
+  // "Engine Constants" (ADTB ~5400 alongside exponents 0.1-1.5) and
+  // "Strategic Overrides" (unrelated percentage/threshold values) are not a
+  // whole that sums to anything meaningful -- charting them as a pie made one
+  // value swallow ~99% of the circle and the rest invisible slivers.
+  const ADDITIVE_WEIGHT_SECTIONS = new Set(['deficiency', 'component']);
+
   // Chart for weight distribution
   const weightChartOption = useMemo(() => {
     const section = PARAM_SECTIONS.find(s => s.id === activeSection);
     if (!section) return {};
+
+    if (ADDITIVE_WEIGHT_SECTIONS.has(section.id)) {
+      return {
+        tooltip: { trigger: 'item', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#f8fafc', fontSize: 12 } },
+        series: [{
+          type: 'pie',
+          radius: ['45%', '75%'],
+          center: ['50%', '50%'],
+          itemStyle: { borderRadius: 6, borderColor: '#0f172a', borderWidth: 3 },
+          label: { show: false },
+          data: section.params.map((p, i) => ({
+            name: p.label,
+            value: params[p.key],
+            itemStyle: { color: COLORS[i % COLORS.length] }
+          }))
+        }]
+      };
+    }
+
+    // Non-additive section: show each parameter as its own independent bar
+    // rather than implying a whole that these unrelated-unit values don't form.
+    // These sections can mix wildly different magnitudes on one axis (e.g.
+    // Engine Constants has ADTB~5400 alongside exponents of 0.2-1.5) -- a
+    // linear scale would make the small values render as invisible slivers,
+    // which is exactly the "one value swallows everything" problem this
+    // chart type was chosen to avoid for the pie case. Switch to a log scale
+    // whenever the values span more than one order of magnitude so every
+    // bar stays visible and comparable.
+    const positiveValues = section.params.map(p => Number(params[p.key])).filter(v => Number.isFinite(v) && v > 0);
+    const maxVal = positiveValues.length ? Math.max(...positiveValues) : 0;
+    const minVal = positiveValues.length ? Math.min(...positiveValues) : 0;
+    const useLogScale = minVal > 0 && maxVal / minVal >= 20;
+    // The right-hand panel is only 260px wide (minus padding), far too
+    // narrow to also fit each parameter's full descriptive label (e.g. "K3
+    // (Alignment Exponent)" at ~23 characters) as a y-axis category label --
+    // reserving enough width for that pushed the plot area to near-zero and
+    // left the labels clipped/overlapping the panel edge. Use each
+    // parameter's short code (the text before " (", e.g. "K3") on the axis
+    // instead, and show the full label + value in the tooltip on hover.
+    const shortLabel = (label) => {
+      const idx = label.indexOf(' (');
+      if (idx > 0) return label.slice(0, idx);
+      // No parenthetical short code available (e.g. "Minimum Deficiency
+      // Threshold") -- truncate so the label can't overflow the 260px
+      // panel; the full name is still available on hover via the tooltip.
+      return label.length > 16 ? `${label.slice(0, 15)}…` : label;
+    };
     return {
-      tooltip: { trigger: 'item', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#f8fafc', fontSize: 12 } },
+      grid: { left: 56, right: 16, top: 10, bottom: 10, containLabel: true },
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: '#1e293b',
+        borderColor: '#334155',
+        textStyle: { color: '#f8fafc', fontSize: 12 },
+        formatter: (p) => `${section.params[p.dataIndex]?.label || p.name}<br/>${p.value}`,
+      },
+      xAxis: {
+        type: useLogScale ? 'log' : 'value',
+        logBase: 10,
+        axisLabel: { color: '#64748b', fontSize: 10 },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+      },
+      yAxis: {
+        type: 'category',
+        data: section.params.map(p => shortLabel(p.label)),
+        axisLabel: { color: '#94a3b8', fontSize: 10 },
+        axisLine: { lineStyle: { color: '#334155' } },
+        axisTick: { alignWithLabel: true },
+      },
       series: [{
-        type: 'pie',
-        radius: ['45%', '75%'],
-        center: ['50%', '50%'],
-        itemStyle: { borderRadius: 6, borderColor: '#0f172a', borderWidth: 3 },
-        label: { show: false },
+        type: 'bar',
+        barWidth: '55%',
         data: section.params.map((p, i) => ({
-          name: p.label,
           value: params[p.key],
-          itemStyle: { color: COLORS[i % COLORS.length] }
+          itemStyle: { color: COLORS[i % COLORS.length], borderRadius: [0, 4, 4, 0] }
         }))
       }]
     };
@@ -357,9 +429,9 @@ export default function SystemParametersForm() {
       }}>
         <div>
           <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748b', marginBottom: '12px' }}>
-            Weight Distribution
+            {ADDITIVE_WEIGHT_SECTIONS.has(activeSection) ? 'Weight Distribution' : 'Parameter Values'}
           </div>
-          <div style={{ height: '200px' }}>
+          <div style={{ height: ADDITIVE_WEIGHT_SECTIONS.has(activeSection) ? '200px' : `${Math.max(200, (currentSection?.params.length || 0) * 42)}px` }}>
             <ReactECharts option={weightChartOption} style={{ height: '100%', width: '100%' }} />
           </div>
         </div>
