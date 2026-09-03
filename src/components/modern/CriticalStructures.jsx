@@ -33,21 +33,33 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
     substructure: x.LegacyData?.substructure_rating, superstructure: x.LegacyData?.superstructure_rating,
     waterway: x.LegacyData?.waterway_rating,
   });
+  // A structure whose overall rating is simply absent (e.g. still under
+  // construction, or not yet inspected) must not be swept into "critical" --
+  // Number(null) coerces to 0, and 0 <= 3 would otherwise wrongly qualify
+  // every un-rated bridge as a critical one. Only a genuine, present rating
+  // of <=3 (or an explicit Critical/Poor category) counts.
+  const severityOf = (cat, rawRating) => {
+    const rating = rawRating !== null && rawRating !== undefined && rawRating !== '' ? Number(rawRating) : null;
+    const isCritical = cat === 'Critical' || (cat == null && rating !== null && rating <= 1);
+    const isPoor = cat === 'Poor' || (cat == null && rating !== null && rating > 1 && rating <= 3);
+    if (isCritical) return 'Critical';
+    if (isPoor) return 'Poor';
+    return null;
+  };
+
   const criticalBridges = useMemo(() => {
-    return bridges.filter(b => {
-      const cat = b.ConditionCategory;
-      return cat === 'Critical' || cat === 'Poor' || Number(b.OverallConditionRating) <= 3;
-    }).sort((a, b) =>
-      (calculateBridgeDeficiencyIndex(compRatings(b)) || 0) - (calculateBridgeDeficiencyIndex(compRatings(a)) || 0)
-    );
+    return bridges
+      .map(b => ({ b, severity: severityOf(b.ConditionCategory, b.OverallConditionRating) }))
+      .filter(({ severity }) => severity !== null)
+      .sort((x, y) =>
+        (calculateBridgeDeficiencyIndex(compRatings(y.b)) || 0) - (calculateBridgeDeficiencyIndex(compRatings(x.b)) || 0)
+      );
   }, [bridges]);
 
   const criticalCulverts = useMemo(() => {
-    return culverts.filter(c => {
-      const cat = c.ConditionCategory;
-      const rating = c['Overall Rating'] != null ? Number(c['Overall Rating']) : null;
-      return cat === 'Critical' || cat === 'Poor' || (rating !== null && rating <= 3);
-    });
+    return culverts
+      .map(c => ({ c, severity: severityOf(c.ConditionCategory, c['Overall Rating']) }))
+      .filter(({ severity }) => severity !== null);
   }, [culverts]);
 
   return (
@@ -63,8 +75,12 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-        {criticalBridges.map(b => {
+        {criticalBridges.map(({ b, severity }) => {
           const photoUrl = photoMap.get(b.BridgeNumber);
+          // Badge reflects this bridge's actual severity rather than a
+          // fixed "CRITICAL" label -- a Poor bridge in this list must read
+          // as Poor, not be overstated as Critical.
+          const badgeColor = severity === 'Critical' ? '#ef4444' : '#f59e0b';
           return (
             <div key={b.BridgeNumber} onClick={() => onSelectBridge && onSelectBridge(b)} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
               <div style={{ height: '180px', background: '#111827', position: 'relative' }}>
@@ -73,8 +89,8 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#475569' }}><Camera size={32} /></div>
                 )}
-                <div style={{ position: 'absolute', top: 8, right: 8, background: '#ef4444', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
-                  CRITICAL BRIDGE
+                <div style={{ position: 'absolute', top: 8, right: 8, background: badgeColor, color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                  {severity.toUpperCase()} BRIDGE
                 </div>
               </div>
               <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -87,8 +103,9 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
           );
         })}
 
-        {criticalCulverts.map(c => {
+        {criticalCulverts.map(({ c, severity }) => {
           const photoUrl = photoMap.get(c.CulvertNumber);
+          const badgeColor = severity === 'Critical' ? '#ef4444' : '#f59e0b';
           return (
             <div key={c.CulvertNumber} onClick={() => onSelectBridge && onSelectBridge({ ...c, _structureType: 'culvert' })} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
               <div style={{ height: '180px', background: '#111827', position: 'relative' }}>
@@ -97,8 +114,8 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#475569' }}><Camera size={32} /></div>
                 )}
-                <div style={{ position: 'absolute', top: 8, right: 8, background: '#f59e0b', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
-                  POOR CULVERT
+                <div style={{ position: 'absolute', top: 8, right: 8, background: badgeColor, color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                  {severity.toUpperCase()} CULVERT
                 </div>
               </div>
               <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
