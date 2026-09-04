@@ -68,7 +68,7 @@ export default function StructureListPanel({ selectedBridge, onSelectBridge, dyn
         photos.forEach(p => {
           const filename = p.file_name || p.filename;
           if (p.structure_id && filename && !map.has(p.structure_id) && !p.duplicate_of) {
-            map.set(p.structure_id, url(`gallery/thumbnails/${filename.replace(/\\.[^/.]+$/, ".jpg")}`));
+            map.set(p.structure_id, url(`gallery/thumbnails/${filename.replace(/\.[^/.]+$/, ".jpg")}`));
           }
         });
         setPhotoMap(map);

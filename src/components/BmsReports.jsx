@@ -152,7 +152,12 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
   const [selectedStructureType, setSelectedStructureType] = useState('bridge');
   const [selectedStructureId, setSelectedStructureId] = useState('');
   const [printPreviewData, setPrintPreviewData] = useState(null);
-  const [unitCost, setUnitCost] = useState(1500000);
+  // Default matches bmsAlgorithms.js's UNIT_COST_UGX (the same per-m²
+  // estimate used to compute CRC/CDRC on the Bridge Detail Card) so this
+  // report's default valuation agrees with the per-bridge figure the user
+  // would see elsewhere for the same bridge. The field stays user-editable
+  // as a planning "what if" assumption -- see the disclosure note below.
+  const [unitCost, setUnitCost] = useState(3500000);
   const [gallery, setGallery] = useState([]);
 
   useEffect(() => {
@@ -458,6 +463,9 @@ export default function BmsReports({ bridges = [], culverts = [] }) {
                   <Printer size={14} /> Print Summary
                 </button>
               </div>
+              <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                Starts from the platform's standard per-m² replacement cost estimate; adjust it to model a different planning assumption for this portfolio-wide report.
+              </p>
               {/* Portfolio KPIs */}
               <div style={{ display: 'flex', gap: '24px', marginTop: '12px', fontSize: '12px' }}>
                 <div><span style={{ color: 'var(--text-muted)' }}>Total CRC: </span><strong style={{ color: 'var(--accent-primary)' }}>UGX {fmt(Math.round(portfolioMetrics.totalCRC))}</strong></div>

@@ -56,18 +56,40 @@ const PARAM_SECTIONS = [
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
+// This form's own state was never actually persisted -- "Save Configuration"
+// showed a success message but the values reset to defaults on every reload,
+// and the live DC/rating calculations in bmsAlgorithms.js/rankingEngine.js
+// use their own fixed constants rather than reading anything set here.
+// Persisting to localStorage makes "saved" literally true (the values a user
+// sets do survive a reload); the disclosure banner below the header makes
+// clear this is a reference/planning configuration, not yet wired into the
+// live calculation engine, so it can't misrepresent what changing it does.
+const STORAGE_KEY = 'nbms_system_parameters_v1';
+
 export default function SystemParametersForm() {
   const defaults = {};
   PARAM_SECTIONS.forEach(s => s.params.forEach(p => { defaults[p.key] = p.default; }));
   defaults.strategicImportanceFactor = true;
 
-  const [params, setParams] = useState(defaults);
+  const [params, setParams] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      return stored && typeof stored === 'object' ? { ...defaults, ...stored } : defaults;
+    } catch {
+      return defaults;
+    }
+  });
   const [savedMessage, setSavedMessage] = useState('');
   const [activeSection, setActiveSection] = useState('deficiency');
   const [editingKey, setEditingKey] = useState(null);
 
   const handleSave = () => {
-    setSavedMessage('Configuration saved successfully.');
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(params));
+      setSavedMessage('Configuration saved successfully.');
+    } catch {
+      setSavedMessage('Could not save -- your browser blocked local storage.');
+    }
     setTimeout(() => setSavedMessage(''), 4000);
   };
 
@@ -253,6 +275,17 @@ export default function SystemParametersForm() {
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#f8fafc' }}>{currentSection?.title}</h2>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>{currentSection?.description}</p>
+        </div>
+
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '20px',
+          padding: '10px 12px', borderRadius: '8px',
+          background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)',
+        }}>
+          <Info size={14} style={{ color: '#f59e0b', marginTop: '1px', flexShrink: 0 }} />
+          <span style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5 }}>
+            Saved values persist in this browser as a reference/planning configuration. The live Deficiency Index and Condition Rating calculations use their own fixed constants and are not read from here.
+          </span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

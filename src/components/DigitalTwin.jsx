@@ -1,8 +1,26 @@
-import { Suspense, useMemo, useState } from 'react';
+import { Component, Suspense, useMemo, useState } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { ContactShadows, Line, OrbitControls, Text } from '@react-three/drei';
 import { DoubleSide, TextureLoader } from 'three';
 import { getPhotoUrl } from '../utils/photoUrlResolver';
+
+// useLoader's Suspense fallback only covers the pending-load case; a photo
+// that 404s or fails to decode throws a real render error that Suspense does
+// not catch, which would otherwise crash the whole Digital Twin view instead
+// of just leaving that one photo panel out -- the same "missing photo never
+// breaks the page" contract every other photo usage in this app follows.
+class PhotoPanelErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false };
+  }
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 const numeric = (...values) => {
   const value = values.find((candidate) => Number.isFinite(Number(candidate)));
@@ -209,7 +227,11 @@ function PhotoPanel({ photo, index, count, radius, opacity }) {
 
 function PhotoViewRing({ photos, radius, opacity, limit = 8 }) {
   const views = photos.slice(0, limit);
-  return <group>{views.map((photo, index) => <PhotoPanel key={photo.filename} photo={photo} index={index} count={views.length} radius={radius} opacity={opacity} />)}</group>;
+  return <group>{views.map((photo, index) => (
+    <PhotoPanelErrorBoundary key={photo.filename}>
+      <PhotoPanel photo={photo} index={index} count={views.length} radius={radius} opacity={opacity} />
+    </PhotoPanelErrorBoundary>
+  ))}</group>;
 }
 
 export default function DigitalTwin({ asset, isCulvert = false, large = false, photos = [], mode = 'constructed', measurement = null }) {

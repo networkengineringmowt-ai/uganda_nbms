@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { fetchBridges, fetchCulverts } from '../services/bmsDataService';
+import { getCriticalBridgeRows } from '../utils/bmsAlgorithms';
 import {
   TYPE_ABUTMENT,
   TYPE_BEARINGS,
@@ -265,27 +266,30 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
   const bridges = usingExternalData ? bridgesProp : fetchedBridges;
   const culverts = usingExternalData ? culvertsProp : fetchedCulverts;
   const [analytics, setAnalytics] = useState(null);
-  const [critical, setCritical] = useState([]);
+  // Live-computed from the current bridge register -- see the note in the
+  // data-fetch effect above on why this replaced a static snapshot file.
+  const critical = useMemo(() => getCriticalBridgeRows(bridges), [bridges]);
 
   useEffect(() => {
+    // Critical structures are computed live from the bridge register below
+    // (bmsAlgorithms.js getCriticalBridgeRows) rather than read from a
+    // separately-maintained snapshot file, which could silently drift stale
+    // relative to a bridge's actual current condition.
     const requests = [
       fetch(dataUrl('data/analytics.json')).then((response) => response.json()),
-      fetch(dataUrl('data/critical_structures.json')).then((response) => response.json()),
     ];
     if (!usingExternalData) {
       requests.unshift(fetchBridges(), fetchCulverts());
     }
     Promise.all(requests).then((results) => {
       if (usingExternalData) {
-        const [analyticsData, criticalRows] = results;
+        const [analyticsData] = results;
         setAnalytics(analyticsData);
-        setCritical(criticalRows);
       } else {
-        const [bridgeRows, culvertRows, analyticsData, criticalRows] = results;
+        const [bridgeRows, culvertRows, analyticsData] = results;
         setFetchedBridges(bridgeRows);
         setFetchedCulverts(culvertRows);
         setAnalytics(analyticsData);
-        setCritical(criticalRows);
       }
     }).catch(console.error);
   }, [usingExternalData]);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, ArrowUp, ArrowDown, ArrowUpDown, Search } from 'lucide-react';
 import { getConditionLabel, toProperCase } from '../utils/dataDictionary';
+import { getCriticalBridgeRows } from '../utils/bmsAlgorithms';
 
 // Worst-to-best condition order, used only to give the "Condition" column a
 // meaningful sort (its display value is a label, not a number).
@@ -31,19 +32,21 @@ const stripPersonnelNames = (text) => {
 };
 
 export default function MaintenanceWorkspace({ bridges, onSelectAsset }) {
-  const [critical, setCritical] = useState([]);
+  // Live-computed from the current bridge register (bmsAlgorithms.js
+  // getCriticalBridgeRows) rather than a separately-maintained snapshot
+  // file -- a bridge re-inspected to a better (or worse) condition since
+  // that snapshot was taken now shows up here correctly, instead of the
+  // 2026 intervention queue silently disagreeing with the bridge's actual
+  // current record shown everywhere else in the app.
+  const critical = useMemo(() => getCriticalBridgeRows(bridges), [bridges]);
   const [works, setWorks] = useState([]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All');
 
   useEffect(() => {
-    Promise.all([
-      fetch(dataUrl('data/critical_structures.json')).then((response) => response.json()),
-      fetch(dataUrl('data/bridge_works.json')).then((response) => response.json()).catch(() => []),
-    ]).then(([priorityRows, workRows]) => {
-      setCritical(priorityRows);
-      setWorks(Array.isArray(workRows) ? workRows : []);
-    }).catch(console.error);
+    fetch(dataUrl('data/bridge_works.json')).then((response) => response.json()).catch(() => [])
+      .then((workRows) => setWorks(Array.isArray(workRows) ? workRows : []))
+      .catch(console.error);
   }, []);
 
   const filtered = useMemo(() => critical.filter((row) => {
