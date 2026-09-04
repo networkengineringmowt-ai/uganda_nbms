@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { AlertTriangle, MapPin, Camera } from 'lucide-react';
-import { calculateBridgeDeficiencyIndex } from '../../utils/bmsAlgorithms';
+import { getCriticalBridges, conditionSeverity } from '../../utils/bmsAlgorithms';
 import { onPhotoError } from '../../utils/photoUrlResolver';
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
@@ -26,39 +26,17 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
     return map;
   }, [photos]);
 
-  // Critical Structures = bridges in the DNR "Critical" or "Poor" condition
-  // categories (overall rating <= 3 on the app scale), ranked by deficiency.
-  const compRatings = (x) => ({
-    approaches: x.LegacyData?.approaches_rating, roadway: x.LegacyData?.roadway_rating,
-    substructure: x.LegacyData?.substructure_rating, superstructure: x.LegacyData?.superstructure_rating,
-    waterway: x.LegacyData?.waterway_rating,
-  });
-  // A structure whose overall rating is simply absent (e.g. still under
-  // construction, or not yet inspected) must not be swept into "critical" --
-  // Number(null) coerces to 0, and 0 <= 3 would otherwise wrongly qualify
-  // every un-rated bridge as a critical one. Only a genuine, present rating
-  // of <=3 (or an explicit Critical/Poor category) counts.
-  const severityOf = (cat, rawRating) => {
-    const rating = rawRating !== null && rawRating !== undefined && rawRating !== '' ? Number(rawRating) : null;
-    const isCritical = cat === 'Critical' || (cat == null && rating !== null && rating <= 1);
-    const isPoor = cat === 'Poor' || (cat == null && rating !== null && rating > 1 && rating <= 3);
-    if (isCritical) return 'Critical';
-    if (isPoor) return 'Poor';
-    return null;
-  };
-
-  const criticalBridges = useMemo(() => {
-    return bridges
-      .map(b => ({ b, severity: severityOf(b.ConditionCategory, b.OverallConditionRating) }))
-      .filter(({ severity }) => severity !== null)
-      .sort((x, y) =>
-        (calculateBridgeDeficiencyIndex(compRatings(y.b)) || 0) - (calculateBridgeDeficiencyIndex(compRatings(x.b)) || 0)
-      );
-  }, [bridges]);
+  // Critical Structures = bridges/culverts in the DNR "Critical" or "Poor"
+  // condition categories (overall rating <= 3 on the app scale), ranked by
+  // deficiency. The bridge side of this is shared with the Overview and
+  // Maintenance Workspace panels (bmsAlgorithms.js getCriticalBridges) so
+  // there is exactly one live-computed definition of "critical" everywhere,
+  // instead of a separately-maintained snapshot that can drift stale.
+  const criticalBridges = useMemo(() => getCriticalBridges(bridges), [bridges]);
 
   const criticalCulverts = useMemo(() => {
     return culverts
-      .map(c => ({ c, severity: severityOf(c.ConditionCategory, c['Overall Rating']) }))
+      .map(c => ({ c, severity: conditionSeverity(c.ConditionCategory, c['Overall Rating']) }))
       .filter(({ severity }) => severity !== null);
   }, [culverts]);
 
@@ -82,7 +60,7 @@ export default function CriticalStructures({ bridges = [], culverts = [], onSele
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-        {criticalBridges.map(({ b, severity }) => {
+        {criticalBridges.map(({ bridge: b, severity }) => {
           const photoUrl = photoMap.get(b.BridgeNumber);
           // Badge reflects this bridge's actual severity rather than a
           // fixed "CRITICAL" label -- a Poor bridge in this list must read
