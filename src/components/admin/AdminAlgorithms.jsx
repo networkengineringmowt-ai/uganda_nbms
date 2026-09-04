@@ -17,8 +17,9 @@ export default function AdminAlgorithms() {
       </div>
 
       <div className="algo-dense-grid">
-        {/* Bridge Overall Condition Rating -- rankingEngine.js calculateOverallRating(),
-            wired into the Inspect Bridge capture form. Weights depend on which
+        {/* Bridge Overall Condition Rating -- bmsAlgorithms.js calculateBridgeOverallRating(),
+            used consistently on the Inspect Bridge capture form, the Bridge
+            Detail Card, and every ranking list. Weights depend on which
             condition band (0-2 / 3-4 / 5-9) each component's own rating falls in,
             per Table 3 of the 2017 UNRA BMS manual -- not a fixed 40/40/20 split. */}
         <div className="algo-tech-card full-width">
@@ -93,19 +94,22 @@ export default function AdminAlgorithms() {
           </div>
         </div>
 
-        {/* Bridge Condition Deficiency Index -- rankingEngine.js calculateConditionDeficiency()
-            (used in the Inspect Bridge form) / the equivalent bmsAlgorithms.js
-            calculateBridgeDeficiencyIndex() (used on the Bridge Detail Card). Both
-            implement the same DC formula from the 2017 UNRA manual. */}
+        {/* Bridge Condition Deficiency Index -- bmsAlgorithms.js
+            calculateBridgeDeficiencyIndex(), used consistently on the Inspect
+            Bridge form's live preview, the Bridge Detail Card, and every
+            ranking list. This is a condition-only index -- full traffic and
+            geometry data (ADTO, VCG, VCM) for the manual's traffic-scaled
+            variant is rarely fully populated in the source data, so this
+            platform implements the condition-based DC term only. */}
         <div className="algo-tech-card full-width">
           <div className="algo-tech-header">
             <AlertTriangle size={16} className="tech-icon red" />
             <span className="tech-title">BRIDGE_CONDITION_DEFICIENCY_INDEX</span>
           </div>
-          <div className="tech-desc">Scores a bridge's condition deficiency from 0 (perfect) to 100 (critical), scaled by traffic demand, per the 2017 UNRA BMS manual (Tables 8-10). This is what drives the Deficiency Score shown on the bridge detail view -- it is not part of a machine-learning ranking model.</div>
+          <div className="tech-desc">Scores a bridge's condition deficiency from 0 (perfect) to 100 (critical), based on component condition ratings, per the 2017 UNRA BMS manual (Tables 8-10). This is what drives the Deficiency Score shown on the bridge detail view and every ranking list -- it is not part of a machine-learning ranking model.</div>
 
           <div className="code-block">
-            <code>DC = 100 × (ADTO / 5400)^0.2 × Σ(k[component][rating] × w[component]) / Σ(w[component])</code>
+            <code>DC = 100 × Σ(k[component][rating] × w[component]) / Σ(w[component])</code>
           </div>
 
           <div className="decision-tree horizontal">

@@ -17,12 +17,15 @@ import { fetchBridges, fetchCulverts } from '../../services/bmsDataService';
 
 // Source Register column config: key resolves the raw sort value per row,
 // so the "Category" column (computed, not a stored field) can sort too.
+// This platform never surfaces source file names or raw extracted text --
+// both can embed individual/inspector names or other confidential material
+// from the underlying corpus -- so the "Document" column is a sanitized,
+// category-derived label only, and there is no free-text/snippet column.
 const SOURCE_TABLE_COLUMNS = [
-  { key: 'filename', header: 'Document' },
+  { key: 'label', header: 'Document' },
   { key: 'category', header: 'Category' },
   { key: 'type', header: 'Type' },
   { key: 'size_mb', header: 'Size' },
-  { key: 'snippet', header: 'Extracted evidence' },
 ];
 
 const BASE_URL = import.meta.env.BASE_URL || '/uganda_bms/';
@@ -91,6 +94,9 @@ const DATASETS = [
   ['gallery/index.json', 'Evidence-photo index', 'Structure-linked media'],
 ];
 
+// Classification only -- the filename/snippet text feeding this is used to
+// derive a generic category label, never rendered verbatim (see the
+// SOURCE_TABLE_COLUMNS note above on why raw source text never reaches the UI).
 const documentCategory = (document) => {
   const value = `${document.filename} ${document.snippet || ''}`.toLowerCase();
   if (value.includes('manual') || value.includes('guide') || value.includes('strategy')) return 'Manual / Guidance';
@@ -99,6 +105,13 @@ const documentCategory = (document) => {
   if (value.includes('investment') || value.includes('project') || value.includes('critical')) return 'Planning / Investment';
   return 'Technical Reference';
 };
+
+// A non-identifying display label for the Source Register table: category +
+// file type + a stable per-category sequence number. Never derived from the
+// real filename, so it cannot leak a name embedded in one (e.g. an author's
+// name in a document's title).
+const documentLabel = (document, category, sequenceInCategory) =>
+  `${category} Source ${sequenceInCategory} (${document.type})`;
 
 export default function SourcesEvidenceAdmin() {
   const [activeView, setActiveView] = useState('documentation');
@@ -126,15 +139,28 @@ export default function SourcesEvidenceAdmin() {
     fetchCulverts().then((rows) => setCulvertTotal(rows.length)).catch(console.error);
   }, []);
 
+  // Attach a sanitized category + display label to every document once, up
+  // front -- everything downstream (filtering, search, sort, rendering)
+  // reads only these derived fields, never the raw filename/snippet.
+  const labeledDocuments = useMemo(() => {
+    const seenInCategory = new Map();
+    return documents.map((document) => {
+      const category = documentCategory(document);
+      const sequence = (seenInCategory.get(category) || 0) + 1;
+      seenInCategory.set(category, sequence);
+      return { ...document, category, label: documentLabel(document, category, sequence) };
+    });
+  }, [documents]);
+
   const documentTypes = useMemo(() => ['All', ...new Set(documents.map((document) => document.type))], [documents]);
   const filteredDocuments = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return documents.filter((document) => {
+    return labeledDocuments.filter((document) => {
       const matchesType = typeFilter === 'All' || document.type === typeFilter;
-      const matchesTerm = !term || `${document.filename} ${document.snippet || ''}`.toLowerCase().includes(term);
+      const matchesTerm = !term || `${document.label} ${document.category}`.toLowerCase().includes(term);
       return matchesType && matchesTerm;
     });
-  }, [documents, query, typeFilter]);
+  }, [labeledDocuments, query, typeFilter]);
 
   const [sourceSort, setSourceSort] = useState({ key: null, direction: 'asc' });
   const toggleSourceSort = (key) => setSourceSort((current) => ({
@@ -143,7 +169,7 @@ export default function SourcesEvidenceAdmin() {
   }));
   const sortedDocuments = useMemo(() => {
     if (!sourceSort.key) return filteredDocuments;
-    const getValue = (document) => (sourceSort.key === 'category' ? documentCategory(document) : document[sourceSort.key]);
+    const getValue = (document) => document[sourceSort.key];
     return [...filteredDocuments].sort((a, b) => {
       const aValue = getValue(a);
       const bValue = getValue(b);
@@ -221,7 +247,7 @@ export default function SourcesEvidenceAdmin() {
       {activeView === 'sources' && (
         <section className="source-register">
           <div className="sources-toolbar">
-            <label><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search filename or extracted source text" /></label>
+            <label><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search document category" /></label>
             <div>{documentTypes.map((type) => <button key={type} className={typeFilter === type ? 'active' : ''} onClick={() => setTypeFilter(type)}>{type}</button>)}</div>
             <span>{filteredDocuments.length} records</span>
           </div>
@@ -247,12 +273,11 @@ export default function SourcesEvidenceAdmin() {
               </thead>
               <tbody>
                 {sortedDocuments.map((document, index) => (
-                  <tr key={`${document.filename}-${index}`}>
-                    <td><FileText size={15} /><strong>{document.filename}</strong></td>
-                    <td>{documentCategory(document)}</td>
+                  <tr key={`${document.label}-${index}`}>
+                    <td><FileText size={15} /><strong>{document.label}</strong></td>
+                    <td>{document.category}</td>
                     <td><span className="source-type">{document.type}</span></td>
                     <td>{document.size_mb} MB</td>
-                    <td>{document.snippet || 'No extracted text available.'}</td>
                   </tr>
                 ))}
               </tbody>

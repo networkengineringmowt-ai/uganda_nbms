@@ -62,7 +62,7 @@ export default function UserManagement({ onNavigate } = {}) {
         </div>
         <div className="glass-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}><History size={24} /></div>
-          <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>System Events (24h)</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>1,432</div></div>
+          <div><div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>System Events (24h)</div><div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{USAGE_HISTORY.length}</div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No live event feed connected</div></div>
         </div>
       </div>
 
