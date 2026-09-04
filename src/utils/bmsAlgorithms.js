@@ -145,11 +145,16 @@ export const calculateAssetValue = (structure, isCulvert) => {
 // Implementing DC (Bridge Condition Deficiency) as the primary index since full traffic 
 // and geometry data (ADTO, VCG, VCM) for clearance formulas is rarely fully populated in the sample sets.
 // DC = WC * sum(wi * ki) / sum(wi) 
+// Keyed "approaches" (not "approach") to match the rating-object shape every
+// call site actually passes (LegacyData.approaches_rating etc.) -- the
+// mismatched singular key here previously meant the coefficient lookup below
+// silently found nothing for this component, dropping it from every
+// deficiency-index score computed anywhere in the app.
 const COMPONENT_WEIGHTS = {
   superstructure: 1.0,
   substructure: 1.0,
   roadway: 0.5,
-  approach: 0.25,
+  approaches: 0.25,
   waterway: 0.83
 };
 
@@ -182,4 +187,67 @@ export const calculateBridgeDeficiencyIndex = (ratings) => {
   if (den === 0) return null;
   // Scaled out of 100
   return (num / den) * 100;
+};
+
+// --- CRITICAL STRUCTURES: SHARED CLASSIFICATION ---
+// Extracted from modern/CriticalStructures.jsx so every screen that needs
+// "is this bridge critical/poor" uses one definition instead of each
+// maintaining its own copy (or, worse, a separately-maintained static
+// snapshot that silently drifts out of sync with the live register).
+export const bridgeComponentRatings = (bridge) => ({
+  approaches: bridge.LegacyData?.approaches_rating,
+  roadway: bridge.LegacyData?.roadway_rating,
+  substructure: bridge.LegacyData?.substructure_rating,
+  superstructure: bridge.LegacyData?.superstructure_rating,
+  waterway: bridge.LegacyData?.waterway_rating,
+});
+
+// A structure whose overall rating is simply absent (e.g. still under
+// construction, or not yet inspected) must not be swept into "critical" --
+// Number(null) coerces to 0, and 0 <= 3 would otherwise wrongly qualify
+// every un-rated bridge as a critical one. Only a genuine, present rating
+// of <=3 (or an explicit Critical/Poor category) counts.
+export const conditionSeverity = (category, rawRating) => {
+  const rating = rawRating !== null && rawRating !== undefined && rawRating !== '' ? Number(rawRating) : null;
+  const isCritical = category === 'Critical' || (category == null && rating !== null && rating <= 1);
+  const isPoor = category === 'Poor' || (category == null && rating !== null && rating > 1 && rating <= 3);
+  if (isCritical) return 'Critical';
+  if (isPoor) return 'Poor';
+  return null;
+};
+
+/**
+ * Live-computed critical/poor bridges, ranked by deficiency index -- the
+ * single source of truth other views should read from instead of a static
+ * snapshot dataset that can go stale relative to the actual bridge register.
+ */
+export const getCriticalBridges = (bridges = []) => {
+  return bridges
+    .map((bridge) => ({ bridge, severity: conditionSeverity(bridge.ConditionCategory, bridge.OverallConditionRating) }))
+    .filter(({ severity }) => severity !== null)
+    .sort((x, y) =>
+      (calculateBridgeDeficiencyIndex(bridgeComponentRatings(y.bridge)) || 0) -
+      (calculateBridgeDeficiencyIndex(bridgeComponentRatings(x.bridge)) || 0)
+    )
+    .map(({ bridge, severity }) => ({ bridge, severity }));
+};
+
+/**
+ * Same live critical-bridge list, reshaped to the row fields the
+ * Maintenance Workspace and Overview panels display (bridge identity, link,
+ * station, length/width, condition label). Always reflects the current
+ * register -- there is no separately-maintained snapshot to go stale.
+ */
+export const getCriticalBridgeRows = (bridges = []) => {
+  return getCriticalBridges(bridges).map(({ bridge }) => ({
+    BridgeNumber: bridge.BridgeNumber,
+    BridgeName: bridge.BridgeName,
+    LinkID: bridge.LinkID,
+    LinkName: bridge.RoadDescrPrincipal || bridge.link_name || bridge.LinkID,
+    MaintenanceStation: bridge.Station || bridge.station,
+    BridgeLength: bridge.length ?? bridge.bridge_len,
+    BridgeWidth: bridge.width ?? bridge.bridge_wid,
+    OverallRating: bridge.OverallConditionRating,
+    Comment: '',
+  }));
 };
