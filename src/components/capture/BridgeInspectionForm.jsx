@@ -1,6 +1,17 @@
 import { useState, useMemo } from 'react';
 import { saveBridge } from '../../services/bmsDataService';
-import { calculateOverallRating, calculateConditionDeficiency, getConditionCategory } from '../../utils/rankingEngine';
+import { getConditionCategory } from '../../utils/rankingEngine';
+// Overall rating and deficiency index come from bmsAlgorithms.js -- the same
+// functions used on the Bridge Detail Card, ranking lists and Critical
+// Structures -- so the live preview shown here while capturing an
+// inspection always matches what every other screen shows afterward for
+// the same bridge. (rankingEngine.js has its own equivalent pair; the
+// overall-rating formulas are mathematically identical either way, but its
+// deficiency formula adds a traffic-demand term the review screens don't
+// use, which produced a different number for the same bridge -- and this
+// form was calling it with a fixed placeholder ADT of 15,000,000, several
+// orders of magnitude beyond any real bridge, further inflating the score.)
+import { calculateBridgeOverallRating, calculateBridgeDeficiencyIndex } from '../../utils/bmsAlgorithms';
 import { Search, Save, AlertCircle, CheckCircle, Activity, Plus, Trash2 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
@@ -152,9 +163,9 @@ export default function BridgeInspectionForm({ bridges = [], onBridgesUpdate, re
       waterway: parsedRatings.waterway
     };
 
-    const overall = calculateOverallRating(engineRatings);
-    const dc = calculateConditionDeficiency(engineRatings, 15000000); 
-    
+    const overall = calculateBridgeOverallRating(engineRatings);
+    const dc = calculateBridgeDeficiencyIndex(engineRatings);
+
     return {
       overallRating: overall,
       deficiencyIndex: dc,
