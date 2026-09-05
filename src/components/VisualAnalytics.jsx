@@ -150,7 +150,7 @@ function hbarOption(counts, xName) {
     },
     toolbox: neonToolbox,
     grid: { left: '18%', right: '8%', bottom: '10%', top: '10%', containLabel: true },
-    xAxis: { type: 'value', name: 'Count', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.15)', type: 'dashed' } } },
+    xAxis: { type: 'value', name: 'Count', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.15)', type: 'dashed' } } },
     yAxis: { type: 'category', data: entries.map(([name]) => name), name: xName, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } } },
     series: [{
       type: 'bar',
@@ -178,9 +178,9 @@ function radarOption(regionStats) {
         { name: 'Avg length (m)', max: Math.ceil(maxLength * 1.2) || 10 },
       ],
       axisName: { color: chartTextStyle.color, fontSize: 11, fontWeight: 700 },
-      splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.2)' } },
+      splitLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.2)' } },
       splitArea: { areaStyle: { color: ['rgba(10,18,36,0.3)', 'rgba(10,18,36,0.55)'] } },
-      axisLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.3)' } },
+      axisLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.3)' } },
     },
     series: [{
       type: 'radar',
@@ -208,8 +208,8 @@ function scatterOption(pairs, xName, yName, colorHex) {
     },
     toolbox: neonToolbox,
     grid: { left: '5%', right: '5%', bottom: '12%', top: '10%', containLabel: true },
-    xAxis: { type: 'value', name: xName, nameLocation: 'middle', nameGap: 28, nameTextStyle: { ...chartTextStyle, fontSize: 12 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.12)' } } },
-    yAxis: { type: 'value', name: yName, nameTextStyle: { ...chartTextStyle, fontSize: 12 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.12)' } } },
+    xAxis: { type: 'value', name: xName, nameLocation: 'middle', nameGap: 28, nameTextStyle: { ...chartTextStyle, fontSize: 12 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.12)' } } },
+    yAxis: { type: 'value', name: yName, nameTextStyle: { ...chartTextStyle, fontSize: 12 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.12)' } } },
     series: [{
       type: 'scatter',
       symbolSize: 9,
@@ -232,12 +232,12 @@ function dualGaugeOption(ratedPct, poorPct) {
         radius: '85%',
         min: 0, max: 100,
         startAngle: 210, endAngle: -30,
-        progress: { show: true, width: 14, itemStyle: { color: '#00f5ff', shadowBlur: 14, shadowColor: hexToRgba('#00f5ff', 0.8) } },
-        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(40,224,255,0.15)']] } },
+        progress: { show: true, width: 14, itemStyle: { color: '#64d2ff', shadowBlur: 14, shadowColor: hexToRgba('#64d2ff', 0.8) } },
+        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(100, 210, 255,0.15)']] } },
         pointer: { show: false },
         axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
         title: { show: true, offsetCenter: [0, '75%'], color: chartTextStyle.color, fontSize: 11, fontWeight: 700 },
-        detail: { valueAnimation: true, offsetCenter: [0, '5%'], formatter: '{value}%', color: '#00f5ff', fontSize: 22, fontWeight: 800 },
+        detail: { valueAnimation: true, offsetCenter: [0, '5%'], formatter: '{value}%', color: '#64d2ff', fontSize: 22, fontWeight: 800 },
         data: [{ value: ratedPct, name: 'Condition rated' }],
       },
       {
@@ -246,12 +246,12 @@ function dualGaugeOption(ratedPct, poorPct) {
         radius: '85%',
         min: 0, max: 100,
         startAngle: 210, endAngle: -30,
-        progress: { show: true, width: 14, itemStyle: { color: '#ff073a', shadowBlur: 14, shadowColor: hexToRgba('#ff073a', 0.8) } },
-        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(255,7,58,0.15)']] } },
+        progress: { show: true, width: 14, itemStyle: { color: '#ff453a', shadowBlur: 14, shadowColor: hexToRgba('#ff453a', 0.8) } },
+        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(255, 69, 58,0.15)']] } },
         pointer: { show: false },
         axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
         title: { show: true, offsetCenter: [0, '75%'], color: chartTextStyle.color, fontSize: 11, fontWeight: 700 },
-        detail: { valueAnimation: true, offsetCenter: [0, '5%'], formatter: '{value}%', color: '#ff073a', fontSize: 22, fontWeight: 800 },
+        detail: { valueAnimation: true, offsetCenter: [0, '5%'], formatter: '{value}%', color: '#ff453a', fontSize: 22, fontWeight: 800 },
         data: [{ value: poorPct, name: 'Poor or worse' }],
       },
     ],
@@ -314,7 +314,7 @@ function heatmapOption(regions, conditions, matrix) {
     visualMap: {
       min: 0, max: maxVal, calculable: true, orient: 'horizontal', left: 'center', bottom: 0,
       textStyle: { color: chartTextStyle.color },
-      inRange: { color: ['rgba(10,18,36,0.4)', '#00f5ff', '#ff00e5'] },
+      inRange: { color: ['rgba(10,18,36,0.4)', '#64d2ff', '#bf5af2'] },
     },
     series: [{
       type: 'heatmap',
@@ -332,12 +332,12 @@ function boxplotOption(regions, boxData) {
     toolbox: neonToolbox,
     grid: { left: '8%', right: '5%', bottom: '15%', top: '8%', containLabel: true },
     xAxis: { type: 'category', data: regions, axisLabel: { ...chartTextStyle, fontSize: 10, rotate: 20 }, axisLine: { lineStyle: { color: NEON_AXIS } }, boundaryGap: true },
-    yAxis: { type: 'value', name: 'Length (m)', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.12)' } } },
+    yAxis: { type: 'value', name: 'Length (m)', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.12)' } } },
     series: [{
       type: 'boxplot',
       data: boxData,
-      itemStyle: { color: hexToRgba('#00f5ff', 0.35), borderColor: '#00f5ff', borderWidth: 2, shadowBlur: 10, shadowColor: hexToRgba('#00f5ff', 0.6) },
-      emphasis: { itemStyle: { borderColor: '#ff00e5', shadowColor: hexToRgba('#ff00e5', 0.8) } },
+      itemStyle: { color: hexToRgba('#64d2ff', 0.35), borderColor: '#64d2ff', borderWidth: 2, shadowBlur: 10, shadowColor: hexToRgba('#64d2ff', 0.6) },
+      emphasis: { itemStyle: { borderColor: '#bf5af2', shadowColor: hexToRgba('#bf5af2', 0.8) } },
     }],
   };
 }
@@ -350,15 +350,15 @@ function lineAreaOption(yearCounts, xName) {
     toolbox: neonToolbox,
     grid: { left: '5%', right: '5%', bottom: '12%', top: '10%', containLabel: true },
     xAxis: { type: 'category', data: years, name: xName, nameLocation: 'middle', nameGap: 28, nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } } },
-    yAxis: { type: 'value', name: 'Records', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.12)' } } },
+    yAxis: { type: 'value', name: 'Records', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.12)' } } },
     series: [{
       type: 'line',
       smooth: true,
       symbolSize: 8,
       data: years.map((y) => yearCounts[y]),
-      lineStyle: { color: '#00f5ff', width: 3, shadowBlur: 12, shadowColor: hexToRgba('#00f5ff', 0.8) },
-      itemStyle: { color: '#00f5ff', shadowBlur: 10, shadowColor: hexToRgba('#00f5ff', 0.9) },
-      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: hexToRgba('#00f5ff', 0.45) }, { offset: 1, color: hexToRgba('#00f5ff', 0.02) }] } },
+      lineStyle: { color: '#64d2ff', width: 3, shadowBlur: 12, shadowColor: hexToRgba('#64d2ff', 0.8) },
+      itemStyle: { color: '#64d2ff', shadowBlur: 10, shadowColor: hexToRgba('#64d2ff', 0.9) },
+      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: hexToRgba('#64d2ff', 0.45) }, { offset: 1, color: hexToRgba('#64d2ff', 0.02) }] } },
     }],
   };
 }
@@ -520,7 +520,7 @@ export default function VisualAnalytics({ bridges: bridgesProp, culverts: culver
           kicker="Correlation"
           title="Bridge Deck Length vs AADT"
           note={`n=${bScatterPairs.length.toLocaleString()} bridges with both a deck length and an estimated AADT on file.`}
-          option={scatterOption(bScatterPairs, 'Deck length (m)', 'AADT (veh/day)', '#00f5ff')}
+          option={scatterOption(bScatterPairs, 'Deck length (m)', 'AADT (veh/day)', '#64d2ff')}
         />
         <ChartCard kicker="Data quality" title="Bridges — Coverage at a Glance" option={dualGaugeOption(bGauges.ratedPct, bGauges.poorPct)} />
         <ChartCard kicker="Data completeness" title="Bridges — Register Completeness Funnel" option={funnelOption(bFunnel)} />
@@ -546,7 +546,7 @@ export default function VisualAnalytics({ bridges: bridgesProp, culverts: culver
           kicker="Correlation"
           title="Culvert Length vs Span/Diameter"
           note={`n=${cScatterPairs.length.toLocaleString()} culverts with both dimensions on file${cScatterExcluded ? ` · ${cScatterExcluded} outlier(s) beyond 10 m span excluded as likely data-entry errors` : ''}.`}
-          option={scatterOption(cScatterPairs, 'Length (m)', 'Span/diameter (m)', '#ff00e5')}
+          option={scatterOption(cScatterPairs, 'Length (m)', 'Span/diameter (m)', '#bf5af2')}
         />
         <ChartCard kicker="Data quality" title="Culverts — Coverage at a Glance" option={dualGaugeOption(cGauges.ratedPct, cGauges.poorPct)} />
         <ChartCard kicker="Hierarchy" title="Culverts — Region → Road Class" option={treemapOption(cTreemap)} wide />

@@ -126,7 +126,7 @@ function DimensionTicks({ metrics }) {
 
 function ActiveMeasurement({ metrics, axis }) {
   if (!axis) return null;
-  const color = '#22d3ee';
+  const color = '#64d2ff';
   const { length, width, height } = metrics;
   const tickSize = 0.45;
   const definitions = {

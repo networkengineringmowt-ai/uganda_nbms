@@ -94,7 +94,7 @@ const bar2DOption = (rawData, xName) => {
       axisLabel: { ...chartTextStyle, fontSize: 10 },
       axisTick: { show: true, lineStyle: { color: NEON_AXIS } },
       axisLine: { show: true, lineStyle: { color: NEON_AXIS } },
-      splitLine: { show: true, lineStyle: { color: 'rgba(40, 224, 255, 0.15)', type: 'dashed' } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(100, 210, 255, 0.15)', type: 'dashed' } },
     },
     animation: true,
     animationDuration: 1000,
@@ -204,7 +204,7 @@ const groupedBarOption = (rows, rowField, colField, xName) => {
       axisLabel: { ...chartTextStyle, fontSize: 10 },
       axisTick: { show: true, lineStyle: { color: NEON_AXIS } },
       axisLine: { show: true, lineStyle: { color: NEON_AXIS } },
-      splitLine: { show: true, lineStyle: { color: 'rgba(40, 224, 255, 0.15)', type: 'dashed' } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(100, 210, 255, 0.15)', type: 'dashed' } },
     },
     animation: true,
     animationDuration: 1000,
@@ -439,10 +439,10 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
   const conditionChartOptions = useMemo(() => {
     if (!bridges.length) return {};
     const neonFor = (label) => (
-      label === 'Beyond Repair' || label === 'Critical' || label === 'Very Poor' ? '#ff073a' :
-      label === 'Poor' ? '#ff5f1f' :
-      label === 'Marginal' || label === 'Fair' ? '#ffea00' :
-      label === 'Satisfactory' ? '#c6ff00' : '#39ff14'
+      label === 'Beyond Repair' || label === 'Critical' || label === 'Very Poor' ? '#ff453a' :
+      label === 'Poor' ? '#ff9f0a' :
+      label === 'Marginal' || label === 'Fair' ? '#ffd60a' :
+      label === 'Satisfactory' ? '#c6ff00' : '#30d158'
     );
     const rawData = CONDITION_ORDER.map((label) => ({ name: label, value: conditionOverall[label] || 0 })).filter((d) => d.value > 0);
     const total = rawData.reduce((sum, d) => sum + d.value, 0);
@@ -478,7 +478,7 @@ export default function BmsOverview({ onNavigate, onSelectAsset, bridges: bridge
         type: 'value',
         axisLabel: { color: chartTextStyle.color },
         axisLine: { lineStyle: { color: NEON_AXIS } },
-        splitLine: { lineStyle: { color: 'rgba(40, 224, 255, 0.12)' } }
+        splitLine: { lineStyle: { color: 'rgba(100, 210, 255, 0.12)' } }
       },
       series: [
         {
