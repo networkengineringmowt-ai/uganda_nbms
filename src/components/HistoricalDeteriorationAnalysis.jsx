@@ -118,7 +118,7 @@ function barOption(categories, values, { yName = 'Count', rotate = 0, colorFn } 
     toolbox: neonToolbox,
     grid: { left: '7%', right: '5%', bottom: rotate ? '20%' : '12%', top: '10%', containLabel: true },
     xAxis: { type: 'category', data: categories, axisLabel: { ...chartTextStyle, fontSize: 10, rotate }, axisLine: { lineStyle: { color: NEON_AXIS } } },
-    yAxis: { type: 'value', name: yName, nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255,0.12)' } } },
+    yAxis: { type: 'value', name: yName, nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40,224,255,0.12)' } } },
     series: [{
       type: 'bar',
       data: values.map((v, i) => ({ value: v, itemStyle: neonItemStyle(colorFn ? colorFn(categories[i], v) : chartColors[i % chartColors.length]) })),
@@ -137,7 +137,7 @@ function stackedPercentOption(groups, conditions, seriesData) {
     legend: { bottom: 0, textStyle: { ...chartTextStyle, fontSize: 10 }, type: 'scroll' },
     grid: { left: '6%', right: '5%', bottom: '18%', top: '8%', containLabel: true },
     xAxis: { type: 'category', data: groups, axisLabel: { ...chartTextStyle, fontSize: 10, rotate: 20 }, axisLine: { lineStyle: { color: NEON_AXIS } } },
-    yAxis: { type: 'value', max: 100, name: '% of group', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10, formatter: '{value}%' }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255,0.12)' } } },
+    yAxis: { type: 'value', max: 100, name: '% of group', nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10, formatter: '{value}%' }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40,224,255,0.12)' } } },
     series: conditions.map((cond, i) => ({
       name: cond, type: 'bar', stack: 'total', data: seriesData[cond], itemStyle: neonItemStyle(chartColors[i % chartColors.length]),
     })),
@@ -154,12 +154,12 @@ function avgRankLineOption(categories, values, counts, yName = 'Avg. condition r
     toolbox: neonToolbox,
     grid: { left: '7%', right: '5%', bottom: '14%', top: '10%', containLabel: true },
     xAxis: { type: 'category', data: categories, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } } },
-    yAxis: { type: 'value', name: yName, min: 0, max: 9, nameTextStyle: { ...chartTextStyle, fontSize: 10 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255,0.12)' } } },
+    yAxis: { type: 'value', name: yName, min: 0, max: 9, nameTextStyle: { ...chartTextStyle, fontSize: 10 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40,224,255,0.12)' } } },
     series: [{
       type: 'line', data: values, smooth: true, symbolSize: 8,
-      lineStyle: { color: '#64d2ff', width: 3, shadowBlur: 12, shadowColor: 'rgba(100, 210, 255,0.7)' },
-      itemStyle: { color: '#64d2ff' },
-      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: hexToRgba('#64d2ff', 0.35) }, { offset: 1, color: hexToRgba('#64d2ff', 0) }] } },
+      lineStyle: { color: '#28e0ff', width: 3, shadowBlur: 12, shadowColor: 'rgba(40,224,255,0.7)' },
+      itemStyle: { color: '#28e0ff' },
+      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: hexToRgba('#28e0ff', 0.35) }, { offset: 1, color: hexToRgba('#28e0ff', 0) }] } },
     }],
   };
 }
@@ -172,7 +172,7 @@ function groupedBarOption(categories, series) {
     legend: { bottom: 0, textStyle: { ...chartTextStyle, fontSize: 10 } },
     grid: { left: '7%', right: '5%', bottom: '18%', top: '10%', containLabel: true },
     xAxis: { type: 'category', data: categories, axisLabel: { ...chartTextStyle, fontSize: 10, rotate: 15 }, axisLine: { lineStyle: { color: NEON_AXIS } } },
-    yAxis: { type: 'value', name: 'Avg. rating (0–9)', min: 0, max: 9, nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255,0.12)' } } },
+    yAxis: { type: 'value', name: 'Avg. rating (0–9)', min: 0, max: 9, nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40,224,255,0.12)' } } },
     series: series.map((s, i) => ({ ...s, type: 'bar', itemStyle: neonItemStyle(chartColors[i % chartColors.length]) })),
   };
 }
@@ -188,7 +188,7 @@ function percentGroupedBarOption(categories, series) {
     legend: { bottom: 0, textStyle: { ...chartTextStyle, fontSize: 10 } },
     grid: { left: '7%', right: '5%', bottom: '18%', top: '10%', containLabel: true },
     xAxis: { type: 'category', data: categories, axisLabel: { ...chartTextStyle, fontSize: 10, rotate: 20 }, axisLine: { lineStyle: { color: NEON_AXIS } } },
-    yAxis: { type: 'value', name: '% of comparable register', max: 100, nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10, formatter: '{value}%' }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255,0.12)' } } },
+    yAxis: { type: 'value', name: '% of comparable register', max: 100, nameTextStyle: chartTextStyle, axisLabel: { ...chartTextStyle, fontSize: 10, formatter: '{value}%' }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40,224,255,0.12)' } } },
     series: series.map((s, i) => ({ ...s, type: 'bar', itemStyle: neonItemStyle(chartColors[i % chartColors.length]) })),
   };
 }
@@ -203,7 +203,7 @@ function transitionHeatmapOption(matrix) {
     yAxis: { type: 'category', name: 'Prior condition', data: CONDITION_ORDER, axisLabel: { ...chartTextStyle, fontSize: 9 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitArea: { show: true } },
     visualMap: {
       min: 0, max: Math.max(1, ...matrix.map((d) => d[2])), calculable: true, orient: 'vertical', right: 0, top: 'middle', itemHeight: 160,
-      textStyle: { color: chartTextStyle.color, fontSize: 10 }, inRange: { color: ['rgba(10,18,36,0.4)', '#64d2ff', '#bf5af2'] },
+      textStyle: { color: chartTextStyle.color, fontSize: 10 }, inRange: { color: ['rgba(10,18,36,0.4)', '#28e0ff', '#ff00e5'] },
     },
     series: [{ type: 'heatmap', data: matrix, label: { show: true, color: '#e8fbff', fontSize: 9, fontWeight: 700 }, emphasis: { itemStyle: { shadowBlur: 20, shadowColor: 'rgba(255,255,255,0.7)' } } }],
   };
@@ -234,9 +234,9 @@ function scatterOption(points, xName, yName) {
     tooltip: { ...neonTooltipBase, formatter: (p) => `${xName}: ${p.value[0]}<br/>${yName}: ${p.value[1]}` },
     toolbox: neonToolbox,
     grid: { left: '8%', right: '6%', bottom: '12%', top: '10%', containLabel: true },
-    xAxis: { type: 'value', name: xName, nameLocation: 'middle', nameGap: 28, nameTextStyle: { ...chartTextStyle, fontSize: 11 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255,0.12)' } } },
-    yAxis: { type: 'value', name: yName, nameTextStyle: { ...chartTextStyle, fontSize: 11 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(100, 210, 255,0.12)' } } },
-    series: [{ type: 'scatter', symbolSize: 8, data: points, itemStyle: { color: hexToRgba('#bf5af2', 0.6), borderColor: '#bf5af2', borderWidth: 1 } }],
+    xAxis: { type: 'value', name: xName, nameLocation: 'middle', nameGap: 28, nameTextStyle: { ...chartTextStyle, fontSize: 11 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40,224,255,0.12)' } } },
+    yAxis: { type: 'value', name: yName, nameTextStyle: { ...chartTextStyle, fontSize: 11 }, axisLabel: { ...chartTextStyle, fontSize: 10 }, axisLine: { lineStyle: { color: NEON_AXIS } }, splitLine: { lineStyle: { color: 'rgba(40,224,255,0.12)' } } },
+    series: [{ type: 'scatter', symbolSize: 8, data: points, itemStyle: { color: hexToRgba('#ff00e5', 0.6), borderColor: '#ff00e5', borderWidth: 1 } }],
   };
 }
 
