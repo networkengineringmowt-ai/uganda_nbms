@@ -261,7 +261,7 @@ export default function DashboardNav({ modernTab, setModernTab, setSelectedBridg
           )}
 
           <div className="horiz-auth-badge" title={isAdmin ? 'Full Access' : 'Dashboard Access'}>
-            {isAdmin ? <ShieldCheck size={16} color="#64d2ff" /> : <User size={16} color="#38bdf8" />}
+            {isAdmin ? <ShieldCheck size={16} color="#22d3ff" /> : <User size={16} color="#38bdf8" />}
             <span>{isAdmin ? 'Admin' : 'Dashboard User'}</span>
           </div>
           <button className="horiz-logout" onClick={() => window.location.reload()} title="Logout"><LogOut size={14} /><span>Logout</span></button>
