@@ -1,24 +1,24 @@
-// Shared neon chart theme -- used by every ECharts panel across the platform
+// Shared Apple system-dark chart theme -- used by every ECharts panel across the platform
 // so the look stays cohesive as more chart types are added. Keeping this in
 // one place means a future palette/style change only happens once, instead
 // of drifting between components.
 
 export const chartTextStyle = { color: '#e8fbff', fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 };
-export const NEON_AXIS = '#28e0ff';
+export const NEON_AXIS = '#64d2ff';
 
 export const chartColors = [
-  '#00f5ff', // neon cyan
-  '#ff00e5', // neon magenta
-  '#39ff14', // neon green
-  '#ffea00', // neon yellow
-  '#ff5f1f', // neon orange
-  '#bc13fe', // neon purple
-  '#00ff9f', // neon mint
-  '#ff2079', // neon pink
-  '#0aefff', // neon blue
-  '#f8ff00', // neon lime
-  '#ff3860', // neon red-pink
-  '#7dff3d', // neon lime-green
+  '#64d2ff', // systemCyan
+  '#bf5af2', // systemPurple
+  '#30d158', // systemGreen
+  '#ffd60a', // systemYellow
+  '#ff9f0a', // systemOrange
+  '#5e5ce6', // systemIndigo
+  '#66d4cf', // systemMint
+  '#ff375f', // systemPink
+  '#0a84ff', // systemBlue
+  '#ac8e68', // systemBrown
+  '#ff453a', // systemRed
+  '#40c8e0', // systemTeal
 ];
 
 export const hexToRgba = (hex, alpha) => {
