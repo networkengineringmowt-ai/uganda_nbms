@@ -160,6 +160,56 @@ export default function UserManagement({ onNavigate } = {}) {
         </div>
       </div>
 
+      {/* Role Permissions Matrix -- real permission structure from the BMS
+          vendor training program (Chapter 1: User Roles & Permissions), not
+          a fabricated access model. Reflects the 3-tier authority already
+          used by the user rows above (Inspector < Bridge Manager <
+          Operations Manager). */}
+      <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'rgba(3, 9, 24, 0.52)', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Shield size={16} /> Role Permissions Matrix
+          <span style={{ fontWeight: 500, fontSize: '11px', color: 'var(--text-muted)', marginLeft: 8 }}>Source: BMS User Training, Chapter 1 -- User Roles &amp; Permissions</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
+          {[
+            {
+              role: 'Inspector', authority: 1, color: '#7dd3fc',
+              permissions: ['Map view', 'Inspection plan review', 'Damage quantity input', 'Maintenance info input'],
+              restriction: 'No access to bridge/condition info',
+            },
+            {
+              role: 'Bridge Manager', authority: 2, color: '#fbbf24',
+              permissions: ['Full maintenance info management', 'Bridge condition & repair/reinforcement management', 'Bridge specs & repair method management', 'Damage quantity calculation & analysis'],
+              restriction: 'Cannot configure user permissions',
+            },
+            {
+              role: 'Operations Manager', authority: 3, color: '#4ade80',
+              permissions: ['Access to all system menus', 'User permission configuration', 'System usage history management', 'Highest authority level'],
+              restriction: 'No restrictions',
+            },
+          ].map((r, i) => (
+            <div key={r.role} style={{ padding: '18px 20px', borderRight: i < 2 ? '1px solid var(--border)' : 'none', borderTop: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                <span style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: 14 }}>{r.role}</span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>(Authority {r.authority}/3)</span>
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Key Permissions</div>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                {r.permissions.map(p => (
+                  <li key={p} style={{ fontSize: 12.5, color: '#94a3b8', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ color: r.color, flexShrink: 0 }}>&#10003;</span>{p}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                Restriction: {r.restriction}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
