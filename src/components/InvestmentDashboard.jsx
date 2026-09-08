@@ -48,9 +48,16 @@ const fmtBn = (n) => (n == null ? '-' : (n / 1000).toLocaleString('en-US', { max
 export default function InvestmentDashboard() {
   const [data, setData] = useState(null);
   const [regionFilter, setRegionFilter] = useState('All');
+  // Asset value (current replacement cost / depreciated value) is a
+  // different figure from the investment-need cost above -- extracted from
+  // the real 2026 asset value register (Maintenance Strategy planning
+  // workbooks). Bridges and major culverts kept as separate line items per
+  // standing rule, never merged into one combined figure.
+  const [structures, setStructures] = useState(null);
 
   useEffect(() => {
     fetch(dataUrl('data/bridge_investment.json')).then(r => r.json()).then(setData).catch(console.error);
+    fetch(dataUrl('data/asset_values_structures.json')).then(r => r.json()).then(setStructures).catch(() => setStructures(null));
   }, []);
 
   const bridges = data?.bridges || [];
@@ -151,6 +158,30 @@ export default function InvestmentDashboard() {
         <span className="panel-kicker"><TrendingUp size={12} style={{ display: 'inline', marginRight: 5 }} />UNRA Bridge Investment Model · FY2026/27</span>
         <h2 style={{ margin: '4px 0 0', fontWeight: 700 }}>Investment planning &amp; prioritisation</h2>
       </div>
+
+      {structures && (
+        <section className="glass-card" style={{ padding: '16px 20px' }}>
+          <div className="panel-header"><div><span className="panel-kicker">Real 2026 asset register</span><h2>Structures asset value (current replacement cost)</h2></div></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Bridges</div>
+              <div style={{ display: 'flex', gap: 20 }}>
+                <div><strong style={{ fontSize: 20, color: '#f0f3fa' }}>{structures.bridges.count.toLocaleString()}</strong><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Count</div></div>
+                <div><strong style={{ fontSize: 20, color: '#38bdf8' }}>${structures.bridges.asset_value_musd.toLocaleString()}M</strong><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Asset Value</div></div>
+                <div><strong style={{ fontSize: 20, color: '#9aa5c4' }}>${structures.bridges.crc_musd.toLocaleString()}M</strong><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>CRC</div></div>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Major Culverts (kept separate from bridges)</div>
+              <div style={{ display: 'flex', gap: 20 }}>
+                <div><strong style={{ fontSize: 20, color: '#f0f3fa' }}>{structures.major_culverts.count.toLocaleString()}</strong><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Count</div></div>
+                <div><strong style={{ fontSize: 20, color: '#38bdf8' }}>${structures.major_culverts.asset_value_musd.toLocaleString()}M</strong><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Asset Value</div></div>
+                <div><strong style={{ fontSize: 20, color: '#9aa5c4' }}>${structures.major_culverts.crc_musd.toLocaleString()}M</strong><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>CRC</div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
         {kpis.map((k, i) => (
