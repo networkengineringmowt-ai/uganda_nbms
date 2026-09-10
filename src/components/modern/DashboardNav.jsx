@@ -18,6 +18,7 @@ import {
   Network,
   Settings,
   ShieldCheck,
+  Table,
   TrendingUp,
   User,
   Users,
@@ -50,13 +51,14 @@ const sectionDefinitions = [
           { id: 'critical_structures', label: 'Critical Structures', icon: AlertTriangle },
         ],
       },
-      {
-        label: 'Analytics',
-        tabs: [
-          { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-        ],
-      },
     ],
+  },
+  {
+    id: 'summary',
+    label: 'Summary Tables',
+    icon: Table,
+    defaultTab: 'analytics',
+    groups: [],
   },
   {
     id: 'evidence',
