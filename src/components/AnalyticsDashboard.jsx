@@ -153,6 +153,92 @@ function CrossTabTable({ kicker, title, rows, rowField, colField, unitLabel }) {
   );
 }
 
+// Same 2D surface type x functional road class matrix as CrossTabTable, but
+// each cell also sums a length/km field (the road link's length carried by
+// each counted record) alongside the count -- "km affected" is a straight
+// per-record sum, not a de-duplicated unique-link figure, consistent with
+// how every other table on this page aggregates per asset record rather
+// than per shared road link.
+function CrossTabCountKmTable({ kicker, title, rows, rowField, colField, lengthField, unitLabel }) {
+  const colLabelFn = /road_class/i.test(colField) ? getRoadClassLabel : (v) => v || 'Unknown';
+  const { matrix, rowKeys, colKeys, rowTotals, colTotals, grandCount, grandKm } = useMemo(() => {
+    const matrix = {};
+    const rowTotals = {};
+    const colTotals = {};
+    let grandCount = 0;
+    let grandKm = 0;
+    (rows || []).forEach((record) => {
+      const rowKey = fieldValue(record, rowField) || 'Unknown';
+      const colKey = colLabelFn(fieldValue(record, colField));
+      const km = Number(fieldValue(record, lengthField)) || 0;
+      matrix[rowKey] = matrix[rowKey] || {};
+      const cell = matrix[rowKey][colKey] || { count: 0, km: 0 };
+      cell.count += 1;
+      cell.km += km;
+      matrix[rowKey][colKey] = cell;
+      const rowTotal = rowTotals[rowKey] || { count: 0, km: 0 };
+      rowTotal.count += 1;
+      rowTotal.km += km;
+      rowTotals[rowKey] = rowTotal;
+      const colTotal = colTotals[colKey] || { count: 0, km: 0 };
+      colTotal.count += 1;
+      colTotal.km += km;
+      colTotals[colKey] = colTotal;
+      grandCount += 1;
+      grandKm += km;
+    });
+    return {
+      matrix,
+      rowKeys: Object.keys(rowTotals).sort(),
+      colKeys: Object.keys(colTotals).sort(),
+      rowTotals,
+      colTotals,
+      grandCount,
+      grandKm,
+    };
+  }, [rows, rowField, colField, lengthField, colLabelFn]);
+
+  const fmtCell = (cell) => `${(cell?.count || 0).toLocaleString()} · ${(cell?.km || 0).toFixed(1)} km`;
+
+  return (
+    <article className="panel glass-card">
+      <div className="panel-header">
+        <div>
+          <span className="panel-kicker">{kicker}</span>
+          <h2>{title}</h2>
+        </div>
+        <span className="stat-meta">{rowKeys.length} surface types × {colKeys.length} classes · {grandCount.toLocaleString()} {unitLabel} · {grandKm.toFixed(1)} km affected</span>
+      </div>
+      <p className="stat-formula-note">Each cell shows record count · road-link length (km) affected, summed across the {unitLabel} in that surface type / functional class combination.</p>
+      <div className="crosstab-scroll">
+        <table className="crosstab-table">
+          <thead>
+            <tr>
+              <th>Surface type \ Functional class</th>
+              {colKeys.map((col) => <th key={col}>{col}</th>)}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rowKeys.map((row) => (
+              <tr key={row}>
+                <td className="crosstab-row-label">{row}</td>
+                {colKeys.map((col) => <td key={col}>{fmtCell(matrix[row]?.[col])}</td>)}
+                <td className="crosstab-total-cell">{fmtCell(rowTotals[row])}</td>
+              </tr>
+            ))}
+            <tr className="crosstab-total-row">
+              <td className="crosstab-row-label">Total</td>
+              {colKeys.map((col) => <td key={col} className="crosstab-total-cell">{fmtCell(colTotals[col])}</td>)}
+              <td className="crosstab-total-cell">{grandCount.toLocaleString()} · {grandKm.toFixed(1)} km</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  );
+}
+
 const BRIDGE_GROUP_FIELDS = [
   { key: 'region', label: 'Region' },
   { key: 'road_class', label: 'Road class' },
@@ -246,6 +332,14 @@ export default function AnalyticsDashboard() {
       <section className="analytics-grid tables">
         <CrossTabTable kicker="Bridges" title="Bridges — Surface Type × Functional Class" rows={bridges} rowField="surface_ty" colField="road_class" unitLabel="bridges" />
         <CrossTabTable kicker="Culverts" title="Culverts — Surface Type × Functional Class" rows={culverts} rowField="Surface_Type" colField="Road_Class" unitLabel="culverts" />
+      </section>
+
+      <section className="category-explorer">
+        <div><span className="panel-kicker">Cross-tabulation</span><h2>Surface type × functional class — counts and km affected</h2></div>
+      </section>
+      <section className="analytics-grid tables">
+        <CrossTabCountKmTable kicker="Bridges" title="Bridges — Counts & Km Affected" rows={bridges} rowField="surface_ty" colField="road_class" lengthField="link_len_km" unitLabel="bridges" />
+        <CrossTabCountKmTable kicker="Culverts" title="Culverts — Counts & Km Affected" rows={culverts} rowField="Surface_Type" colField="Road_Class" lengthField="LinkLengthKm" unitLabel="culverts" />
       </section>
 
       <StatisticalAnalysis rows={bridges} label="Bridges" groupFields={BRIDGE_GROUP_FIELDS} />
